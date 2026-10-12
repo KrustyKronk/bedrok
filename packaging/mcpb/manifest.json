@@ -1,0 +1,82 @@
+{
+  "manifest_version": "0.4",
+  "name": "bedrok",
+  "display_name": "Bedrok",
+  "version": "0.2.0",
+  "description": "Public macroeconomic data from central banks, statistics offices and international organisations, each series fetched from its publisher into a local store. No keys needed to start.",
+  "long_description": "Bedrok gives your assistant about 160 curated series and their deep history: US rates and the Fed's releases, US labour and prices, the euro area country by country, the UK, OECD, BIS, IMF, national statistics offices, commodities, positioning and FX. Each series comes from the publisher that produces it, with its licence and the line to credit it with. Most of it works without keys; free keys add US GDP and PCE (BEA), retail and housing (Census), energy (EIA), Germany's and Japan's national statistics (Destatis, e-Stat) and the series only FRED publishes. Your data stays on your machine. Bedrok measures and contextualises; it never gives investment advice.",
+  "author": {
+    "name": "Andreu Paddack"
+  },
+  "server": {
+    "type": "uv",
+    "entry_point": "bedrok/__main__.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run", "--directory", "${__dirname}", "bedrok", "serve"],
+      "env": {
+        "BEDROK_PROFILE": "${user_config.data_dir}",
+        "BLS_API_KEY": "${user_config.bls_api_key}",
+        "BEA_API_KEY": "${user_config.bea_api_key}",
+        "CENSUS_API_KEY": "${user_config.census_api_key}",
+        "EIA_API_KEY": "${user_config.eia_api_key}",
+        "FRED_API_KEY": "${user_config.fred_api_key}",
+        "DESTATIS_API_KEY": "${user_config.destatis_api_key}",
+        "ESTAT_API_KEY": "${user_config.estat_api_key}"
+      }
+    }
+  },
+  "tools": [
+    {"name": "list_sources", "description": "Every publisher Bedrok is wired to, whether its key is set, and its terms"},
+    {"name": "search_series", "description": "Find a series in the curated catalog"},
+    {"name": "list_series", "description": "Walk the whole catalog, or count it by publisher, place and frequency"},
+    {"name": "describe_series", "description": "Units, publisher, licence, caveats, freshness and related series"},
+    {"name": "get_series", "description": "Observations, optionally as year-on-year, 3-month annualised or rebased"},
+    {"name": "chart_series", "description": "Series on one calendar with a chart recipe: title, units, scales, source line, footnotes"},
+    {"name": "percentile", "description": "Where a value sits in its own history, always with the sample"},
+    {"name": "query", "description": "Read-only SQL over the local store"},
+    {"name": "refresh", "description": "Bring stored series up to date from their publishers"}
+  ],
+  "user_config": {
+    "data_dir": {
+      "type": "directory",
+      "title": "Bedrok folder (optional)",
+      "description": "Where Bedrok keeps its store. Leave blank for the standard folder (~/Library/Application Support/bedrok). An existing folder's .env keys are read too.",
+      "required": false
+    },
+    "bls_api_key": {
+      "type": "string", "title": "BLS API key (optional)", "sensitive": true, "required": false,
+      "description": "Raises the Bureau of Labor Statistics limit from 25 to 500 requests a day. Free: data.bls.gov/registrationEngine"
+    },
+    "bea_api_key": {
+      "type": "string", "title": "BEA API key (optional)", "sensitive": true, "required": false,
+      "description": "US GDP and PCE prices. Free: apps.bea.gov/API/signup"
+    },
+    "census_api_key": {
+      "type": "string", "title": "Census API key (optional)", "sensitive": true, "required": false,
+      "description": "US retail sales, durable goods, housing, trade. Free: api.census.gov/data/key_signup.html"
+    },
+    "eia_api_key": {
+      "type": "string", "title": "EIA API key (optional)", "sensitive": true, "required": false,
+      "description": "US energy prices. Free: eia.gov/opendata/register.php"
+    },
+    "fred_api_key": {
+      "type": "string", "title": "FRED API key (optional)", "sensitive": true, "required": false,
+      "description": "Series only FRED publishes (credit spreads, VIX, jobless claims), fetched live and never stored. Free: fredaccount.stlouisfed.org/apikeys"
+    },
+    "destatis_api_key": {
+      "type": "string", "title": "Destatis API token (optional)", "sensitive": true, "required": false,
+      "description": "Germany's national CPI and industrial production from GENESIS-Online. Free: destatis.de/EN/Service/OpenData/api-webservice.html"
+    },
+    "estat_api_key": {
+      "type": "string", "title": "e-Stat application ID (optional)", "sensitive": true, "required": false,
+      "description": "Japan's CPI (core and core-core) and unemployment rate. Free: e-stat.go.jp/api/en"
+    }
+  },
+  "compatibility": {
+    "platforms": ["darwin", "linux"],
+    "runtimes": {"python": ">=3.11"}
+  },
+  "keywords": ["economics", "macroeconomic data", "central banks", "inflation", "interest rates", "sdmx"],
+  "license": "MIT"
+}

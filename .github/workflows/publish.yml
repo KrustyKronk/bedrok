@@ -1,0 +1,58 @@
+name: publish
+
+# A published GitHub release puts the same wheel and sdist on PyPI. Trusted
+# publishing: PyPI trusts this workflow, in this repository, in the `pypi`
+# environment, by OIDC, so no token is stored anywhere. The build job runs the
+# clean-machine check on the exact wheel it uploads, and refuses a tag that
+# disagrees with pyproject's version. A manual dispatch builds and checks
+# without publishing.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: The tag is the package version
+        if: github.event_name == 'release'
+        run: |
+          VERSION=$(python3 -c 'import tomllib;print(tomllib.load(open("pyproject.toml","rb"))["project"]["version"])')
+          test "v$VERSION" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME, pyproject $VERSION"; exit 1; }
+      - name: Build sdist and wheel
+        run: uv build
+      - name: The seeds are inside the wheel
+        run: unzip -l dist/*.whl | grep -E "bedrok/seeds/(sources|macro_catalog)\.csv"
+      - name: Install into an empty home and ask two questions with no keys
+        run: |
+          WHEEL=$(ls dist/*.whl)
+          HOME_DIR=$(mktemp -d)
+          env -i HOME="$HOME_DIR" PATH="$PATH" \
+            python3 scripts/mcp_smoke.py -- uvx --python 3.12 --from "$WHEEL" bedrok serve
+      - name: Metadata renders on PyPI
+        run: uvx twine check dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    if: github.event_name == 'release'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

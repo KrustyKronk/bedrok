@@ -1,0 +1,22 @@
+# --- user data: NEVER committed -------------------------------------------
+profile/
+profile-legacy/
+*.duckdb
+.env
+*.env
+
+# --- fetched binaries (see bin/fetch-binaries.sh) --------------------------
+bin/duckdb-*
+
+# --- python ----------------------------------------------------------------
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+
+# --- logs / scratch --------------------------------------------------------
+*.log
+.DS_Store
+.~lock.*#

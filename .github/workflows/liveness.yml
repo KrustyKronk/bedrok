@@ -1,0 +1,34 @@
+name: liveness
+
+# Once a week, one live call to every publisher that needs no key
+# (`bedrok smoke --keyless`). A publisher that moves a file or changes an
+# endpoint fails here instead of leaving a silent gap; one that answers with
+# frozen data prints WARN. GitHub emails the owner when a scheduled run fails.
+# No secrets: keyed publishers are left out until their keys are worth putting
+# on GitHub. Tuesday early UTC, before the US agencies' release window, so the
+# keyless BLS allowance (25 calls a day per address) is fresh.
+
+on:
+  schedule:
+    - cron: "17 6 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: liveness
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install .
+      - name: One live call per keyless publisher
+        run: bedrok smoke --keyless

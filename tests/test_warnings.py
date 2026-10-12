@@ -1,0 +1,93 @@
+"""The warnings seed (bedrok/seeds/warnings.csv) and how it is matched."""
+import csv
+from datetime import date
+
+import pandas as pd
+import pytest
+
+from bedrok.core import warnings
+from bedrok.ingest import pipeline
+
+
+def _row(**kw):
+    base = {c: "" for c in warnings.COLUMNS}
+    base.update(warning_id="x", country="Testland", severity="material",
+                period_start="2025-10", period_end="2025-10", series="us_cpi")
+    base.update(kw)
+    base["series_ids"] = tuple(base["series"].split())
+    return base
+
+
+@pytest.fixture
+def fake(monkeypatch):
+    rows = (
+        _row(warning_id="gap", series="us_cpi us_unemployment"),
+        _row(warning_id="note", severity="caveat", period_start="2025-08", period_end=""),
+        _row(warning_id="ar_cpi", country="Argentina", concept="cpi inflation consumer prices",
+             period_start="2007", period_end="2015", series=""),
+        _row(warning_id="us_cps", country="United States", concept="household survey unemployment",
+             series=""),
+    )
+    monkeypatch.setattr(warnings, "load", lambda: rows)
+    return rows
+
+
+# ---- the seed itself ---------------------------------------------------------
+
+def test_the_seed_has_the_agreed_columns_and_every_row_is_complete():
+    with open(warnings.WARNINGS_CSV, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        assert reader.fieldnames == warnings.COLUMNS
+        rows = list(reader)
+    assert len(rows) >= 40
+    ids = [r["warning_id"] for r in rows]
+    assert len(ids) == len(set(ids)), "duplicate warning_id"
+    for r in rows:
+        for col in ("warning_id", "country", "severity", "concept", "official_series",
+                    "what_happened", "effect_on_data", "cross_check",
+                    "source_name"):
+            assert r[col].strip(), f"{r['warning_id']}: empty {col}"
+        assert r["severity"] in warnings.SEVERITIES, r["warning_id"]
+        assert r["source_url"].startswith("https://"), f"{r['warning_id']}: source_url"
+        w0, w1 = warnings.period_bounds(r)
+        assert w1 is None or w1 >= w0, r["warning_id"]
+
+
+def test_every_linked_series_exists():
+    known = set(pd.read_csv(pipeline.CATALOG_CSV, dtype=str)["series_id"])
+    known |= set(pipeline.static_catalog_rows()["series_id"])
+    for r in warnings.load():
+        missing = set(r["series_ids"]) - known
+        assert not missing, f"{r['warning_id']}: unknown series {missing}"
+
+
+# ---- matching ----------------------------------------------------------------
+
+def test_periods_cover_whole_months_and_years():
+    assert warnings.period_bounds(_row(period_start="2007", period_end="2015")) == \
+        (date(2007, 1, 1), date(2015, 12, 31))
+    assert warnings.period_bounds(_row(period_start="2025-10", period_end="2025-10")) == \
+        (date(2025, 10, 1), date(2025, 10, 31))
+    assert warnings.period_bounds(_row(period_end=""))[1] is None
+    with pytest.raises(ValueError):
+        warnings.period_bounds(_row(period_start="Oct 2025"))
+
+
+def test_a_loud_warning_needs_its_period_inside_the_window(fake):
+    inside = warnings.for_series("us_cpi", date(2025, 9, 1), date(2025, 12, 1), loud_only=True)
+    assert [w["warning_id"] for w in inside] == ["gap"]
+    after = warnings.for_series("us_cpi", date(2026, 1, 1), date(2026, 8, 1), loud_only=True)
+    assert after == []
+
+
+def test_a_caveat_is_never_loud_but_is_always_described(fake):
+    assert "note" not in [w["warning_id"] for w in
+                          warnings.for_series("us_cpi", date(2026, 1, 1), None, loud_only=True)]
+    assert {w["warning_id"] for w in warnings.for_series("us_cpi")} == {"gap", "note"}
+
+
+def test_search_needs_a_place_and_knows_its_short_names(fake):
+    assert [w["warning_id"] for w in warnings.search("argentina inflation")] == ["ar_cpi"]
+    assert warnings.search("inflation") == []
+    assert [w["warning_id"] for w in warnings.search("US unemployment")] == ["us_cps"]
+    assert warnings.search("in it no") == []        # ISO codes are words first

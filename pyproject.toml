@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bedrok"
+version = "0.2.0"
+description = "Public macroeconomic data from central banks, statistics offices and international organisations, in your AI assistant: a local MCP server and store. No keys needed to start. Not financial advice."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "Andreu Paddack"}]
+requires-python = ">=3.11"
+keywords = ["macroeconomics", "economic data", "mcp", "duckdb", "sdmx", "central banks"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Science/Research",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+dependencies = [
+    "duckdb>=1.5,<2",
+    "pandas>=2.2.0",
+    "numpy>=1.26",
+    "requests>=2.31.0",
+    "python-dotenv>=1.0.0",
+    "openpyxl>=3.1",
+    # openpyxl cannot read legacy OLE2 .xls, which is what the NY Fed still
+    # serves for the ACM term premium and GSCPI (the latter from a .xlsx URL).
+    "xlrd>=2.0.1",
+    # The MCP server (`bedrok serve`). v2 renamed FastMCP to MCPServer; pin the
+    # major so a v3 rename cannot break an install silently.
+    "mcp>=2,<3",
+    # The per-user data folder a fresh install keeps its store in.
+    "platformdirs>=4",
+    # tomllib is stdlib from 3.11, but the Cowork sandbox's system python is
+    # 3.10 and the repo venv's shebang is macOS-only — so the package gets run
+    # unpinned there. Without the backport, `import tomllib` kills every command.
+    "tomli>=2.0; python_version < '3.11'",
+]
+
+[project.urls]
+Homepage = "https://github.com/KrustyKronk/bedrok"
+Source = "https://github.com/KrustyKronk/bedrok"
+Issues = "https://github.com/KrustyKronk/bedrok/issues"
+Changelog = "https://github.com/KrustyKronk/bedrok/releases"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+bedrok = "bedrok.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["bedrok*"]
+
+# The source list, the catalog, the warnings and the gaps note ship inside the
+# package: an installed wheel has no repo around it (core/config.SEEDS_DIR).
+[tool.setuptools.package-data]
+bedrok = ["seeds/*.csv", "seeds/*.md"]

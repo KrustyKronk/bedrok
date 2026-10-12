@@ -1,0 +1,36 @@
+name: package
+
+# The clean-machine check: build the wheel, install it with uvx into an empty
+# home on a fresh runner, start `bedrok serve` and ask it two keyless questions
+# over stdio (scripts/mcp_smoke.py). This is what a new user's first run does;
+# if a seed file falls out of the wheel or a path assumes the repo, it fails here.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  clean-install:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Build the wheel
+        run: uv build --wheel
+      - name: The seeds are inside the wheel
+        run: unzip -l dist/*.whl | grep -E "bedrok/seeds/(sources|macro_catalog)\.csv"
+      - name: Nothing in the tree or the wheel that must not be published
+        run: uvx pytest -q tests/test_publication.py
+      - name: Install into an empty home and ask two questions with no keys
+        run: |
+          WHEEL=$(ls dist/*.whl)
+          HOME_DIR=$(mktemp -d)
+          env -i HOME="$HOME_DIR" PATH="$PATH" \
+            python3 scripts/mcp_smoke.py -- uvx --python 3.12 --from "$WHEEL" bedrok serve

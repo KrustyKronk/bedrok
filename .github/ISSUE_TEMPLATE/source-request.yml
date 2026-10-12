@@ -1,0 +1,36 @@
+name: Source request
+description: Ask for a publisher or a series Bedrok does not carry yet.
+title: "Source: "
+labels: ["source request"]
+body:
+  - type: input
+    id: publisher
+    attributes:
+      label: Publisher
+      description: The organisation that produces the data (a central bank, a statistics office, an international organisation).
+    validations:
+      required: true
+  - type: input
+    id: data_url
+    attributes:
+      label: Where the data lives
+      description: The API, SDMX endpoint, PxWeb site or download page.
+    validations:
+      required: true
+  - type: input
+    id: terms_url
+    attributes:
+      label: Terms of use
+      description: The page with the publisher's licence or terms. Bedrok only carries data whose terms allow a personal, automated tool to fetch it.
+  - type: textarea
+    id: series
+    attributes:
+      label: The series you want first
+      description: Up to three, with their codes if you know them.
+    validations:
+      required: true
+  - type: dropdown
+    id: key
+    attributes:
+      label: Does it need an API key?
+      options: ["No", "Yes, free", "Yes, paid", "Not sure"]
