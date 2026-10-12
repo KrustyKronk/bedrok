@@ -34,6 +34,19 @@ data sources and not found; most are sold by data vendors.
   Sub-Saharan Africa, which index providers and exchanges license.
 - Parallel (market) exchange rates where they differ from the official rate.
 
+**Published, but not as series**
+
+- UK contributions to GDP growth by expenditure. The ONS publishes them only
+  in a spreadsheet ("GDP – contributions summary of records", under
+  `economy/grossdomesticproductgdp/datasets`), not as time series. Bedrok
+  carries UK growth itself (`uk_gdp_annual`, `uk_gdp_yoy`) and Eurostat's and
+  BEA's contributions for the euro area, the EU, eleven member states and the
+  US (`gdp_contrib_`, `us_gdp_contrib_`).
+- German and Dutch quarterly contributions on a year earlier, seasonally
+  adjusted. Eurostat publishes them for every other country Bedrok covers,
+  and for these two only quarter-on-quarter or unadjusted. Their annual
+  contributions are carried (`gdp_contrib_<part>_de`, `_nl`).
+
 **Records that are not kept openly**
 
 - Release-by-release revision histories (what a number was when first

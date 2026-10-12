@@ -25,6 +25,10 @@ ALIASES: dict[str, str] = {
     "esi_ea20": "esi_ea21",
     "ind_conf_ea20": "ind_conf_ea21",
     "cons_conf_ea20": "cons_conf_ea21",
+    # The UK is not in Eurostat's national accounts; its own series answer
+    # the family ids a cross-country question naturally tries (session C).
+    "gdp_yoy_uk": "uk_gdp_yoy",
+    "gdp_annual_uk": "uk_gdp_annual",
 }
 
 

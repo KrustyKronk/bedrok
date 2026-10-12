@@ -10,13 +10,13 @@ Bedrok is wired to 31 publishers. 25 need no key at all; the others take a free 
 | **European Central Bank** (`ecb`) | 21 curated | none | reuse with attribution | yes | [terms](https://www.ecb.europa.eu/services/disclaimer/html/index.en.html) |
 | **Eurostat** (`eurostat`) | 10 curated + 31 families | none | reuse with attribution | yes | [terms](https://ec.europa.eu/eurostat/web/main/help/copyright-notice) |
 | **U.S. Energy Information Administration** (`eia`) | 8 curated | [`EIA_API_KEY`](https://www.eia.gov/opendata/register.php) | public domain | yes | [terms](https://www.eia.gov/about/copyrights_reuse.php) |
-| **Office for National Statistics** (`ons`) | 9 curated | none | reuse with attribution | yes | [terms](https://www.ons.gov.uk/help/termsandconditions) |
+| **Office for National Statistics** (`ons`) | 10 curated | none | reuse with attribution | yes | [terms](https://www.ons.gov.uk/help/termsandconditions) |
 | **Bank of England** (`boe`) | 6 curated | none | reuse with attribution | yes | [terms](https://www.bankofengland.co.uk/legal) |
 | **OECD** (`oecd`) | 11 curated | none | reuse with attribution | yes | [terms](https://www.oecd.org/en/about/terms-conditions.html) |
 | **Federal Reserve Banks' research files and FHFA** (`fedfiles`) | 14 curated | none | reuse with attribution | yes | [terms](https://www.newyorkfed.org/privacy/termsofuse) |
 | **Board of Governors of the Federal Reserve System** (`fedboard`) | 22 curated | none | public domain | yes | [terms](https://www.federalreserve.gov/disclaimer.htm) |
 | **U.S. Bureau of Labor Statistics** (`bls`) | 18 curated | [`BLS_API_KEY`](https://data.bls.gov/registrationEngine/) (optional) | public domain | yes | [terms](https://www.bls.gov/opub/copyright-information.htm) |
-| **U.S. Bureau of Economic Analysis** (`bea`) | 3 curated | [`BEA_API_KEY`](https://apps.bea.gov/API/signup/) | public domain | yes | [terms](https://www.bea.gov/help/guidelines-for-citing-bea) |
+| **U.S. Bureau of Economic Analysis** (`bea`) | 12 curated | [`BEA_API_KEY`](https://apps.bea.gov/API/signup/) | public domain | yes | [terms](https://www.bea.gov/help/guidelines-for-citing-bea) |
 | **U.S. Census Bureau** (`census`) | 7 curated | [`CENSUS_API_KEY`](https://api.census.gov/data/key_signup.html) | public domain | yes | [terms](https://www.census.gov/data/developers/about/terms-of-service.html) |
 | **Federal Reserve Bank of New York — Markets Data and surveys** (`nyfed`) | 6 curated | none | reuse with attribution | yes | [terms](https://www.newyorkfed.org/privacy/termsofuse) |
 | **The World Bank — Commodity Markets (Pink Sheet)** (`worldbank`) | 1 family | none | reuse with attribution | yes | [terms](https://data.worldbank.org/summary-terms-of-use) |
@@ -142,6 +142,7 @@ Bedrok is wired to 31 publishers. 25 need no key at all; the others take a free 
 - `uk_gdp_qoq` — UK real GDP quarter-on-quarter growth
 - `uk_gdp_yoy` — UK real GDP growth on a year earlier
 - `uk_gdp_level` — UK real GDP level
+- `uk_gdp_annual` — UK real GDP growth, annual
 
 ### Bank of England
 
@@ -234,6 +235,15 @@ Bedrok is wired to 31 publishers. 25 need no key at all; the others take a free 
 - `us_pce` — US PCE price index
 - `us_core_pce` — US Core PCE price index
 - `us_real_gdp` — US real GDP chained 2017 USD
+- `us_gdp_growth_saar` — US real GDP growth, quarter on quarter at an annual rate
+- `us_gdp_contrib_hh` — US contribution of personal consumption to GDP growth
+- `us_gdp_contrib_inv_total` — US contribution of gross private domestic investment to GDP growth
+- `us_gdp_contrib_gfcf` — US contribution of fixed investment to GDP growth
+- `us_gdp_contrib_inv` — US contribution of the change in private inventories to GDP growth
+- `us_gdp_contrib_net` — US contribution of net exports to GDP growth
+- `us_gdp_contrib_exp` — US contribution of exports to GDP growth
+- `us_gdp_contrib_imp` — US contribution of imports to GDP growth
+- `us_gdp_contrib_gov` — US contribution of government spending to GDP growth
 
 ### U.S. Census Bureau
 
@@ -406,8 +416,10 @@ These ids still answer, with `alias_of` naming the one Bedrok keeps: the same nu
 
 - `cons_conf_ea20` → `cons_conf_ea21`
 - `esi_ea20` → `esi_ea21`
+- `gdp_annual_uk` → `uk_gdp_annual`
 - `gdp_qoq_ea20` → `ea_gdp_qoq`
 - `gdp_qoq_es` → `es_gdp_qoq`
+- `gdp_yoy_uk` → `uk_gdp_yoy`
 - `hicp_yoy_de` → `de_hicp_yoy`
 - `hicp_yoy_ea` → `ea_hicp_yoy`
 - `hicp_yoy_es` → `es_hicp_yoy`
