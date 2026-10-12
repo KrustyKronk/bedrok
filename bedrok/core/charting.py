@@ -88,16 +88,23 @@ def colour(i: int) -> str:
     return PALETTE[i % len(PALETTE)]
 
 
-def title_suggestion(names: list[str]) -> str:
-    """One series: its name. Two: both. More: the first and a count. The
-    assistant may always replace it; it never carries units."""
+_TRANSFORM_WORDS = {"yoy": ", annual rate", "mom3_ann": ", 3-month annualised rate",
+                    "index_to": ", rebased"}
+
+
+def title_suggestion(names: list[str], transform: str = "level") -> str:
+    """One series: its name. Two: both. More: the first and a count. A
+    transform is said ("US CPI all items, annual rate"): a chart of a rate
+    titled by the index it came from misled the self-test. The assistant may
+    always replace it; it never carries units."""
     if not names:
         return ""
+    suffix = _TRANSFORM_WORDS.get(transform, "")
     if len(names) == 1:
-        return names[0]
+        return names[0] + suffix
     if len(names) == 2:
-        return f"{names[0]} and {names[1]}"
-    return f"{names[0]} and {len(names) - 1} others"
+        return f"{names[0]} and {names[1]}" + suffix
+    return f"{names[0]} and {len(names) - 1} others" + suffix
 
 
 def axes(series: list[tuple[str, str]]) -> dict:
