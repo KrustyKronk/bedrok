@@ -46,6 +46,42 @@ def valid(units: str) -> bool:
     return bool(_FULL.fullmatch(str(units).strip()))
 
 
+# Which units can share one vertical scale. Two percent series got two scales
+# because "percent" and "percent change on previous quarter" are different
+# strings (the 2026-10-12 self-test); what matters is the dimension. Each
+# index base is its own dimension: two indices on different bases are not
+# comparable, which is why the base is in the units at all.
+_RATE = re.compile(r"percent( annualised|, annualised| change on .*)?|percentage points|net percent|balance")
+_MONEY = re.compile(rf"{SCALES} {CURRENCIES}.*")
+_SD = re.compile(r"standard deviations from (mean|trend)|index 0=average")
+
+
+def dimension(units: str) -> str:
+    """The scale a unit belongs to: 'rate' for every percentage-like unit,
+    'share of GDP', 'money:USD' (millions and billions alike), 'index:<base>',
+    'sd', or the unit itself when nothing else applies."""
+    u = str(units).strip()
+    if _RATE.fullmatch(u):
+        return "rate"
+    if u in ("percent of GDP", "percentage points of GDP"):
+        return "share of GDP"
+    m = _MONEY.fullmatch(u)
+    if m:
+        return f"money:{m.group(2)}"
+    m = re.fullmatch(r"index ([A-Za-z0-9-]+)=100", u)
+    if m:
+        return f"index:{m.group(1)}"
+    if _SD.fullmatch(u):
+        return "sd"
+    return u
+
+
+def is_money_level(units: str) -> bool:
+    """A level in money terms (millions USD, billions GBP): it grows with the
+    economy, so its percentile mostly says how recent it is."""
+    return bool(_MONEY.fullmatch(str(units).strip()))
+
+
 # The World Bank Pink Sheet's own unit labels, written out.
 _PER = {"mt": "metric ton", "kg": "kilogram", "bbl": "barrel", "troy oz": "troy ounce",
         "mmbtu": "million Btu", "cubic meter": "cubic meter", "dmtu": "dry metric ton unit",

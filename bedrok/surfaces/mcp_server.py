@@ -52,7 +52,8 @@ from pydantic import Field
 from bedrok.core import aliases, charting, config, dates, licensing, sources, store, warnings
 from bedrok.core import geography as geo
 from bedrok.engines import pctile
-from bedrok.ingest import derived, live, pipeline, transforms
+from bedrok.ingest import derived, live, pipeline
+from bedrok.ingest import transforms as transforms_mod
 from bedrok.ops import docs, freshness
 
 log = logging.getLogger("bedrok.mcp")
@@ -106,6 +107,7 @@ def _version() -> str:
 server = MCPServer(name="bedrok", instructions=INSTRUCTIONS, version=_version())
 
 MAX_ROWS = 1000
+_TRANSFORMS = Literal["level", "yoy", "mom3_ann", "index_to"]
 LOCK_WAIT_S = 20
 RETRY_AFTER_S = 6 * 3600
 BUSY = ("The Bedrok store is busy: another process (probably `bedrok refresh` in a "
@@ -594,10 +596,16 @@ def get_series(
     how: Annotated[Literal["last", "mean", "sum", "first"] | None,
                    Field(description="how a faster series becomes one value per period; "
                                      "default: last for weekly, mean otherwise")] = None,
+    transforms: Annotated[dict[str, _TRANSFORMS] | None,
+                          Field(description="a transform per id, overriding `transform` for "
+                                            "that id: {'us_cpi_nsa': 'yoy'} beside published "
+                                            "rates")] = None,
 ) -> dict[str, Any]:
     """Observations for up to five series, newest last. transform: level (as
     published), yoy (% change on a year earlier, by date), mom3_ann (3-month
-    change annualised), index_to (rebased to 100 at index_date). A stored series
+    change annualised), index_to (rebased to 100 at index_date); `transforms`
+    sets one per id, so an index level charted as a rate can sit beside a
+    published rate. A stored series
     that is stale or empty is re-fetched from its publisher first; a
     session-only series is fetched live and not stored — `fetched` says which.
 
@@ -619,12 +627,14 @@ def get_series(
     start, end = _span(start, end)
     if frequency != "native":
         return _get_aligned(series_ids, start, end, transform, index_date, max_rows,
-                            frequency, how)
+                            frequency, how, transforms)
     out = []
     for sid in series_ids:
+        t = (transforms or {}).get(sid, transform)
         try:
             df, fetched, row = _load(sid)
-            df = transforms.apply(df, transform, index_date)
+            df = transforms_mod.apply(df, t, index_date)
+            units = _units(row, t, index_date)
         except (ToolError, ValueError) as e:
             out.append({"series_id": sid, "error": str(e)})
             continue
@@ -636,8 +646,8 @@ def get_series(
         df = df.tail(max_rows)
         out.append({
             "series_id": sid, **_alias(row), "name": row["name"],
-            "units": _units(row, transform, index_date),
-            "transform": transform, "frequency": row["frequency"], "fetched": fetched,
+            "units": units, "catalog_units": row["units"],
+            "transform": t, "frequency": row["frequency"], "fetched": fetched,
             "observations": [{"date": _iso(d), "value": _iso(float(v))}
                              for d, v in zip(df["date"], df["value"])],
             "total_rows": total, "truncated": total > len(df),
@@ -666,10 +676,15 @@ def _span(start: str | None, end: str | None) -> tuple:
     return s, e
 
 
-def _units(row: dict, transform: str, index_date) -> str:
-    return row["units"] if transform == "level" else \
-        {"yoy": "percent change on a year earlier", "mom3_ann": "percent, annualised",
-         "index_to": f"index {index_date}=100"}[transform]
+def _units(row: dict, transform: str, index_date, frequency: str | None = None) -> str:
+    if transform == "level":
+        return row["units"]
+    if transform == "index_to":
+        when = dates.parse(index_date, name="index_date")
+        return charting.index_base_label(when, frequency or row.get("frequency"))
+    return {"yoy": "percent change on a year earlier",
+            "mom3_ann": "percent, annualised"}[transform]
+
 
 
 def _cut(total: int, kept: int, first_kept) -> dict:
@@ -682,14 +697,16 @@ def _cut(total: int, kept: int, first_kept) -> dict:
 
 
 def _get_aligned(series_ids, start, end, transform, index_date, max_rows,
-                 frequency, how) -> dict[str, Any]:
+                 frequency, how, per_id=None) -> dict[str, Any]:
     """get_series with `frequency`: every series on one shared calendar."""
     out, frames, notes = [], {}, {}
     for sid in series_ids:
+        t = (per_id or {}).get(sid, transform)
         try:
             df, fetched, row = _load(sid)
-            df, note = transforms.to_frequency(df, row.get("frequency"), frequency, how)
-            df = transforms.apply(df, transform, index_date)
+            df, note = transforms_mod.to_frequency(df, row.get("frequency"), frequency, how)
+            df = transforms_mod.apply(df, t, index_date)
+            units = _units(row, t, index_date, frequency)
         except (ToolError, ValueError) as e:
             out.append({"series_id": sid, "error": str(e)})
             continue
@@ -697,24 +714,24 @@ def _get_aligned(series_ids, start, end, transform, index_date, max_rows,
         notes[sid] = note
         out.append({
             "series_id": sid, **_alias(row), "name": row["name"],
-            "units": _units(row, transform, index_date),
-            "transform": transform, "frequency": row["frequency"], "fetched": fetched,
+            "units": units, "catalog_units": row["units"],
+            "transform": t, "frequency": row["frequency"], "fetched": fetched,
             **_terms_for(row),
             "freshness": _freshness(row["series_id"]) if row.get("cache") != licensing.SESSION
             else {"status": "session"},
         })
     if not frames:
         return {"series": out}
-    dates, columns = transforms.align(frames, frequency, start=start, end=end)
-    total = len(dates)
+    days, columns = transforms_mod.align(frames, frequency, start=start, end=end)
+    total = len(days)
     keep = max(total - max_rows, 0)
-    dates = dates[keep:]
+    dates_kept = days[keep:]
     columns = {k: v[keep:] for k, v in columns.items()}
     for entry in out:
         sid = entry["series_id"]
         if sid not in columns:
             continue
-        have = [d for d, v in zip(dates, columns[sid]) if v is not None]
+        have = [d for d, v in zip(dates_kept, columns[sid]) if v is not None]
         entry["warnings"] = warnings.for_series(entry.get("alias_of") or sid, have[0], have[-1],
                                                 loud_only=True) \
             if have else []
@@ -723,14 +740,14 @@ def _get_aligned(series_ids, start, end, transform, index_date, max_rows,
         # Only when something was actually aggregated: a monthly series charted
         # monthly was not averaged, and saying so would be false.
         "how": next((n["how"] for n in notes.values() if n["how"]), None),
-        "dates": [_iso(d) for d in dates],
+        "dates": [_iso(d) for d in dates_kept],
         "columns": {k: [_iso(x) for x in v] for k, v in columns.items()},
         "stepped": {k: n["stepped"] for k, n in notes.items()},
         "partial_last": {k: n["partial_last"] for k, n in notes.items()},
         "partial": {k: n["partial"] for k, n in notes.items() if n.get("partial")},
         "incomplete": {k: n["incomplete"] for k, n in notes.items() if n["incomplete"]},
-        "total_rows": total, "truncated": total > len(dates),
-        **_cut(total, len(dates), dates[0] if dates else None),
+        "total_rows": total, "truncated": total > len(dates_kept),
+        **_cut(total, len(dates_kept), dates_kept[0] if dates_kept else None),
     }
     return {"series": out, "table": table}
 
@@ -750,6 +767,10 @@ def chart_series(
     how: Annotated[Literal["last", "mean", "sum", "first"] | None,
                    Field(description="how a faster series becomes one value per period")] = None,
     title: Annotated[str | None, Field(description="your title; Bedrok suggests one if empty")] = None,
+    transforms: Annotated[dict[str, _TRANSFORMS] | None,
+                          Field(description="a transform per id, overriding `transform` for "
+                                            "that id: {'us_cpi_nsa': 'yoy'} beside published "
+                                            "rates")] = None,
 ) -> dict[str, Any]:
     """Use this for every chart: when someone asks to show, plot, chart or
     compare series over time. It returns the data on one calendar (`table`)
@@ -776,20 +797,20 @@ def chart_series(
     start, end = _span(start, end)
     if frequency == "auto":
         frequency = _auto_frequency(series_ids)
-    got = _get_aligned(series_ids, start, end, transform, index_date, MAX_ROWS, frequency, how)
+    got = _get_aligned(series_ids, start, end, transform, index_date, MAX_ROWS, frequency, how,
+                       transforms)
     table = got.get("table")
     if not table:
         return got
     entries = [e for e in got["series"] if "error" not in e]
     # Contributions to growth are drawn as stacked bars with the total beside
-    # them on one scale: the parts are in percentage points of the total's
-    # percent, so for this form the two units are one scale (session C).
+    # them (session C); percent and percentage points are one dimension, so
+    # axes puts them on one scale by itself.
     parts = [e for e in entries if charting.is_contribution(e)]
-    totals = [e for e in entries if e not in parts and e["units"] == "percent"] if parts else []
+    totals = [e for e in entries if e not in parts and e["catalog_units"] == "percent"] \
+        if parts else []
     total = totals[0] if len(totals) == 1 else None
-    stacked = {e["series_id"] for e in parts} | ({total["series_id"]} if total else set())
-    placed = charting.axes([(e["series_id"], "percentage points" if e["series_id"] in stacked
-                             else e["units"]) for e in entries])
+    placed = charting.axes([(e["series_id"], e["units"]) for e in entries])
     left = set(placed["left"]["series"])
     right = set((placed.get("right") or {}).get("series", []))
     # A series a third unit left off both scales is not drawn, and nothing

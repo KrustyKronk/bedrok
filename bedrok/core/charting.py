@@ -18,6 +18,8 @@ from __future__ import annotations
 import math
 from datetime import date
 
+from bedrok.core import units as units_vocab
+
 # Okabe–Ito, without its yellow (unreadable on white): seven hues that stay
 # distinct for the common forms of colour blindness. Assigned in the order the
 # series were asked for, so a series keeps its colour across charts.
@@ -99,20 +101,25 @@ def title_suggestion(names: list[str]) -> str:
 def axes(series: list[tuple[str, str]]) -> dict:
     """[(id, units)] → which series go on the left scale and which on the right.
 
-    One unit: one scale. Two: the first-listed series' units on the left, the
-    other on the right. Three or more cannot be read on two scales: the first
-    two groups are placed and `problem` says what to do instead."""
+    One dimension (percent, percentage points and the other rate-like units
+    are one): one scale, labelled with the first series' units. Two: the
+    first-listed series' dimension on the left, the other on the right. Three
+    or more cannot be read on two scales: the first two are placed and
+    `problem` says what to do instead."""
+    dims = [(i, units_vocab.dimension(u), u) for i, u in series]
     groups: list[str] = []
-    for _, u in series:
-        if u not in groups:
-            groups.append(u)
-    left = [i for i, u in series if u == groups[0]] if groups else []
-    right = [i for i, u in series if len(groups) > 1 and u == groups[1]]
-    out = {"left": {"units": groups[0] if groups else None, "series": left},
-           "right": {"units": groups[1], "series": right} if len(groups) > 1 else None,
+    label: dict[str, str] = {}
+    for _, d, u in dims:
+        if d not in groups:
+            groups.append(d)
+            label[d] = u
+    left = [i for i, d, _ in dims if d == groups[0]] if groups else []
+    right = [i for i, d, _ in dims if len(groups) > 1 and d == groups[1]]
+    out = {"left": {"units": label[groups[0]] if groups else None, "series": left},
+           "right": {"units": label[groups[1]], "series": right} if len(groups) > 1 else None,
            "problem": None}
     if len(groups) > 2:
-        dropped = [i for i, u in series if u in groups[2:]]
+        dropped = [i for i, d, _ in dims if d in groups[2:]]
         out["problem"] = (f"{len(groups)} different units cannot share two scales; "
                           f"{', '.join(dropped)} {'is' if len(dropped) == 1 else 'are'} "
                           "not placed and not drawn. Draw two charts, or ask for "
@@ -126,6 +133,22 @@ def _span_label(d: date, frequency: str) -> str:
     if frequency == "annual":
         return str(d.year)
     return f"{_MONTHS[d.month - 1]} {d.year}"
+
+
+def index_base_label(when: date, frequency: str | None) -> str:
+    """The base period of a rebased series as the units name it, in the
+    vocabulary's "index <base>=100" form: the period actually used on the
+    chart's calendar, not the date typed ("index 2020Q1=100" when a quarterly
+    chart was rebased to 2020-02-15)."""
+    if frequency == "quarterly":
+        base = f"{when.year}Q{(when.month - 1) // 3 + 1}"
+    elif frequency == "annual":
+        base = str(when.year)
+    elif frequency == "monthly":
+        base = f"{_MONTHS[when.month - 1]}-{when.year}"
+    else:
+        base = when.isoformat()
+    return f"index {base}=100"
 
 
 def subtitle(placed: dict, frequency: str, how: str | None, first: date | None,

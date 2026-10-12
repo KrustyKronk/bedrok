@@ -493,3 +493,20 @@ def test_contributions_chart_as_stacked_bars_on_one_scale_with_their_total(srv):
     assert any("add up to the total within 0.05" in n for n in c["footnotes"])
     lines = _call("chart_series", {"series_ids": ["us_cpi"]}).structured_content["chart"]
     assert lines["form"] == "lines" and lines["total"] is None
+
+
+def test_a_transform_per_series_puts_a_rate_beside_an_index_in_one_recipe(srv):
+    """Session D1: the self-test merged two calls by hand because one transform
+    applied to every series. A published rate beside an index charted as a
+    rate is now one recipe, on one scale."""
+    c = _call("chart_series", {"series_ids": ["jp_policy_rate", "us_cpi"],
+                               "transforms": {"us_cpi": "yoy"}, "frequency": "monthly"}) \
+        .structured_content
+    by = {s["series_id"]: s for s in c["series"]}
+    assert by["us_cpi"]["transform"] == "yoy" and by["jp_policy_rate"]["transform"] == "level"
+    assert by["us_cpi"]["units"] == "percent change on a year earlier"
+    assert by["us_cpi"]["catalog_units"] == "index"
+    assert c["chart"]["axes"]["right"] is None
+    g = _call("get_series", {"series_ids": ["us_cpi"], "transform": "index_to",
+                             "index_date": "2025-02-15", "frequency": "quarterly"}).structured_content
+    assert g["series"][0]["units"] == "index 2025Q1=100"
