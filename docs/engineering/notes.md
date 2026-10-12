@@ -239,13 +239,47 @@ February 2026); the r539 endpoint is a form POST at
 `oui.doleta.gov/unemploy/wkclaims/report.asp` (`level=us`, `filetype=xml`),
 with thousands separators and non-breaking spaces for weeks not yet reported.
 
-**The Fed Board is retiring its Data Download Program and pointing users at
-FRED.** "Build Your Package" goes the week of 2026-11-09 and the program after
-that, undated. The per-release SDMX-XML zips
-(`federalreserve.gov/releases/{rel}/data/FRB_{rel}_xml.zip`) still downloaded
-on 2026-10-09 for H.15, H.4.1, H.8, H.6, H.10 and G.17. Treasury's own par
-curve starts in 1990 where H.15's constant maturities start in 1962, so the
-zips, not Treasury, are the route for the yields that need deep history.
+**The Fed Board is retiring its Data Download Program; Bedrok never used
+it (session B, 2026-10-12).** The adapter reads the release-page zips
+(`federalreserve.gov/releases/{rel}/data/FRB_{rel}_xml.zip`, eight of them:
+H15, H10, G17, H6, H8, H41, SLOOS, CHGDEL), and the Board's notice
+(`federalreserve.gov/data/data-download-fred-information.htm`, 2026-07-16)
+says "Historical data will remain available for download as XML files on
+statistical release pages". What goes: the interactive "Build Your Package"
+the week of 2026-11-09, the pre-built DDP packages "later this year and in
+2027", the program itself after that, undated. All eight zips answered on
+2026-10-12 (H.15 is 4.3 MB, 263 series from 1954; H.4.1 is 9.1 MB and its
+series names are not FRED's). What was done, and what to do when a zip goes:
+- *`smoke` now HEADs every zip* (`fedboard.release_status`), beyond the SLOOS
+  download the smoke series makes, and prints each file's Last-Modified date;
+  a 404, or an HTML page answering in the zip's place, FAILs the Tuesday run.
+- *SLOOS is the exposed one:* its page (`/data/sloos.htm`) offers no zip, only
+  the survey's chart-data HTML (`/data/sloos/sloos-YYYYMM-chart-data.htm`,
+  every survey since 1990:2, headers spanning columns, "n.a." for gaps). If
+  the zip goes, `fetch` reads that table (`parse_sloos_html`, `SLOOS_HTML`
+  maps the four series to a panel heading and a column by words). Tied out
+  on 2026-10-12: all 146, 146, 140 and 123 stored observations equal.
+- *The yields:* Treasury's par curve, one CSV per year (the all-years URL is
+  refused by Akamai): `home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/{YYYY}/all?type=daily_treasury_yield_curve&field_tdr_date_value={YYYY}&page&_format=csv`,
+  real yields with `type=daily_treasury_real_yield_curve`. US dates, newest
+  first, columns keyed by header because tenors were added over the years
+  (1990 has 3 Mo to 30 Yr with no 1 Mo, 2 Mo or 20 Yr; the real curve starts
+  2003 with 5, 7 and 10 YR). A US government work, public domain by default;
+  no terms page states it. A re-point costs 1962–1989 of H.15 history
+  (re-pointed series are replaced, never stitched), so only if the zip goes.
+- *GBPUSD:* `("GBPUSD", "derived", "EURUSD/EURGBP")` in `config.fx_pairs()`,
+  placed before USDGBP; `_derived_fx` already divides. ECB reference rates
+  fix at 14:15 CET against H.10's noon New York, and start in 1999 against
+  1971. The Bank of England's XUDLUSS is excluded from the OGL (third-party
+  FX under licence), so it is not an option.
+- *No non-FRED source exists* for the dollar index (H.10), G.17, H.6, H.8,
+  H.4.1 or the charge-off rates, and FRED can never be stored. If one of
+  those zips goes, the series freezes with its history and joins the gaps
+  page; the Board's crosswalk to FRED ids is at
+  `federalreserve.gov/data/documents/DDP-FRED%20Data%20Series%20Crosswalk.csv`
+  for a session-only read.
+- The download cache held four zips for eight releases, so one run could
+  fetch H.10 twice (GBPUSD in `sync_fx` is never primed); it holds eight now.
 
 **Census rejects keyless calls by redirecting, not by erroring.** A request
 without a key is answered with a 302 to `missing_key.html`; `requests` follows
