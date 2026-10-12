@@ -47,7 +47,7 @@ Terms: <https://www.ecb.europa.eu/services/disclaimer/html/index.en.html>
 
 ### Eurostat
 
-Source: Eurostat. Reused under the Creative Commons Attribution 4.0 International licence (CC BY 4.0). Non-EU country data carried inside Eurostat datasets is excluded from commercial reuse, so Bedrok fetches EU geographies only.
+Source: Eurostat. Reused under the Creative Commons Attribution 4.0 International licence (CC BY 4.0). Commercial reuse covers EU, EFTA and EU candidate countries only, so Bedrok carries no other country's data from Eurostat.
 
 Terms: <https://ec.europa.eu/eurostat/web/main/help/copyright-notice>
 

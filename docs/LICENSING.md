@@ -133,7 +133,7 @@ Every publisher's terms page is in the source list,
 attribution line and whether it needs a key. That file is the one place to
 look; the list below is kept only for the per-series terms it adds.
 
-- Eurostat — **non-EU country data inside Eurostat datasets is excluded from commercial reuse**, which is why the multi-geo sets iterate a curated list rather than the API response.
+- Eurostat — **data on countries other than EU members, EFTA members and official EU candidate countries is excluded from commercial reuse** (the notice's examples are the US, Japan and China). Curated multi-geo sets iterate their own list; the broad HICP set loops over the API response and keeps only `pipeline.REUSE_GEOS`. Kosovo, a potential candidate only, is not carried.
 - Bank of England — SONIA requires a verbatim statement, and selected FX series are excluded from the OGL grant.
 - The `fedfiles` row covers several publishers, each with its own terms: NY Fed <https://www.newyorkfed.org/privacy/termsofuse>; Chicago Fed <https://www.chicagofed.org/utilities/legal-notices> (not for private or commercial gain, with credit); Cleveland Fed <https://www.clevelandfed.org/privacy> (noncommercial, credited); Dallas Fed <https://www.dallasfed.org/fed/disclaimer> (not for private gain, credited); Atlanta Fed <https://www.atlantafed.org/terms-of-use> (not for commercial gain); Philadelphia Fed <https://www.philadelphiafed.org/about-us/terms-of-use> (all rights reserved); FHFA <https://www.fhfa.gov/about/fhfa-policies/api-terms-of-service> (required notice).
 - NBER — <https://www.nber.org/research/data/us-business-cycle-expansions-and-contractions> (copy with attribution), for the derived recession flag.
