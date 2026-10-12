@@ -89,6 +89,9 @@ Rules: quote a percentile only with its sample (start, end, n). Bedrok
 measures and contextualises; it never gives investment advice or buy/sell
 timing signals. Currency and units are in the catalog, never inferred.
 Session-only series (FRED's) are fetched live and are not visible to query().
+What Bedrok does not carry may be fetched another way (a web search, another
+tool): say that part did not come through Bedrok, and where Bedrok stores the
+headline, check the outside number against it first.
 """
 
 def _version() -> str:
