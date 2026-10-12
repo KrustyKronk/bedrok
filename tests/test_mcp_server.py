@@ -368,3 +368,23 @@ def test_everyday_words_find_series_named_otherwise(srv):
     """"inflation" finds a series named CPI; a place Bedrok lacks finds none."""
     r = _call("search_series", {"text": "us inflation"}).structured_content
     assert [m["series_id"] for m in r["matches"]][0] == "us_cpi"
+
+
+def test_dates_read_one_way_everywhere_and_refusals_say_why(srv):
+    """The 2026-10-12 self-test: percentile(since="2010") crashed with no
+    message while get_series took "2010"; a start after the end came back
+    empty without a word; a malformed date crashed the whole call."""
+    first = _call("get_series", {"series_ids": ["us_cpi"], "max_rows": 1000}) \
+        .structured_content["series"][0]["observations"][0]["date"]
+    year = first[:4]
+    p = _call("percentile", {"series_id": "us_cpi", "since": year}).structured_content
+    assert p["sample"]["start"] == first
+    for tool, args in [("percentile", {"series_id": "us_cpi", "since": "2020-13-01"}),
+                       ("get_series", {"series_ids": ["us_cpi"], "start": "2020-13-01"}),
+                       ("chart_series", {"series_ids": ["us_cpi"], "start": "March 2020"})]:
+        r = _call(tool, args)
+        assert r.is_error and "YYYY-MM-DD" in r.content[0].text, tool
+    r = _call("get_series", {"series_ids": ["us_cpi"], "start": "2025-12-31", "end": "2025-01-01"})
+    assert r.is_error and "after" in r.content[0].text
+    r = _call("percentile", {"series_id": "us_cpi", "since": "2099"})
+    assert r.is_error and "no observations on or after" in r.content[0].text
