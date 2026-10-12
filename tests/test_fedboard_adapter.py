@@ -74,3 +74,78 @@ def test_fetch_downloads_each_release_once_for_every_primed_series(monkeypatch):
     with pytest.raises(ValueError, match="not found"):
         fedboard.prime(["H15:NOPE"])
         fedboard.fetch("H15:NOPE")
+
+
+SLOOS_HTML = """
+<table title="Figure 1"><tr><th rowspan="2">Period</th>
+<th colspan="2">Panel 1: Net Percentage of Domestic Respondents Tightening Standards for C&amp;I Loans</th>
+<th colspan="2">Panel 3: Net Percentage of Domestic Respondents Reporting Stronger Demand for C&amp;I Loans</th></tr>
+<tr><th>Large and medium</th><th>Small</th><th>Large and medium</th><th>Small</th></tr>
+<tr><td>1990:2</td><td>54.4</td><td>52.7</td><td>n.a.</td><td>n.a.</td></tr>
+<tr><td>2026:3</td><td>0.0</td><td>1.8</td><td>16.1</td><td>3.6</td></tr></table>
+<table title="Figure 4"><tr><th rowspan="2">Period</th>
+<th colspan="2">Panel 1: Net Percentage of Domestic Respondents Tightening Standards on Consumer Loans ***</th>
+<th rowspan="2">Panel 2: Increased Willingness</th></tr>
+<tr><th>Credit cards</th><th>New and used autos</th></tr>
+<tr><td>2026:3</td><td>6.7</td><td>-4.5</td><td>-2.0</td></tr></table>
+"""
+
+
+def test_the_sloos_chart_data_page_reads_by_header_words_not_position():
+    """Session B: the fallback for the one release file with no release page.
+    Headers span columns and 'n.a.' is a gap, not a zero."""
+    small = fedboard.parse_sloos_html(SLOOS_HTML, "SUBLPDCISS_N.Q")
+    assert [str(d) for d in small["date"]] == ["1990-04-01", "2026-07-01"]
+    assert small["value"].tolist() == [52.7, 1.8]
+    demand = fedboard.parse_sloos_html(SLOOS_HTML, "SUBLPDCILD_N.Q")
+    assert demand["value"].tolist() == [16.1] and str(demand["date"].iloc[0]) == "2026-07-01"
+    cards = fedboard.parse_sloos_html(SLOOS_HTML, "SUBLPDCLCS_N.Q")
+    assert cards["value"].tolist() == [6.7]
+    with pytest.raises(ValueError, match="not found"):
+        fedboard.parse_sloos_html("<table></table>", "SUBLPDCILS_N.Q")
+
+
+def test_sloos_falls_back_to_the_chart_data_page_only_when_its_zip_is_gone(monkeypatch):
+    import requests
+
+    def gone(rel):
+        err = requests.HTTPError("404 Client Error")
+        raise err
+    monkeypatch.setattr(fedboard, "_download", gone)
+    monkeypatch.setattr(fedboard, "_sloos_chart_data", lambda: SLOOS_HTML)
+    fedboard.prime(["SLOOS:SUBLPDCILS_N.Q", "H15:RIFLGFCY10_N.B"])
+    df = fedboard.fetch("SLOOS:SUBLPDCILS_N.Q", start="2026-01-01")
+    assert df["value"].tolist() == [0.0] and "fallback" in df.attrs
+    with pytest.raises(requests.HTTPError):          # H.15 has no fallback
+        fedboard.fetch("H15:RIFLGFCY10_N.B")
+
+
+def test_release_status_reads_the_zip_headers_and_refuses_an_html_answer(monkeypatch):
+    import requests
+
+    class Resp:
+        def __init__(self, status, headers):
+            self.status_code, self.headers = status, headers
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                raise requests.HTTPError(str(self.status_code))
+    monkeypatch.setattr(fedboard.requests, "head", lambda url, **kw: Resp(200, {
+        "content-type": "application/zip", "last-modified": "Fri, 09 Oct 2026 20:15:08 GMT",
+        "content-length": "4300000"}))
+    df = fedboard.release_status("H15")
+    assert str(df["date"].iloc[0]) == "2026-10-09" and df["value"].iloc[0] == 4300000.0
+    monkeypatch.setattr(fedboard.requests, "head", lambda url, **kw: Resp(200, {"content-type": "text/html"}))
+    with pytest.raises(ValueError, match="gone"):
+        fedboard.release_status("SLOOS")
+    monkeypatch.setattr(fedboard.requests, "head", lambda url, **kw: Resp(404, {}))
+    with pytest.raises(requests.HTTPError):
+        fedboard.release_status("SLOOS")
+
+
+def test_the_download_cache_holds_every_release_the_catalog_uses():
+    import pandas as pd
+    from bedrok.ingest import pipeline
+    cat = pd.read_csv(pipeline.CATALOG_CSV, dtype=str)
+    releases = {c.split(":")[0] for c in cat.loc[cat["source"] == "fedboard", "source_code"]}
+    assert fedboard._download.cache_parameters()["maxsize"] >= len(releases)   # GBPUSD reads H10, already counted

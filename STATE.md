@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-12, end of session A.** Bedrok is a local MCP server and store of
+**Updated 2026-10-12, end of session B.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -13,9 +13,8 @@ became sessions 8 (lining up the data), 9 (charts and answers), 10 (the data
 the questions needed) and 11 (tidying the catalog). Session 12 opened it:
 **Bedrok 0.2.0 is public**, at `github.com/KrustyKronk/bedrok` and on PyPI
 (`uvx --python 3.12 bedrok serve`), with the Desktop bundle on the release.
-**Next: three sessions, in this order** (the owner, 2026-10-12; session A,
-correct answers, is done):
-- **B. The Fed Board migration:** item 8, before the week of 2026-11-09.
+**Next: two sessions, in this order** (the owner, 2026-10-12; sessions A,
+correct answers, and B, the Fed Board watch, are done):
 - **C. Breakdown questions:** item 1, already decided.
 - **D. Charts and tool friction:** item 2, item 18, and outside rows in
   `chart_series` (decided below).
@@ -27,6 +26,23 @@ serve 0.2.0 until a version bump.
 **Owner-side items** — the ones that need the owner's accounts or describe one
 machine — live in `profile/STATE-private.md`, which is gitignored. This file
 holds only what any reader may see.
+
+**Session B in one paragraph.** The Fed Board's retirement of its Data
+Download Program turned out not to touch Bedrok: the adapter reads the
+release-page zips, and the Board's notice says those stay (the interactive
+tool goes the week of 2026-11-09, the pre-built packages later). So nothing
+moved source and no history was lost. What changed: `smoke` now HEADs every
+one of the eight release zips and prints its Last-Modified date, so a file
+that goes shows in the Tuesday liveness run; SLOOS, the one release with no
+release page, falls back to the survey's chart-data HTML table when its zip
+is gone (`parse_sloos_html`, tied out against every stored observation of
+the four series: all equal); the download cache holds eight zips instead of
+four, so a run no longer fetches H.10 twice. The re-point recipes for the
+day a zip does go (Treasury's par and real curves for the yields, the ECB
+cross for GBPUSD, and which series have no non-FRED source at all) are in
+`docs/engineering/notes.md`. Proven live: the forced fallback against the
+current survey page matches the store exactly, `validate` is clean but for
+the known Eurostat debt lag, and `smoke` passed 36 of 38 with all eight zip lines green (the two failures are the OECD bot check and the Destatis outage, item 3).
 
 **Session A in one paragraph.** The cold-session self-test's bugs, each
 pinned by a test of what a user hit. Search matches a warning's country as a
@@ -460,11 +476,16 @@ Owner-side items are in `profile/STATE-private.md`.
    server instructions tell the assistant to label numbers fetched outside
    Bedrok and check them against a stored headline.
 
-8. **The Fed Board zips are the fragile link.** The Board is retiring its Data
-   Download Program ("Build Your Package" goes the week of 2026-11-09) and
-   points users at FRED. If the release zips go too, 22 series and GBPUSD have
-   no other source but Treasury's par-curve feed for the yields (from 1990).
-   `smoke` reads the SLOOS zip, so a move shows in the liveness run first.
+8. **Watch the Fed Board's release zips.** Bedrok reads the eight
+   release-page zips, which the Board says outlive its Data Download Program
+   (session B). `smoke` now checks every one; read a red Tuesday run on a
+   `<REL> release zip` line as that file having moved or gone. SLOOS falls
+   back to the survey's HTML table by itself. For the yields the recipe is
+   Treasury's par and real curves (from 1990 and 2003; a re-point costs
+   1962–1989 of history), for GBPUSD the ECB cross; the dollar index, G.17,
+   H.6, H.8, H.4.1 and the charge-off rates have no non-FRED source and would
+   freeze with their history and go on the gaps page. All in
+   `docs/engineering/notes.md`, "The Fed Board is retiring…".
 
 9. **Shrimp has stopped too, probably.** `wb_shrimp` ends 2023-10 and, as the
    oldest last date among the Pink Sheet series, sets every incremental Pink

@@ -30,7 +30,7 @@ import pandas as pd
 
 from bedrok.core import sources
 from bedrok.ingest import pipeline
-from bedrok.ingest.adapters import cftc, eurostat, worldbank
+from bedrok.ingest.adapters import cftc, eurostat, fedboard, worldbank
 from bedrok.ops import freshness
 
 GRACE_DAYS = 14
@@ -56,6 +56,16 @@ def checks(keyless: bool = False) -> list[tuple[str, str, int | None, callable]]
         allow = freshness.allowance(entry.get("frequency"), entry.get("staleness_days"), sid)
         out.append((source, sid, allow, lambda s=source, c=entry["source_code"]:
                     pipeline._with_retry(lambda: pipeline.MACRO_FETCHERS[s](c, start))))
+    # The Fed Board is one source but eight release files, and the Board is
+    # retiring its download program around them: one HEAD per file the catalog
+    # reads, beyond the one the smoke series downloads, so a file that moves
+    # shows here the week it moves.
+    fed = catalog[catalog["source"] == "fedboard"]
+    smoke_rel = str(catalog.loc[sources.load()["fedboard"]["smoke_series"], "source_code"]
+                    ).split(":")[0] if "fedboard" in sources.load() else None
+    for rel in sorted({str(c).split(":")[0] for c in fed["source_code"]} - {smoke_rel}):
+        out.append(("fedboard", f"{rel} release zip", None,
+                    lambda r=rel: fedboard.release_status(r)))
     out += [
         ("worldbank", "Pink Sheet (Brent)", None,
          lambda: worldbank.fetch_pink_sheet()[0]["wb_crude_brent"]),

@@ -58,6 +58,7 @@ def world(tmp_path, monkeypatch):
                         lambda code: ({"DE": _frame(20)}, {}))
     monkeypatch.setattr(smoke.cftc, "fetch_cot",
                         lambda years: ({"cot_gold_net_noncomm": _frame(3)}, []))
+    monkeypatch.setattr(smoke.fedboard, "release_status", lambda rel: _frame(3))
     paced = []
     monkeypatch.setattr(pipeline, "_pace", paced.append)
     return paced
@@ -105,3 +106,36 @@ def test_every_check_after_the_first_is_paced(world, monkeypatch, capsys):
     _run(monkeypatch, capsys)
     sources = [source for source, *_ in smoke.checks()]
     assert world == sources[1:]
+
+
+def test_every_fed_board_release_file_gets_its_own_check(tmp_path, monkeypatch, capsys):
+    """Session B: the Board is retiring its download program around the
+    release zips Bedrok reads; one of eight going must show the week it goes,
+    not when a refresh happens to need it."""
+    catalog = tmp_path / "catalog.csv"
+    catalog.write_text(
+        "series_id,source,source_code,frequency,staleness_days\n"
+        "us_sloos,fedboard,SLOOS:S1,quarterly,150\n"
+        "us_10y,fedboard,H15:Y10,daily,10\n"
+        "us_m2,fedboard,H6:M2:billions,monthly,90\n")
+    monkeypatch.setattr(pipeline, "CATALOG_CSV", catalog)
+    monkeypatch.setattr(smoke.sources, "load", lambda: {"fedboard": _row("us_sloos")})
+    monkeypatch.setattr(pipeline, "MACRO_FETCHERS", {"fedboard": lambda code, start: _frame(5)})
+    monkeypatch.setattr(smoke.worldbank, "fetch_pink_sheet", lambda: ({"wb_crude_brent": _frame(2)}, {}))
+    monkeypatch.setattr(smoke.eurostat, "fetch_multi_geo", lambda code: ({"DE": _frame(2)}, {}))
+    monkeypatch.setattr(smoke.cftc, "fetch_cot", lambda years: ({"cot_gold_net_noncomm": _frame(3)}, []))
+    monkeypatch.setattr(pipeline, "_pace", lambda s: None)
+    seen = []
+
+    def status(rel):
+        seen.append(rel)
+        if rel == "H6":
+            raise ValueError("the H6 release zip is gone")
+        return _frame(1)
+    monkeypatch.setattr(smoke.fedboard, "release_status", status)
+    monkeypatch.setattr("sys.argv", ["bedrok smoke"])
+    code = smoke.main()
+    out = capsys.readouterr().out
+    assert seen == ["H15", "H6"]                    # SLOOS is the smoke series itself
+    assert "H15 release zip" in out and "PASS" in out.split("H15 release zip")[1].split("\n")[0]
+    assert "FAIL" in out.split("H6 release zip")[1].split("\n")[0] and code == 1
