@@ -598,10 +598,16 @@ because cutting at the first ". " breaks on "incl.".
   `git rev-list --all | wc -l` is 1: an unreachable old object cannot be
   pushed if it no longer exists. GitHub treats `Bedrok` and `bedrok` as one
   name, so the old repository is renamed before the new one is created.
-- *A bot check is not an outage.* Cloudflare's "Just a moment…" 403 is served
-  by address range, and GitHub's runners sit in datacentre ranges, so a
-  publisher can pass from a home connection and fail every liveness run.
+- *A bot check is not an outage, and not stable either.* Cloudflare's "Just a
+  moment…" 403 comes and goes: on 2026-10-12 the OECD refused a home
+  connection and, an hour later, answered GitHub's runner. One red run is a
+  prompt to look, not a verdict.
 - *`--keyless` means "requires no key", not "has no key column".* The BLS has
   a `key_env` but works without it (25 calls a day per address); the first cut
   of the flag dropped it from the weekly run.
+- *An "empty home" check must not run from the repo folder.* The profile
+  resolves `./profile` before the per-user folder, so `scripts/mcp_smoke.py`
+  started from a checkout answers from the developer's own store and passes for
+  the wrong reason. Run it with the empty home as the working directory too.
+  CI is safe only because a fresh checkout has no `profile/`.
 
