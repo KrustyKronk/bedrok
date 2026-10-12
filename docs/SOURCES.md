@@ -367,9 +367,12 @@ Bedrok is wired to 31 publishers. 25 need no key at all; the others take a free 
 
 These ids still answer, with `alias_of` naming the one Bedrok keeps: the same number from the same dataset is held once.
 
+- `cons_conf_ea20` → `cons_conf_ea21`
+- `esi_ea20` → `esi_ea21`
 - `gdp_qoq_ea20` → `ea_gdp_qoq`
 - `gdp_qoq_es` → `es_gdp_qoq`
 - `hicp_yoy_de` → `de_hicp_yoy`
 - `hicp_yoy_ea` → `ea_hicp_yoy`
 - `hicp_yoy_es` → `es_hicp_yoy`
 - `hicp_yoy_fr` → `fr_hicp_yoy`
+- `ind_conf_ea20` → `ind_conf_ea21`

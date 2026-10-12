@@ -49,7 +49,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
-from bedrok.core import aliases, charting, config, licensing, sources, store, warnings
+from bedrok.core import aliases, charting, config, dates, licensing, sources, store, warnings
 from bedrok.core import geography as geo
 from bedrok.engines import pctile
 from bedrok.ingest import derived, live, pipeline, transforms
@@ -89,6 +89,9 @@ Rules: quote a percentile only with its sample (start, end, n). Bedrok
 measures and contextualises; it never gives investment advice or buy/sell
 timing signals. Currency and units are in the catalog, never inferred.
 Session-only series (FRED's) are fetched live and are not visible to query().
+What Bedrok does not carry may be fetched another way (a web search, another
+tool): say that part did not come through Bedrok, and where Bedrok stores the
+headline, check the outside number against it first.
 """
 
 def _version() -> str:
@@ -520,8 +523,8 @@ def _related(con, series_id: str, row: dict) -> list[dict]:
 def get_series(
     series_ids: Annotated[list[str], Field(min_length=1, max_length=5,
                                            description="one to five catalog ids")],
-    start: Annotated[str | None, Field(description="first date, YYYY-MM-DD")] = None,
-    end: Annotated[str | None, Field(description="last date, YYYY-MM-DD")] = None,
+    start: Annotated[str | None, Field(description="first date: YYYY, YYYY-MM or YYYY-MM-DD")] = None,
+    end: Annotated[str | None, Field(description="last date: YYYY, YYYY-MM or YYYY-MM-DD")] = None,
     transform: Literal["level", "yoy", "mom3_ann", "index_to"] = "level",
     index_date: Annotated[str | None, Field(description="for index_to: the date set to 100")] = None,
     max_rows: Annotated[int, Field(ge=1, le=MAX_ROWS)] = 300,
@@ -553,6 +556,7 @@ def get_series(
 
     When more rows match than max_rows, the most recent are kept and `cut`
     says how many of the oldest went; narrow with start, or use a frequency."""
+    start, end = _span(start, end)
     if frequency != "native":
         return _get_aligned(series_ids, start, end, transform, index_date, max_rows,
                             frequency, how)
@@ -565,9 +569,9 @@ def get_series(
             out.append({"series_id": sid, "error": str(e)})
             continue
         if start:
-            df = df[df["date"] >= pd.Timestamp(start).date()]
+            df = df[df["date"] >= start]
         if end:
-            df = df[df["date"] <= pd.Timestamp(end).date()]
+            df = df[df["date"] <= end]
         total = len(df)
         df = df.tail(max_rows)
         out.append({
@@ -586,6 +590,20 @@ def get_series(
             else {"status": "session"},
         })
     return {"series": out}
+
+
+def _span(start: str | None, end: str | None) -> tuple:
+    """start and end as dates, read once for every tool, or a message the
+    assistant can act on: a malformed date, or a start after the end, used to
+    crash the call or come back empty without a word."""
+    try:
+        s, e = dates.parse(start, name="start"), dates.parse(end, name="end", end=True)
+    except ValueError as err:
+        raise ToolError(str(err)) from None
+    if s and e and s > e:
+        raise ToolError(f"start {s} is after end {e}, so nothing lies between them; "
+                        "swap them.")
+    return s, e
 
 
 def _units(row: dict, transform: str, index_date) -> str:
@@ -660,8 +678,8 @@ def _get_aligned(series_ids, start, end, transform, index_date, max_rows,
 def chart_series(
     series_ids: Annotated[list[str], Field(min_length=1, max_length=5,
                                            description="one to five catalog ids, main series first")],
-    start: Annotated[str | None, Field(description="first date, YYYY-MM-DD")] = None,
-    end: Annotated[str | None, Field(description="last date, YYYY-MM-DD")] = None,
+    start: Annotated[str | None, Field(description="first date: YYYY, YYYY-MM or YYYY-MM-DD")] = None,
+    end: Annotated[str | None, Field(description="last date: YYYY, YYYY-MM or YYYY-MM-DD")] = None,
     transform: Literal["level", "yoy", "mom3_ann", "index_to"] = "level",
     index_date: Annotated[str | None, Field(description="for index_to: the date set to 100")] = None,
     frequency: Annotated[Literal["auto", "weekly", "monthly", "quarterly", "annual"],
@@ -687,7 +705,10 @@ def chart_series(
     After the chart, say at most three short lines: the as-of date, the
     footnotes that matter, anything the chart cannot show. No analysis unless
     asked. If `axes.problem` is set, follow it rather than adding a third
-    scale."""
+    scale; the series it names come back with `drawn: false` and are listed in
+    `not_drawn`. The order of `series_ids` sets the scales and the colours: to
+    add a series to a chart already drawn, list it after the others."""
+    start, end = _span(start, end)
     if frequency == "auto":
         frequency = _auto_frequency(series_ids)
     got = _get_aligned(series_ids, start, end, transform, index_date, MAX_ROWS, frequency, how)
@@ -696,25 +717,35 @@ def chart_series(
         return got
     entries = [e for e in got["series"] if "error" not in e]
     placed = charting.axes([(e["series_id"], e["units"]) for e in entries])
+    left = set(placed["left"]["series"])
     right = set((placed.get("right") or {}).get("series", []))
-    dates = [pd.Timestamp(d).date() for d in table["dates"]]
-    have = [d for i, d in enumerate(dates)
-            if any(table["columns"][e["series_id"]][i] is not None for e in entries)]
+    # A series a third unit left off both scales is not drawn, and nothing
+    # else in the recipe may describe it as if it were: before 2026-10-12 it
+    # came back on the left axis while `problem` said it was not placed.
+    drawn = [e for e in entries if e["series_id"] in left | right]
+    days = [pd.Timestamp(d).date() for d in table["dates"]]
+    have = [d for i, d in enumerate(days)
+            if any(table["columns"][e["series_id"]][i] is not None for e in drawn)]
     got["chart"] = {
-        "title": title or charting.title_suggestion([e["name"] for e in entries]),
+        "title": title or charting.title_suggestion([e["name"] for e in drawn]),
         "subtitle": charting.subtitle(placed, frequency, table["how"],
                                       have[0] if have else None, have[-1] if have else None),
         "axes": placed,
+        # Colour by position among all the series asked for, so adding one at
+        # the end never recolours the others.
         "series": [{"id": e["series_id"], "label": e["name"], "units": e["units"],
-                    "axis": "right" if e["series_id"] in right else "left",
+                    "axis": "right" if e["series_id"] in right else
+                            "left" if e["series_id"] in left else None,
+                    "drawn": e["series_id"] in left | right,
                     "dashed": e["series_id"] in right, "colour": charting.colour(i),
                     "stepped": table["stepped"].get(e["series_id"], False)}
                    for i, e in enumerate(entries)],
-        "x": charting.x_labels(dates, frequency),
+        "not_drawn": [e["series_id"] for e in entries if e["series_id"] not in left | right],
+        "x": charting.x_labels(days, frequency),
         "source": charting.source_line(
             [(e.get("publisher") or e["series_id"], e.get("license") == licensing.RESTRICTED,
-              str(e.get("fetched", "")).startswith("fetched live")) for e in entries]),
-        "footnotes": charting.footnotes(entries, table, frequency),
+              str(e.get("fetched", "")).startswith("fetched live")) for e in drawn]),
+        "footnotes": charting.footnotes(drawn, table, frequency),
         "layout": charting.LAYOUT,
     }
     return got
@@ -741,20 +772,27 @@ def _auto_frequency(series_ids: list[str]) -> str:
 def percentile(
     series_id: str,
     value: Annotated[float | None, Field(description="rank this value instead of the latest")] = None,
-    since: Annotated[str | None, Field(description="restrict the sample to dates on or after this, YYYY-MM-DD")] = None,
+    since: Annotated[str | None, Field(description="restrict the sample to dates on or after this: YYYY, YYYY-MM or YYYY-MM-DD")] = None,
 ) -> dict[str, Any]:
     """Where a value (default: the latest observation) sits in the series' own
     history: the share of the sample at or below it. Always quote it WITH the
     sample — start, end and number of observations — and heed `short_sample`:
     a rank over a few years is not a deep-history percentile."""
+    try:
+        since_d = dates.parse(since, name="since")
+    except ValueError as err:
+        raise ToolError(str(err)) from None
     df, how, row = _load(series_id)
     con = duckdb.connect(":memory:")
     try:
-        r = pctile.compute(con, series_id, value, since, frame=df)
+        r = pctile.compute(con, series_id, value, since_d, frame=df)
     finally:
         con.close()
     if r is None:
         raise ToolError(f"{series_id} has no observations to rank.")
+    if not r["n"]:
+        raise ToolError(f"{series_id} has no observations on or after {since_d}; "
+                        f"its last is {_iso(r['value_date'])}.")
     out = {k: _iso(v) for k, v in r.items()}
     out.update({
         "series_id": series_id, "name": row["name"], "units": row["units"], "fetched": how,

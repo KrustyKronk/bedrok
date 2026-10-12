@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 from mcp import Client
 
-from bedrok.core import config, store
+from bedrok.core import charting, config, store
 from bedrok.ingest import pipeline
 from bedrok.surfaces import mcp_server
 
@@ -261,6 +261,30 @@ def test_search_answers_with_warnings_for_a_country_bedrok_does_not_carry(srv, m
     assert r["matches"] == [] and [w["warning_id"] for w in r["warnings"]] == ["ar_cpi"]
 
 
+def test_ordinary_words_and_family_countries_find_their_series(srv):
+    """The 2026-10-12 self-test: "trade balance" returned no series because a
+    warning's country mentioned "trade"; "turkey inflation" found nothing
+    although Bedrok stores Türkiye's HICP. Against the real warnings seed."""
+    con = duckdb.connect(str(config.DB_PATH))
+    store.upsert_macro_catalog(con, pd.DataFrame([
+            {"series_id": "us_trade_balance", "source": "census", "source_code": "x",
+             "name": "US trade balance goods and services", "frequency": "monthly",
+             "units": "millions USD"},
+            {"series_id": "hicp_yoy_tr", "source": "eurostat", "source_code": "x",
+             "name": "HICP annual rate — Türkiye", "frequency": "monthly", "units": "percent"},
+            {"series_id": "ecb_deposit_rate", "source": "ecb", "source_code": "x",
+             "name": "ECB deposit facility rate", "frequency": "event", "units": "percent"}]))
+    store.close_checkpointed(con)
+
+    def found(text):
+        r = _call("search_series", {"text": text}).structured_content
+        return [m["series_id"] for m in r["matches"]], [w["warning_id"] for w in r["warnings"]]
+    assert found("trade balance") == (["us_trade_balance"], [])
+    series, warned = found("turkey inflation")
+    assert series == ["hicp_yoy_tr"] and "tr_cpi_item_prices_2022" in warned
+    assert "ecb_deposit_rate" in found("euro area deposit rate")[0]
+
+
 def test_series_of_different_frequencies_come_back_on_one_calendar(srv):
     """Session 8: the assistant asks for a frequency instead of lining rows up."""
     r = _call("get_series", {"series_ids": ["us_vix", "us_cpi"], "frequency": "weekly"}).structured_content
@@ -344,3 +368,43 @@ def test_everyday_words_find_series_named_otherwise(srv):
     """"inflation" finds a series named CPI; a place Bedrok lacks finds none."""
     r = _call("search_series", {"text": "us inflation"}).structured_content
     assert [m["series_id"] for m in r["matches"]][0] == "us_cpi"
+
+
+def test_dates_read_one_way_everywhere_and_refusals_say_why(srv):
+    """The 2026-10-12 self-test: percentile(since="2010") crashed with no
+    message while get_series took "2010"; a start after the end came back
+    empty without a word; a malformed date crashed the whole call."""
+    first = _call("get_series", {"series_ids": ["us_cpi"], "max_rows": 1000}) \
+        .structured_content["series"][0]["observations"][0]["date"]
+    year = first[:4]
+    p = _call("percentile", {"series_id": "us_cpi", "since": year}).structured_content
+    assert p["sample"]["start"] == first
+    for tool, args in [("percentile", {"series_id": "us_cpi", "since": "2020-13-01"}),
+                       ("get_series", {"series_ids": ["us_cpi"], "start": "2020-13-01"}),
+                       ("chart_series", {"series_ids": ["us_cpi"], "start": "March 2020"})]:
+        r = _call(tool, args)
+        assert r.is_error and "YYYY-MM-DD" in r.content[0].text, tool
+    r = _call("get_series", {"series_ids": ["us_cpi"], "start": "2025-12-31", "end": "2025-01-01"})
+    assert r.is_error and "after" in r.content[0].text
+    r = _call("percentile", {"series_id": "us_cpi", "since": "2099"})
+    assert r.is_error and "no observations on or after" in r.content[0].text
+
+
+def test_a_series_no_scale_can_take_is_marked_not_drawn_and_described_nowhere(srv):
+    """The 2026-10-12 self-test: with a third unit, `problem` said a series was
+    not placed while `series` put it on the left axis, and a host following
+    `series` would have drawn dollars on the percent scale."""
+    con = duckdb.connect(str(config.DB_PATH))
+    store.upsert_macro_catalog(con, pd.DataFrame([
+        {"series_id": "us_oil", "source": "fedboard", "source_code": "X:OIL", "name": "Test oil",
+         "frequency": "monthly", "units": "USD per barrel", "license": "public_domain",
+         "cache": "store"}]))
+    store.replace_macro_series(con, "us_oil", _monthly(36, TODAY), "fedboard:X:OIL")
+    store.close_checkpointed(con)
+    c = _call("chart_series", {"series_ids": ["us_cpi", "jp_policy_rate", "us_oil"]}) \
+        .structured_content["chart"]
+    assert "us_oil is not placed" in c["axes"]["problem"]
+    oil = next(s for s in c["series"] if s["id"] == "us_oil")
+    assert oil["axis"] is None and oil["drawn"] is False and c["not_drawn"] == ["us_oil"]
+    assert "Test oil" not in c["title"]
+    assert [s["colour"] for s in c["series"]][:2] == [charting.colour(0), charting.colour(1)]

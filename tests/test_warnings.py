@@ -56,9 +56,23 @@ def test_the_seed_has_the_agreed_columns_and_every_row_is_complete():
 def test_every_linked_series_exists():
     known = set(pd.read_csv(pipeline.CATALOG_CSV, dtype=str)["series_id"])
     known |= set(pipeline.static_catalog_rows()["series_id"])
+    # Bulk families name their ids only when they download (hicp_yoy_tr).
+    bulk = tuple(pipeline.BULK_STAGE_FOR_PREFIX)
     for r in warnings.load():
-        missing = set(r["series_ids"]) - known
+        missing = {s for s in r["series_ids"] if s not in known and not s.startswith(bulk)}
         assert not missing, f"{r['warning_id']}: unknown series {missing}"
+
+
+def test_a_warning_reaches_every_series_measured_the_same_way():
+    """The 2026-10-12 self-test: a session that picked the unadjusted CPI or the
+    participation rate got the October 2025 hole without its reason."""
+    def ids(sid):
+        return {w["warning_id"] for w in warnings.for_series(sid)}
+    for sid in ("us_cpi", "us_cpi_nsa", "us_cpi_3m_annualized"):
+        assert "us_cpi_oct2025_gap" in ids(sid), sid
+    for sid in ("us_unemployment", "us_participation", "us_u6"):
+        assert "us_cps_oct2025_gap" in ids(sid), sid
+    assert "tr_cpi_item_prices_2022" in ids("hicp_yoy_tr")
 
 
 # ---- matching ----------------------------------------------------------------
@@ -91,3 +105,17 @@ def test_search_needs_a_place_and_knows_its_short_names(fake):
     assert warnings.search("inflation") == []
     assert [w["warning_id"] for w in warnings.search("US unemployment")] == ["us_cps"]
     assert warnings.search("in it no") == []        # ISO codes are words first
+
+
+def test_a_place_is_a_name_never_the_words_describing_the_case():
+    """The 2026-10-12 self-test: "trade balance" matched "Caucasus and Central
+    Asia (mirror trade)" and "government debt" matched "Global (debt statistics
+    vintages)", and search then dropped every series. The real seed is used."""
+    for text in ("trade balance", "government debt", "central bank balance sheet",
+                 "global supply chain", "cross country", "producers prices", "yields from 2020"):
+        assert warnings.search(text) == [], text
+    assert "cca_mirror_trade_russia_sanctions" in \
+        [w["warning_id"] for w in warnings.search("central asia trade")]
+    assert "za_census_2022_undercount" in [w["warning_id"] for w in warnings.search("south africa census")]
+    assert "opec_crude_direct_communication" in [w["warning_id"] for w in warnings.search("opec output")]
+    assert "tr_cpi_item_prices_2022" in [w["warning_id"] for w in warnings.search("turkey inflation")]

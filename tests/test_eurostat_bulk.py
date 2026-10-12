@@ -133,3 +133,17 @@ def test_bulk_prefixes_cover_every_set_so_sync_macro_skips_them():
     labels = [label for label, _, _ in pipeline.bulk_summary_specs()]
     for spec in pipeline.EUROSTAT_BULK_SETS:
         assert spec["label"] in labels
+
+
+def test_the_broad_hicp_set_keeps_only_geos_inside_the_reuse_grant(con, monkeypatch):
+    """Eurostat's notice allows commercial reuse for EU, EFTA and candidate
+    countries only; the broad set loops over the API response, so Kosovo
+    (a potential candidate) and the US must be skipped there (2026-10-12)."""
+    fresh = ["2026-04-01", "2026-05-01", "2026-06-01"]
+    payload = {g: _frame(fresh, [1.0, 2.0, 3.0]) for g in ("PL", "TR", "CH", "XK", "US")}
+    monkeypatch.setattr(pipeline.eurostat, "fetch_multi_geo", lambda code, start=None: (payload, {}))
+    report = pipeline.sync_hicp_europe(con)
+    got = {r[0] for r in con.execute("SELECT DISTINCT series_id FROM macro_series").fetchall()}
+    assert got == {"hicp_yoy_pl", "hicp_yoy_tr", "hicp_yoy_ch"}
+    assert ("hicp_yoy_xk", "skip", "outside Eurostat's reuse grant") in report
+    assert "hicp_yoy_xk" in pipeline.RETIRED

@@ -207,6 +207,7 @@ TurkStat stopped publishing average prices of individual CPI items in 2022 and p
 
 - Cross-check: Istanbul Chamber of Commerce (ITO) Istanbul retail price index; ENAG estimates exist but their licence terms are unclear.
 - Source: [bianet](https://bianet.org/haber/turkish-statistical-authority-ordered-to-disclose-inflation-basket-data-as-union-wins-appeal-306685)
+- Bedrok series: `hicp_yoy_tr`
 
 ### United Kingdom: Labour Force Survey estimates of employment, unemployment and economic inactivity (Office for National Statistics) (2023 onward)
 
@@ -222,7 +223,7 @@ BLS did not collect CPI data from 1 October to 12 November 2025 during the lapse
 
 - Cross-check: BEA Personal Consumption Expenditures price index for October and November 2025.
 - Source: [Bureau of Labor Statistics](https://www.bls.gov/cpi/additional-resources/2025-federal-government-shutdown-impact-cpi-faq.htm)
-- Bedrok series: `us_cpi`, `us_core_cpi`, `us_cpi_shelter`, `us_cpi_supercore`, `us_median_cpi`, `us_trimmed_cpi`, `us_sticky_core_cpi`
+- Bedrok series: `us_cpi`, `us_core_cpi`, `us_cpi_shelter`, `us_cpi_supercore`, `us_median_cpi`, `us_trimmed_cpi`, `us_sticky_core_cpi`, `us_cpi_nsa`, `us_cpi_3m_annualized`
 
 ### United States: Current Population Survey labor force estimates, incl. unemployment rate (Bureau of Labor Statistics) (2025-10–2025-10)
 
@@ -230,7 +231,7 @@ During the lapse in federal appropriations from 1 October to 12 November 2025, B
 
 - Cross-check: BLS Current Employment Statistics payrolls and state unemployment insurance claims for October 2025.
 - Source: [Bureau of Labor Statistics](https://www.bls.gov/cps/methods/2025-federal-government-shutdown-impact-cps.htm)
-- Bedrok series: `us_unemployment`
+- Bedrok series: `us_unemployment`, `us_participation`, `us_u6`
 
 ### Zambia: Public and publicly guaranteed external debt stocks (World Bank International Debt Statistics; Ministry of Finance, Zambia) (2018–2021)
 
@@ -297,7 +298,7 @@ BLS data show the CPS response rate fell from about 90% in early 2013 to about 8
 
 - Cross-check: BLS Current Employment Statistics payrolls, Quarterly Census of Employment and Wages and state unemployment insurance claims.
 - Source: [Bureau of Labor Statistics](https://www.bls.gov/cps/methods/response_rates.htm)
-- Bedrok series: `us_unemployment`
+- Bedrok series: `us_unemployment`, `us_participation`, `us_u6`
 
 ### United States: Current Employment Statistics total nonfarm employment (Bureau of Labor Statistics) (2024-04–2025-03)
 
@@ -313,7 +314,7 @@ BLS suspended CPI price collection entirely in Lincoln NE and Provo UT from Apri
 
 - Cross-check: BEA Personal Consumption Expenditures price index.
 - Source: [Bureau of Labor Statistics](https://www.bls.gov/cpi/notices/2025/more-information-collection-reduction.htm)
-- Bedrok series: `us_cpi`, `us_core_cpi`, `us_cpi_shelter`, `us_cpi_supercore`, `us_median_cpi`, `us_trimmed_cpi`, `us_sticky_core_cpi`
+- Bedrok series: `us_cpi`, `us_core_cpi`, `us_cpi_shelter`, `us_cpi_supercore`, `us_median_cpi`, `us_trimmed_cpi`, `us_sticky_core_cpi`, `us_cpi_nsa`, `us_cpi_3m_annualized`
 
 ### United States: All releases (Bureau of Labor Statistics) (2025-08–2026-08)
 

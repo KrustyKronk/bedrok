@@ -27,11 +27,14 @@ asked for sets the left scale, drawn with solid lines. Series in other units go
 on the right scale, drawn dashed, so it is always clear which line reads
 against which axis. Where two lines cross on a two-scale chart means nothing;
 the scales set it. A third set of units is never given a third scale: draw two
-charts, or ask for every series as an index (`transform="index_to"`).
+charts, or ask for every series as an index (`transform="index_to"`). The
+recipe marks a series it could not place `drawn: false`.
 
 **Colours follow the order the series were asked for**, from a fixed set of
 seven hues chosen to stay distinct for colour-blind readers, so a series keeps
-its colour across the charts of one conversation.
+its colour across the charts of one conversation. Order sets the scales too:
+to add a series to a chart already drawn, list it after the others, and
+nothing already drawn moves.
 
 **The legend goes below the chart**, and clicking a series hides or shows it.
 

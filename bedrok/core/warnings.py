@@ -106,32 +106,50 @@ def _tokens(text: str) -> set[str]:
 # cover. ISO codes are not used for matching: "in", "it" and "no" are words
 # before they are India, Italy and Norway.
 _EXTRA = {"china": {"prc"}, "russia": {"russian"}, "turkey": {"turkish", "turkiye"},
-          "argentina": {"argentine", "argentinian"}, "india": {"indian"}}
+          "argentina": {"argentine", "argentinian"}, "india": {"indian"}, "opec": {"opec"}}
+
+
+def _words(text: str) -> str:
+    return " ".join(re.findall(r"[a-z0-9]+", str(text).lower()))
 
 
 def _place(country: str, iso2: str = "") -> set[str]:
-    toks = _tokens(country) - {"and", "of", "the", "republic", "generally"}
-    toks |= geography.words_for_iso2(iso2)
+    """The names that point at a warning's place, each a word or a whole
+    phrase. A country is matched as a name, never word by word: "Caucasus and
+    Central Asia (mirror trade)" is a place, but "trade" and "central" are not,
+    and treating them as places emptied every search that used them (the
+    2026-10-12 self-test: "trade balance", "government debt"). The bracketed
+    part describes the case, not the place, and is dropped; "A and B" names
+    two places."""
+    name = _words(country.split("(")[0])
+    name = re.sub(r"^(the )?republic of (the )?", "", name)
+    names = {name} | {p.strip() for p in name.split(" and ")}
+    names |= geography.words_for_iso2(iso2)
     by_name = geography.NAMES.get(country.lower().strip())
     if by_name:
-        toks |= geography.words_for_iso2(geography.ISO2.get(by_name, ""))
-    for name, extra in _EXTRA.items():
-        if name in country.lower():
-            toks |= extra
-    return toks
+        names |= geography.words_for_iso2(geography.ISO2.get(by_name, ""))
+    for key, extra in _EXTRA.items():
+        if key in country.lower():
+            names |= extra
+    # "Global" is a scope, not a place: as a place it would empty "global
+    # supply chain" the way "trade" emptied "trade balance".
+    return {n for n in names if n and n not in _NOT_PLACES}
+
+
+_NOT_PLACES = {"global"}
 
 
 def search(text: str, limit: int = 5) -> list[dict]:
     """Warnings whose country and concept match the words asked for. A place
-    word must match: "inflation" alone is not a question about Argentina."""
+    must be named: "inflation" alone is not a question about Argentina."""
     words = _tokens(text)
     if not words:
         return []
+    asked = f" {_words(text)} "
     scored = []
     for r in load():
-        place = _place(r["country"], r.get("iso2", ""))
         about = _tokens(r["concept"]) | _tokens(r["official_series"])
-        hits_place = words & place
+        hits_place = {n for n in _place(r["country"], r.get("iso2", "")) if f" {n} " in asked}
         if not hits_place:
             continue
         scored.append((3 * len(hits_place) + len(words & about), r["warning_id"], r))

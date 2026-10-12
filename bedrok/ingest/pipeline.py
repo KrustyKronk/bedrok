@@ -96,7 +96,7 @@ CATALOG_CSV = config.SEEDS_DIR / "macro_catalog.csv"
 #   wb_barley, wb_sorghum — the World Bank's Pink Sheet shows "…" for both after
 #     August 2020 (an earlier edition carried values to 2026). Their stale last
 #     date also dragged every incremental Pink Sheet download back to 2020.
-RETIRED = frozenset({"wb_barley", "wb_sorghum"})
+RETIRED = frozenset({"wb_barley", "wb_sorghum", "hicp_yoy_xk"})
 
 
 def load_catalog(con) -> None:
@@ -138,8 +138,10 @@ class MissingKey(Exception):
 
 def error_detail(e: Exception, width: int = 70) -> str:
     """One-line failure text with any API key removed BEFORE it is cut to width
-    (a requests error names its URL, and some URLs carry a key)."""
-    return sources.redact(f"{type(e).__name__}: {e}")[:width + len(type(e).__name__) + 2]
+    (a requests error names its URL, and some URLs carry a key). Line breaks
+    become spaces: GENESIS answers in several lines, and the report is one."""
+    text = " ".join(f"{type(e).__name__}: {e}".split())
+    return sources.redact(text)[:width + len(type(e).__name__) + 2]
 
 
 def _fetcher(source: str, row: dict):
@@ -219,13 +221,17 @@ def sync_hicp_europe(con, incremental=False) -> list[tuple]:
     except Exception as e:  # noqa: BLE001
         return [("hicp_europe_bulk", "FAIL", error_detail(e, 70))]
     # Drop structurally-dead geos (e.g. UK stopped contributing post-Brexit,
-    # ending 2020; US is stale and out of scope) so they never pollute the store.
+    # ending 2020; US is stale and out of scope) so they never pollute the store,
+    # and any geo outside Eurostat's commercial reuse grant (REUSE_GEOS).
     from datetime import date as _date, timedelta as _td
     cutoff = _date.today() - _td(days=400)
 
     report = []
     cat_rows = []
     for geo, df in sorted(per_geo.items()):
+        if geo not in REUSE_GEOS:
+            report.append((f"{HICP_PREFIX}{geo.lower()}", "skip", "outside Eurostat's reuse grant"))
+            continue
         if df["date"].max() < cutoff:
             report.append((f"{HICP_PREFIX}{geo.lower()}", "skip", "dead/stale geo"))
             continue
@@ -262,11 +268,24 @@ def sync_hicp_europe(con, incremental=False) -> list[tuple]:
 EU_CORE_GEOS = ["EA", "EA20", "EU27_2020", "DE", "FR", "IT", "ES", "NL", "BE",
                 "AT", "PT", "IE", "EL", "FI"]
 
-# Eurostat's CC BY 4.0 licence EXCLUDES non-EU country data (US/Japan/China)
-# from commercial reuse, and une_rt_m carries US and JP geos. Iterating the
-# curated list rather than the API response is what keeps them out — do not
-# "simplify" this into a loop over per_geo.
+# Eurostat's copyright notice grants CC BY 4.0 reuse, commercial included,
+# except for data on countries other than EU members, EFTA members and official
+# candidate countries (its examples: US, Japan, China). une_rt_m carries US and
+# JP geos. These curated families iterate their own list, never the API
+# response — do not "simplify" this into a loop over per_geo. The broad HICP
+# set does loop over the response, as a breadth set, and keeps only REUSE_GEOS.
 _NON_EU_GEOS = {"US", "JP", "CN"}
+
+# Inside the grant: the aggregates, the EU 27, EFTA, and the official candidate
+# countries (Georgia since December 2023). Kosovo is a potential candidate only
+# and stays out (owner's reading of the terms, 2026-10-12).
+REUSE_GEOS = frozenset({
+    "EA", "EA19", "EA20", "EA21", "EU", "EU27_2020", "EEA",
+    "AT", "BE", "BG", "CY", "CZ", "DE", "DK", "EE", "EL", "ES", "FI", "FR", "HR",
+    "HU", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PL", "PT", "RO", "SE", "SI", "SK",
+    "CH", "IS", "LI", "NO",
+    "AL", "BA", "GE", "MD", "ME", "MK", "RS", "TR", "UA",
+})
 
 # The euro area under each code a dataset may use: EA (changing composition),
 # EA20 and, since Bulgaria joined in 2026, EA21. Datasets disagree and move, so
@@ -293,13 +312,13 @@ EUROSTAT_BULK_SETS = [
      "name_tmpl": "10y government bond yield (Maastricht) — {geo}",
      "notes": "monthly average; the input to the sovereign-spread derived series. "
               "DE/FR/IT/ES from 1980 PT 1986 EL 1992"},
-    {"prefix": "esi_", "ea_codes": ["EA20"], "code": "ei_bssi_m_r2?indic=BS-ESI-I&s_adj=SA",
+    {"prefix": "esi_", "ea_codes": ["EA21"], "code": "ei_bssi_m_r2?indic=BS-ESI-I&s_adj=SA",
      "label": "Economic Sentiment Indicator", "frequency": "monthly", "units": "index long-term average=100",
      "name_tmpl": "Economic Sentiment Indicator — {geo}", "notes": DG_ECFIN_NOTE},
-    {"prefix": "ind_conf_", "ea_codes": ["EA20"], "code": "ei_bssi_m_r2?indic=BS-ICI-BAL&s_adj=SA",
+    {"prefix": "ind_conf_", "ea_codes": ["EA21"], "code": "ei_bssi_m_r2?indic=BS-ICI-BAL&s_adj=SA",
      "label": "Industrial confidence", "frequency": "monthly", "units": "balance",
      "name_tmpl": "Industrial confidence — {geo}", "notes": DG_ECFIN_NOTE},
-    {"prefix": "cons_conf_", "ea_codes": ["EA20"], "code": "ei_bssi_m_r2?indic=BS-CSMCI-BAL&s_adj=SA",
+    {"prefix": "cons_conf_", "ea_codes": ["EA21"], "code": "ei_bssi_m_r2?indic=BS-CSMCI-BAL&s_adj=SA",
      "label": "Consumer confidence", "frequency": "monthly", "units": "balance",
      "name_tmpl": "Consumer confidence — {geo}", "notes": DG_ECFIN_NOTE},
     {"prefix": "indprod_yoy_", "ea_codes": ["EA20"],
@@ -617,7 +636,7 @@ def sync_macro(con, incremental=False, only=None, prime=True) -> list[tuple]:
             report.append((sid, "skip", str(e)))
             continue  # no network call happened — don't pace
         except Exception as e:  # noqa: BLE001
-            report.append((sid, "FAIL", error_detail(e, 70)))
+            report.append((sid, "FAIL", error_detail(e, 200)))
         _pace(row["source"])
     return report
 

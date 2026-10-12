@@ -87,8 +87,9 @@ def axes(series: list[tuple[str, str]]) -> dict:
     if len(groups) > 2:
         dropped = [i for i, u in series if u in groups[2:]]
         out["problem"] = (f"{len(groups)} different units cannot share two scales; "
-                          f"{', '.join(dropped)} are not placed. Draw two charts, or ask "
-                          "for transform='index_to' so every series is an index.")
+                          f"{', '.join(dropped)} {'is' if len(dropped) == 1 else 'are'} "
+                          "not placed and not drawn. Draw two charts, or ask for "
+                          "transform='index_to' so every series is an index.")
     return out
 
 

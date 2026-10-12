@@ -22,7 +22,7 @@ def _fmt(v) -> str:
 
 
 def compute(con, series_id: str, value: float | None = None,
-            since: str | None = None, frame=None) -> dict | None:
+            since=None, frame=None) -> dict | None:
     """Rank `value` (default: latest obs) within a series' history via all_series,
     or within `frame` (a [date, value] DataFrame held in memory) when given.
 
@@ -62,8 +62,14 @@ def main() -> int:
     ap.add_argument("--value", type=float, default=None,
                     help="rank this value (default: the latest observation)")
     ap.add_argument("--since", default=None,
-                    help="restrict the sample to dates >= this (YYYY-MM-DD)")
+                    help="restrict the sample to dates >= this (YYYY, YYYY-MM or YYYY-MM-DD)")
     args = ap.parse_args()
+    from bedrok.core import dates
+    try:
+        since = dates.parse(args.since, name="--since")
+    except ValueError as e:
+        print(e, file=sys.stderr)
+        return 2
 
     from bedrok.core import config
     from bedrok.ingest import live
@@ -77,7 +83,7 @@ def main() -> int:
                 print(f"{args.series_id} is never stored and is fetched live, "
                       f"which needs a key: {e}", file=sys.stderr)
                 return 2
-        r = compute(con, args.series_id, args.value, args.since, frame=frame)
+        r = compute(con, args.series_id, args.value, since, frame=frame)
     finally:
         con.close()
     if r is None:
