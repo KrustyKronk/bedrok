@@ -577,3 +577,14 @@ def test_parts_come_along_in_one_call(srv):
     assert g["expanded_from"] == {"us_10y": ["us_10y_real", "us_breakeven_10y"]} and g["dropped"] == []
     c = _call("chart_series", {"series_ids": ["us_10y"], "with_related": True}).structured_content
     assert len(c["chart"]["series"]) == 3 and c["expanded_from"]["us_10y"]
+
+
+def test_a_money_level_percentile_carries_its_caveat(srv):
+    con = duckdb.connect(str(config.DB_PATH))
+    store.upsert_macro_catalog(con, pd.DataFrame([
+        {"series_id": "us_m2", "source": "fedboard", "source_code": "X:M2", "name": "US M2",
+         "frequency": "monthly", "units": "billions USD", "cache": "store"}]))
+    store.replace_macro_series(con, "us_m2", _monthly(36, TODAY), "fedboard:X:M2")
+    store.close_checkpointed(con)
+    assert "grows with the economy" in _call("percentile", {"series_id": "us_m2"}).structured_content["caveat"]
+    assert "caveat" not in _call("percentile", {"series_id": "us_cpi"}).structured_content

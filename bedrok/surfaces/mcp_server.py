@@ -50,6 +50,7 @@ from mcp.types import ToolAnnotations
 from pydantic import BaseModel, Field
 
 from bedrok.core import aliases, charting, config, dates, licensing, sources, store, warnings
+from bedrok.core import units as units_vocab
 from bedrok.core import geography as geo
 from bedrok.engines import pctile
 from bedrok.ingest import derived, live, pipeline
@@ -84,7 +85,9 @@ Keep answers short. A request to show or plot something gets the chart and at
 most three short lines: how recent the data is, the footnotes that matter, and
 anything the chart cannot show. Warnings are always said. No analysis unless
 asked; when asked, give it fully. When you quote a level, say where it sits in
-its own history with percentile, unless the reader only asked for a chart.
+its own history with percentile, unless the reader only asked for a chart; a
+level in money terms (a deficit in dollars, M2) grows with the economy, so rank
+its ratio to GDP or its growth instead, or say so beside its percentile.
 
 Rules: quote a percentile only with its sample (start, end, n). Bedrok
 measures and contextualises; it never gives investment advice or buy/sell
@@ -1084,6 +1087,12 @@ def percentile(
         # A supplied value has no date of its own; the latest observation's
         # date beside it would read as that day's close.
         out["value_date"] = None
+    if units_vocab.is_money_level(row["units"]):
+        # A trade deficit or M2 grows with the economy: its rank mostly says
+        # how recent it is (the self-test's session left it out for that reason).
+        out["caveat"] = ("a level in money terms grows with the economy, so its percentile "
+                         "mostly says how recent it is; rank its ratio to GDP or its growth "
+                         "instead, or say this beside the number.")
     return out
 
 
