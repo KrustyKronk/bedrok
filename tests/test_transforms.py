@@ -170,3 +170,19 @@ def test_a_weekly_series_dated_on_tuesday_lands_on_the_friday():
     out, notes = transforms.to_frequency(cot, "weekly", "weekly")
     assert [str(d) for d in out["date"]] == ["2026-10-02", "2026-10-09"]
     assert notes["stepped"] is False
+
+
+def test_a_week_that_ended_on_partial_data_says_so():
+    """Session D1: the EIA publishes Tuesday's price on Friday's date and the
+    Fed Board's files run a day behind, so a Friday-dated point can hold a
+    Tuesday value; partial_last is false because the week has ended."""
+    brent = _daily("2026-09-28", "2026-10-06")            # ends Tue 6 Oct
+    out, notes = transforms.to_frequency(brent, "daily", "weekly", today=date(2026, 10, 12))
+    assert notes["partial_last"] is False
+    assert notes["ended_early"] == {"n": 2, "first": "2026-10-05", "last": "2026-10-06"}
+    full = _daily("2026-09-28", "2026-10-09")             # ends Fri 9 Oct
+    _, notes = transforms.to_frequency(full, "daily", "weekly", today=date(2026, 10, 12))
+    assert "ended_early" not in notes
+    thursday = _daily("2026-09-28", "2026-10-08")         # the Fed Board's one-day lag: fine
+    _, notes = transforms.to_frequency(thursday, "daily", "weekly", today=date(2026, 10, 12))
+    assert "ended_early" not in notes

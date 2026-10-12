@@ -82,6 +82,9 @@ def test_footnotes_carry_what_the_chart_cannot_say():
     notes = charting.footnotes(entries, table, "monthly")
     assert "Fed funds changes only at decisions; its last change (16 Sep 2026, 2.5) is held to the end of the chart." in notes
     del table["carried"]
+    table["ended_early"] = {"us_cpi": {"n": 2, "first": "2026-10-05", "last": "2026-10-06"}}
+    assert "US CPI: the latest week holds data to Tue 6 Oct only." in charting.footnotes(entries, table, "weekly")
+    del table["ended_early"]
     table["partial"] = {"us_cpi": {"n": 6, "first": "2026-10-01", "last": "2026-10-08"}}
     notes = charting.footnotes(entries, table, "quarterly")
     assert "US CPI: the latest period is not over yet (it holds 6 observations, 1 to 8 Oct 2026)." in notes

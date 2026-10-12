@@ -80,6 +80,7 @@ _HOW_WORDS = {
     ("annual", "sum"): "annual totals", ("annual", "first"): "first value of each year",
 }
 _MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+_WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 MAX_TICKS = 10
 
 
@@ -251,6 +252,10 @@ def footnotes(entries: list[dict], table: dict, frequency: str) -> list[str]:
                 how_much = f" (it holds {held['n']} {obs}, {span})" if a != b else \
                     f" (it holds 1 observation, {b.day} {_MONTHS[b.month - 1]} {b.year})"
             notes.append(f"{names.get(sid, sid)}: the latest period is not over yet{how_much}.")
+    for sid, held in (table.get("ended_early") or {}).items():
+        d = date.fromisoformat(held["last"])
+        notes.append(f"{names.get(sid, sid)}: the latest week holds data to "
+                     f"{_WEEKDAYS[d.weekday()]} {d.day} {_MONTHS[d.month - 1]} only.")
     for sid, short in (table.get("incomplete") or {}).items():
         notes.append(f"{names.get(sid, sid)}: {', '.join(short)} hold only part of their period "
                      "(a month or quarter not published).")

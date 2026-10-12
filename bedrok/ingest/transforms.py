@@ -207,6 +207,16 @@ def to_frequency(df: pd.DataFrame, native: str | None, frequency: str,
         inside = s.sort_index().index[-n_last:]
         notes["partial"] = {"n": n_last, "first": inside[0].date().isoformat(),
                             "last": inside[-1].date().isoformat()}
+    elif frequency == "weekly" and native != "event" and n_last:
+        # A week that has ended but whose last observation is older than its
+        # Thursday rests on partial data: the EIA publishes Tuesday's price
+        # on Friday's date, the Fed Board's files run a day behind. Said in a
+        # footnote, where the self-test's session had to work it out.
+        last_obs = s.sort_index().index[-1]
+        if (out["date"].iloc[-1] - last_obs).days > 1:
+            inside = s.sort_index().index[-n_last:]
+            notes["ended_early"] = {"n": n_last, "first": inside[0].date().isoformat(),
+                                    "last": last_obs.date().isoformat()}
     parts = _PARTS.get((native, frequency))
     if parts:
         short = counts[(counts > 0) & (counts < parts)]
