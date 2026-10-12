@@ -39,11 +39,11 @@ def test_place_words_are_filters_and_pronouns_are_not_places():
     assert geography.in_text("is it no good")[0] == set()
 
 
-def test_every_alias_points_at_a_seed_row_and_is_never_built():
+def test_every_alias_points_at_a_real_row_and_is_never_built():
     seed = set(pd.read_csv(pipeline.CATALOG_CSV, dtype=str)["series_id"])
     built = set(pipeline.static_catalog_rows()["series_id"])
     for alias, target in ALIASES.items():
-        assert target in seed and alias not in seed and alias not in built
+        assert target in seed | built and alias not in seed and alias not in built
         assert canonical(alias) == target and canonical(target) == target
 
 
@@ -65,5 +65,14 @@ def test_load_catalog_prunes_aliases_and_empty_family_rows_but_keeps_unfilled_on
     pipeline.load_catalog(con)
     ids = {r[0] for r in con.execute("SELECT series_id FROM macro_catalog").fetchall()}
     assert "esi_ea" not in ids and "hicp_yoy_es" not in ids      # neither produced any more
-    assert "esi_ea20" in ids                                      # produced, not yet filled: stays
+    assert "esi_ea21" in ids                                      # produced, not yet filled: stays
     assert con.execute("SELECT count(*) FROM macro_series WHERE series_id='hicp_yoy_es'").fetchone()[0] == 0
+
+
+def test_the_surveys_follow_the_euro_area_to_ea21():
+    """The 2026-10-12 self-test: the surveys stopped at 2025-12 on EA20, and
+    every refresh succeeded and found nothing. EA21 carries the whole history."""
+    built = set(pipeline.static_catalog_rows()["series_id"])
+    for prefix in ("esi_", "ind_conf_", "cons_conf_"):
+        assert f"{prefix}ea21" in built and f"{prefix}ea20" not in built
+        assert canonical(f"{prefix}ea20") == f"{prefix}ea21"
