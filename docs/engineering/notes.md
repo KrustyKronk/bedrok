@@ -646,6 +646,35 @@ found, and why each fix has the shape it has:
   the old attribution said. The broad set loops over the API response, so it
   filters by `pipeline.REUSE_GEOS`; Kosovo is outside and retired.
 
+**GDP by expenditure (session C, 2026-10-12).**
+- *An annual Eurostat family needs room the monthly ones don't.* A year is
+  dated to its first day, so 2025's value is ~650 days old in late 2026, and
+  the 400-day dead-geo rule would have dropped every geography on the first
+  sync; annual families get 800 days, and an 800-day staleness allowance.
+  Eurostat accepts a month-form `sinceTimePeriod` ("2023-01") on annual
+  datasets, so the incremental start needs no annual case.
+- *Pick EA21, not EA20, for new families.* Eurostat labels EA20 "2023-2025";
+  annually EA20 and EA21 are identical, quarterly EA20 drifts by up to 0.03
+  points from EA21 (which equals the changing-composition EA).
+- *Contributions add up annually, not always quarterly.* Imports are
+  published negative, so the six parts sum to growth: within 0.06 points
+  annually everywhere. The seasonally adjusted quarterly parts are adjusted
+  one by one: Greece misses by up to 1.3 points (2011), Portugal and Finland
+  by ~0.3. `validate` reports it; the family note says it.
+- *DE and NL have no seasonally adjusted yoy quarterly contributions* in
+  `namq_10_gdp` (only q/q, or yoy unadjusted).
+- *BEA's table 1.1.2 tags contributions "Level"* with UNIT_MULT 0: no scale
+  in the code. Its basis is quarter on quarter at an annual rate, not
+  Eurostat's year on year, so the US parts stay their own ids.
+- *The ONS publishes no contribution series* (only the spreadsheet "GDP –
+  contributions summary of records"); `api.ons.gov.uk` is gone (2024-11),
+  the site path with `/data` is the route; household consumption ABJR lives
+  under `economy/nationalaccounts/satelliteaccounts`, not the GDP path.
+- *A running MCP server keeps the code it started with.* Changes to the
+  server need a reconnect (`/mcp`) or a new session before a cold-session
+  test means anything; in-process checks (`Client(mcp_server.server)`) use
+  the working tree.
+
 **Opening the repository (session 12, 2026-10-12).**
 
 - *A filename is content.* A tracked LibreOffice lock file (`.~lock.<name>#`)

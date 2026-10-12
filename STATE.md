@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-12, end of session B.** Bedrok is a local MCP server and store of
+**Updated 2026-10-12, end of session C.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -13,11 +13,10 @@ became sessions 8 (lining up the data), 9 (charts and answers), 10 (the data
 the questions needed) and 11 (tidying the catalog). Session 12 opened it:
 **Bedrok 0.2.0 is public**, at `github.com/KrustyKronk/bedrok` and on PyPI
 (`uvx --python 3.12 bedrok serve`), with the Desktop bundle on the release.
-**Next: two sessions, in this order** (the owner, 2026-10-12; sessions A,
-correct answers, and B, the Fed Board watch, are done):
-- **C. Breakdown questions:** item 1, already decided.
-- **D. Charts and tool friction:** item 2, item 18, and outside rows in
-  `chart_series` (decided below).
+**Next: session D, charts and tool friction** (the owner, 2026-10-12;
+sessions A, correct answers, B, the Fed Board watch, and C, breakdown
+questions, are done): item 1, item 17, and outside rows in `chart_series`
+(decided below).
 
 Session 13 (revisions and the release calendar) stays deferred. The fixes
 since 0.2.0 are on `main` but not released: the Desktop bundle and PyPI still
@@ -26,6 +25,32 @@ serve 0.2.0 until a version bump.
 **Owner-side items** — the ones that need the owner's accounts or describe one
 machine — live in `profile/STATE-private.md`, which is gitignored. This file
 holds only what any reader may see.
+
+**Session C in one paragraph.** The breakdown questions both feedback logs
+took to Eurostat are answered from the store. Eurostat families:
+`gdp_annual_<geo>` (real growth by year, 13 places, from 1996, France from
+1975) and each expenditure part's contribution to growth, annual
+(`gdp_contrib_<part>_<geo>`) and on a year earlier (`gdp_contrib_q_…`; no
+Germany or Netherlands, which Eurostat does not publish, owner's choice),
+with net trade derived as exports plus imports. The euro area is EA21. The
+US parts are BEA's (`us_gdp_contrib_*`, annual rate, from 1947); UK annual
+growth is the ONS's own (`uk_gdp_annual`, from 1949), its contributions on
+the gaps page. `gdp_yoy_uk` and `gdp_annual_uk` answer as aliases. Search
+shows contribution rows only when the words ask for parts, names the
+nearest series when nothing matches, and a total and its parts point at
+each other under `related`; `list_series` gives first dates. Charts: a
+breakdown comes back as `form: stacked_bars` with its total on one scale, a
+title naming the total and a footnote on whether the parts add up; seven ids
+per chart; the palette's hex values are in the house style; an unfinished
+period's footnote says how many observations it holds ("6 observations, 1 to
+8 Oct 2026"). `validate` checks the parts add up: Spain ties to the logged
+answer exactly (2025: 2.59 against 2.6); 20 of 23 pairs add up within 0.1,
+and Greece, Portugal and Finland quarterly do not, because Eurostat adjusts
+each part alone (Greece by 1.3 points in 2011, said in the note). Proven: a
+full `bedrok refresh` (187/199; the 12 failures are the OECD bot check and
+Destatis) and every new path through the server in-process. **Still to do:
+the acceptance test** (the two logged questions to a cold session) needs a
+server running this code: the session's own started before it.
 
 **Session B in one paragraph.** The Fed Board's retirement of its Data
 Download Program turned out not to touch Bedrok: the adapter reads the
@@ -42,7 +67,7 @@ day a zip does go (Treasury's par and real curves for the yields, the ECB
 cross for GBPUSD, and which series have no non-FRED source at all) are in
 `docs/engineering/notes.md`. Proven live: the forced fallback against the
 current survey page matches the store exactly, `validate` is clean but for
-the known Eurostat debt lag, and `smoke` passed 36 of 38 with all eight zip lines green (the two failures are the OECD bot check and the Destatis outage, item 3).
+the known Eurostat debt lag, and `smoke` passed 36 of 38 with all eight zip lines green (the two failures are the OECD bot check and the Destatis outage, item 2).
 
 **Session A in one paragraph.** The cold-session self-test's bugs, each
 pinned by a test of what a user hit. Search matches a warning's country as a
@@ -62,7 +87,7 @@ countries: the broad HICP set keeps only `pipeline.REUSE_GEOS`, Kosovo is
 retired, and the attribution says so. The server instructions now tell the
 assistant to label numbers fetched outside Bedrok and check them against a
 stored headline. Proven against the real store: a full `bedrok refresh`
-(177/189; the 12 failures are the OECD bot check and Destatis, item 3), then
+(177/189; the 12 failures are the OECD bot check and Destatis, item 2), then
 every failing self-test call repeated through the server in-process.
 
 **Session 12 in one paragraph.** The tree was audited for anything personal and
@@ -160,7 +185,7 @@ Two findings that are not Bedrok faults but are said in the catalog:
   what the server returns and says reaches every host (Claude on the web
   included), which is why the house style is served from the server.
 
-One ask from the same log is still open: item 18 below.
+One ask from the same log is still open: item 17 below.
 
 ## From the cold-session self-test (2026-10-12)
 
@@ -179,8 +204,8 @@ found:
   first ask (Japan's GDP, Argentina and Turkey, China's youth unemployment).
   That tool passes numbers through a summarising model, and twice nothing in
   Bedrok could check them. Going to the web for what Bedrok lacks is fine
-  (see "Bedrok answers what it can" under the decisions); the fix is item 1
-  for what Bedrok should carry, and a labelling line in the server
+  (see "Bedrok answers what it can" under the decisions); the fix was
+  session C for what Bedrok should carry, and a labelling line in the server
   instructions for the rest (added in session A).
 - **Some of those trips were Bedrok's own fault:** a search that returned
   nothing for "trade balance" or "government debt", and a stored Turkish
@@ -263,7 +288,7 @@ BIS, the regional Feds, the OECD, Eurostat, the EIA, Census, the IMF, the ONS,
 the Bank of England, the Bank of Canada, the New York Fed, INSEE, the BEA,
 Statistics Canada, Japan's e-Stat and Ministry of Finance, the ABS, INE, the
 four Nordic offices, Destatis and Istat, with FRED for the nine session-only
-series. 530 catalog rows (Kosovo's HICP retired in session A).
+series. 721 catalog rows (session C added 191 for GDP breakdowns).
 
 **Twelve commands:** `smoke [--keyless]`, `backfill [--only ids --stage S]`,
 `refresh`, `validate`, `query`, `tieout [--only ids]`, `doctor`, `schema`,
@@ -327,59 +352,9 @@ None holds a secret.
 Completed items are removed rather than ticked — git history is the record.
 Owner-side items are in `profile/STATE-private.md`.
 
-1. **Breakdown questions, a session of its own.** The owner's two feedback
-   logs of 2026-10-12 (kept outside the repo) asked for Spain's GDP growth by
-   expenditure and by sector, the US 10-year quarterly, and annual growth of the
-   big European economies. Only the US 10-year came wholly from the store; for
-   the rest the session called Eurostat's API directly with curl and a
-   hand-written parser, losing caveats, attribution, freshness and any stored
-   copy, and two of three charts were hand-styled. What worked: `chart_series`
-   on `us_10y` in one call, `list_series` by place, `get_series` annual sums
-   with `incomplete`. The owner's decisions are taken; the session builds:
-   - **Annual real GDP growth:** a Eurostat family `gdp_annual_<geo>` from
-     `nama_10_gdp` (`unit=CLV_PCH_PRE`, `na_item=B1GQ`) on the 14 curated
-     geographies, one more entry in `EUROSTAT_BULK_SETS`
-     (`ingest/pipeline.py`). The UK as a derived series from `uk_gdp_level`
-     (annual sum over the previous year's). The `gdp_yoy_` note says its
-     annual mean is close to annual growth but is not it.
-   - **Contributions to growth:** `gdp_contrib_<part>_<geo>`, parts `hh`,
-     `gov`, `gfcf`, `inv`, `exp`, `imp`; annual from `nama_10_gdp`
-     `CON_PPCH_PRE`, quarterly from `namq_10_gdp` `CON_PPCH_SM` (on a year
-     earlier, like `gdp_yoy_`); about 168 rows. Net trade is a derived series
-     (`exp` + `imp`). A test checks the parts add to GDP growth within
-     ±0.05 pp, and a gap becomes a footnote, not a silent pass. They appear
-     under `related` on `gdp_yoy_<geo>` (the groundwork for item 18). They show
-     in `search_series` only when the search names "contribution" or a
-     component, so ordinary searches stay short.
-   - **The US and the UK too:** BEA table T10102 through the BEA adapter (keyed;
-     quarter-on-quarter at an annual rate, not the European basis, said in
-     each note); the ONS's contributions if it publishes them, otherwise an
-     entry on the gaps page.
-   - **How partial the last period is:** `get_series` and `chart_series`
-     report the observation count and dates of an unfinished last period, and
-     the footnote says it ("Q4 2026: 6 observations, 1–8 Oct"). Footnoted,
-     never dropped. Pin the `us_10y` case from the log (six trading days that
-     read as a jump from 4.76% to 5.27%).
-   - **Charts:** `bedrok/seeds/charting.md` allows stacked contribution bars
-     with a dot for the total; it lists the seven `PALETTE` hex values so a
-     hand-built chart can match; the `chart_series` cap rises from five to
-     seven; `docs/CHARTING.md` is regenerated.
-   - **Finding series:** alias `gdp_yoy_uk` → `uk_gdp_yoy` (`core/aliases.py`);
-     `list_series` takes a `prefix` and returns `first_date`; an empty
-     `search_series` names the nearest series it carries; the `query`
-     description warns that DuckDB rejects `first` and `last` as bare aliases.
-   - **Server instructions:** a figure from outside Bedrok is checked against
-     the stored headline; background claims not drawn from data are labelled.
-   - **Done when** both logged questions, put through the MCP server again,
-     need no call outside Bedrok.
-   - **Left out on purpose:** output by sector (A10; it doubles the catalog
-     and its contributions are a method choice) and a `decompose` tool.
-     `chart_series` taking rows from outside Bedrok was excluded here at
-     first; the owner reversed that on 2026-10-12, and it moved to item 2.
-
-2. **Friction from the self-test, smaller each, worth a pass together:**
+1. **Friction from the self-test, smaller each, worth a pass together:**
    - **`chart_series` accepts outside rows** (decided 2026-10-12, reversing
-     item 1's first exclusion): rows Claude fetched elsewhere, each with a
+     session C's first plan): rows Claude fetched elsewhere, each with a
      label and its source, drawn in the house style, with the source line
      naming the outside part ("World Bank (fetched by Claude, not via
      Bedrok)"). Today a mixed chart falls back to hand styling and labels
@@ -397,7 +372,8 @@ Owner-side items are in `profile/STATE-private.md`.
    - Event-dated rates (the ECB's) stop at their last change on a chart,
      although the rate is in force.
    - A weekly point built from part of a week (EIA's lag, the Fed Board's
-     one-day lag) is not flagged; with item 1's partial-period counts.
+     one-day lag) is not flagged. Session C counts the observations in a period
+     not yet over, but a week that has ended on partial data is not one.
    - `uk_breakeven_5y` does not say it is RPI-based and has no `related`;
      no UK 10-year real yield or implied inflation; no Japanese GDP or
      headline CPI (none of these is on the gaps page).
@@ -416,7 +392,7 @@ Owner-side items are in `profile/STATE-private.md`.
      rates above `us_fed_balance_sheet` (the phrase "central bank" sits in
      their names).
 
-3. **Publishers that refused on 2026-10-11, and what liveness says now.** The
+2. **Publishers that refused on 2026-10-11, and what liveness says now.** The
    OECD and the CFTC answered every request with a Cloudflare bot check (403,
    "Just a moment…"); never try to get past a bot check. On 2026-10-12 the
    CFTC answered again; the OECD still refused a home connection in the
@@ -433,16 +409,16 @@ Owner-side items are in `profile/STATE-private.md`.
    to 2026-08. Recheck before changing anything (`docs/engineering/notes.md`,
    Destatis); Eurostat's German HICP covers German inflation meanwhile.
 
-4. **Jobless claims: revisit the Labor Department's API** when convenient. It
+3. **Jobless claims: revisit the Labor Department's API** when convenient. It
    matched FRED exactly but ended four weeks behind on 2026-10-10. If it
    catches up to the Thursday release, move the three claims rows to it (the
    fields are in `docs/engineering/notes.md`).
 
-5. **Catalog gaps a real question exposed** ("how have 10-year government
+4. **Catalog gaps a real question exposed** ("how have 10-year government
    bonds done over two years" for the US, Germany, France, the UK, China and
    Japan). Japan's 10-year is in (session 10). Still open:
    - **Daily German yields:** the Bundesbank's BBSIS flow through the existing
-     SDMX client, waiting on item 3. Without it Germany and France are only
+     SDMX client, waiting on item 2. Without it Germany and France are only
      Eurostat's monthly averages, about six weeks behind.
    - **France daily:** Banque de France (Webstat) — not yet checked.
    - **China's 10-year:** probably no openly licensed source (ChinaBond is
@@ -453,7 +429,7 @@ Owner-side items are in `profile/STATE-private.md`.
    constant-maturity, BoE zero-coupon, Eurostat monthly averages, web point
    quotes).
 
-6. **Review the warnings' weaker sources.** 11 of 43 cite a news outlet,
+5. **Review the warnings' weaker sources.** 11 of 43 cite a news outlet,
    trade press, a think tank or a research brief because no primary document
    could be reached: Iran, Russia (oil output, trade, statistics generally),
    Venezuela, Turkey, Zimbabwe, Kazakhstan, the Gulf producers, Zambia and
@@ -465,7 +441,7 @@ Owner-side items are in `profile/STATE-private.md`.
    caveat. The night-lights study's 1992–2013 period is unverified against the
    paper.
 
-7. **The IMF WEO rows' freshness is their last non-forecast year** (session
+6. **The IMF WEO rows' freshness is their last non-forecast year** (session
    11), right for "is this stale" but not for "is this the latest vintage": a
    WEO update shows only as revised values. Freshness by vintage needs the
    release dates (session 13). Also still open from session 5: live SDMX
@@ -476,7 +452,7 @@ Owner-side items are in `profile/STATE-private.md`.
    server instructions tell the assistant to label numbers fetched outside
    Bedrok and check them against a stored headline.
 
-8. **Watch the Fed Board's release zips.** Bedrok reads the eight
+7. **Watch the Fed Board's release zips.** Bedrok reads the eight
    release-page zips, which the Board says outlive its Data Download Program
    (session B). `smoke` now checks every one; read a red Tuesday run on a
    `<REL> release zip` line as that file having moved or gone. SLOOS falls
@@ -487,44 +463,44 @@ Owner-side items are in `profile/STATE-private.md`.
    freeze with their history and go on the gaps page. All in
    `docs/engineering/notes.md`, "The Fed Board is retiring…".
 
-9. **Shrimp has stopped too, probably.** `wb_shrimp` ends 2023-10 and, as the
+8. **Shrimp has stopped too, probably.** `wb_shrimp` ends 2023-10 and, as the
    oldest last date among the Pink Sheet series, sets every incremental Pink
    Sheet download back to 2023. Barley and sorghum were retired for the same
    reason (`pipeline.RETIRED`); shrimp is the owner's call.
 
-10. **Starter-set gaps from session 4:** Italy's NIC CPI (rebased in 2026, its
-    history sits in a differently shaped flow — Eurostat's HICP covers Italy),
-    Istat's headline confidence indices, the ABS monthly CPI (only from 2024;
-    the quarterly index from 1948 is carried). The ILO and the Bundesbank were
-    left for later.
+9. **Starter-set gaps from session 4:** Italy's NIC CPI (rebased in 2026, its
+   history sits in a differently shaped flow — Eurostat's HICP covers Italy),
+   Istat's headline confidence indices, the ABS monthly CPI (only from 2024;
+   the quarterly index from 1948 is carried). The ILO and the Bundesbank were
+   left for later.
 
-11. **Eurostat's government debt/GDP family is late:** freshest 2026-01-01,
+10. **Eurostat's government debt/GDP family is late:** freshest 2026-01-01,
     past its 260-day allowance. The only `validate` finding. Data, not a fault;
     check whether the release moved before widening the allowance.
 
-12. **Two 7a series are not what one might assume.** Japan's unemployment rate
+11. **Two 7a series are not what one might assume.** Japan's unemployment rate
     is not seasonally adjusted: the seasonally adjusted series are not in
     e-Stat's API database. USD/CAD from the Bank of Canada starts only in 2017.
     Both are said in their notes; a better source for either is welcome.
 
-13. **`backfill` exits 1 on failures while `refresh` exits 3.** Align them when
+12. **`backfill` exits 1 on failures while `refresh` exits 3.** Align them when
     a supervisor needs to read `backfill`.
 
-14. **Test coverage gaps:** nothing tests `rates_infl`, `backfill`, or the sync
+13. **Test coverage gaps:** nothing tests `rates_infl`, `backfill`, or the sync
     stages end to end. `smoke`'s verdicts are tested (session 12); whether the
     live publishers answer is the liveness run's job, not the suite's.
 
-15. **The `.mcpb` bundle is built by hand** for each release. Building and
+14. **The `.mcpb` bundle is built by hand** for each release. Building and
     attaching it in `publish.yml` is one job (setup-node, setup-uv,
     `scripts/build-mcpb.sh`, `gh release upload`); do it once a manual release
     has proved the artifact.
 
-16. **The liveness run checks keyless publishers only.** The six keyed ones
+15. **The liveness run checks keyless publishers only.** The six keyed ones
     (BEA, Census, EIA, FRED, Destatis, e-Stat) would need their keys as
     repository secrets, and a secret-holding workflow must never run on
     `pull_request`.
 
-17. **A fresh store lists 436 series, not 531.** `list_series` on a new install
+16. **A fresh store lists 436 series, not 531.** `list_series` on a new install
     counts only what the catalog load knows before any bulk stage has run: the
     World Bank's 50 Pink Sheet series (and a few Eurostat family members)
     appear after their first download. Each answers when asked by id, so
@@ -532,20 +508,20 @@ Owner-side items are in `profile/STATE-private.md`.
     that has refreshed once. Either load the bulk families' rows at catalog
     load, as session 11 did for Eurostat, or count them in `list_series`.
 
-18. **A series with its parts in one call.** The feedback log offered twice,
+17. **A series with its parts in one call.** The feedback log offered twice,
     and never ran, `us_10y` together with its real yield, breakeven and term
     premium. `describe_series` already lists `related` series; a `get_series`
     or `chart_series` option that fetches them alongside would make the
     decomposition one call instead of four.
 
-19. **`scripts/mcp_smoke.py` can pass for the wrong reason.** Started from the
+18. **`scripts/mcp_smoke.py` can pass for the wrong reason.** Started from the
     repo folder it finds `./profile` and answers from the developer's own
     store, not the empty home it was given (it happened in session 12). It
     should fail when the profile it reports is not under the `HOME` it was
     started with, unless told otherwise. CI is safe today only because a fresh
     checkout has no `profile/`.
 
-20. **The later sessions in `docs/rebuild-plan.md` are unplanned:** 13
+19. **The later sessions in `docs/rebuild-plan.md` are unplanned:** 13
     (revisions and the release calendar; deferred 2026-10-12) and 14 (the
     maintenance loop: triage source requests from the issue form, retire stale
     publishers, a second pass over the register for the next thirty).

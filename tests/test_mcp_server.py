@@ -408,3 +408,88 @@ def test_a_series_no_scale_can_take_is_marked_not_drawn_and_described_nowhere(sr
     assert oil["axis"] is None and oil["drawn"] is False and c["not_drawn"] == ["us_oil"]
     assert "Test oil" not in c["title"]
     assert [s["colour"] for s in c["series"]][:2] == [charting.colour(0), charting.colour(1)]
+
+
+def _add_rows(rows):
+    con = duckdb.connect(str(config.DB_PATH))
+    store.upsert_macro_catalog(con, pd.DataFrame([
+        {"source": "eurostat", "source_code": "x", "frequency": "annual", "units": "percent", **r}
+        for r in rows]))
+    store.close_checkpointed(con)
+
+
+def test_parts_of_growth_show_only_when_the_words_ask_for_parts(srv):
+    """Session C: 180 contribution rows would bury the headline in every
+    "spain growth"; they answer "spain growth by component" or "what is
+    driving spain's growth"."""
+    _add_rows([
+        {"series_id": "gdp_annual_es", "name": "Real GDP growth, annual — Spain"},
+        {"series_id": "gdp_contrib_hh_es", "units": "percentage points",
+         "name": "Contribution of household consumption to annual GDP growth — Spain"},
+        {"series_id": "gdp_contrib_exp_es", "units": "percentage points",
+         "name": "Contribution of exports to annual GDP growth — Spain"}])
+
+    def ids(text):
+        return [m["series_id"] for m in
+                _call("search_series", {"text": text}).structured_content["matches"]]
+    assert ids("spain gdp growth") == ["gdp_annual_es"]
+    assert "gdp_contrib_hh_es" in ids("spain gdp growth by component")
+    assert "gdp_contrib_exp_es" in ids("what is driving spain gdp growth")
+
+
+def test_an_empty_search_names_the_nearest_series(srv):
+    """The 2026-10-12 logs: an empty list read as "Bedrok has nothing"."""
+    r = _call("search_series", {"text": "japan cpi"}).structured_content
+    assert r["matches"] == [] and r["nearest"][0] == "us_cpi" and "elsewhere" in r["note"]
+    r = _call("search_series", {"text": "argentina inflation"}).structured_content
+    assert "nearest" not in r                      # the warning is the answer there
+
+
+def test_a_gdp_total_and_its_parts_point_at_each_other(srv):
+    _add_rows([
+        {"series_id": "gdp_annual_es", "name": "Real GDP growth, annual — Spain"},
+        {"series_id": "gdp_contrib_hh_es", "units": "percentage points",
+         "name": "Contribution of household consumption to annual GDP growth — Spain"},
+        {"series_id": "gdp_contrib_net_es", "source": "derived", "units": "percentage points",
+         "name": "Contribution of net trade to annual GDP growth — ES"}])
+    d = _call("describe_series", {"series_id": "gdp_annual_es"}).structured_content
+    assert {"gdp_contrib_hh_es", "gdp_contrib_net_es"} <= {r["series_id"] for r in d["related"]}
+    d = _call("describe_series", {"series_id": "gdp_contrib_hh_es"}).structured_content
+    assert "gdp_annual_es" in {r["series_id"] for r in d["related"]}
+
+
+def test_list_series_gives_the_first_date_too(srv):
+    s = _call("list_series", {"prefix": "us_cpi"}).structured_content["series"][0]
+    assert s["first_date"] and s["first_date"] <= s["last_date"]
+
+
+def test_contributions_chart_as_stacked_bars_on_one_scale_with_their_total(srv):
+    """Session C: the canonical picture of "what drove growth". Parts in
+    percentage points and the total in percent share one scale here, and a
+    footnote says whether the parts add up."""
+    con = duckdb.connect(str(config.DB_PATH))
+    rows, years = [], ["2024-01-01", "2025-01-01"]
+    series = {"gdp_annual_es": ("Real GDP growth, annual — Spain", "percent", [3.7, 2.6]),
+              "gdp_contrib_hh_es": ("Contribution of household consumption to annual GDP growth — Spain",
+                                    "percentage points", [1.74, 1.70]),
+              "gdp_contrib_net_es": ("Contribution of net trade to annual GDP growth — ES",
+                                     "percentage points", [0.32, -0.84]),
+              "gdp_contrib_rest_es": ("Contribution of everything else to annual GDP growth — Spain",
+                                      "percentage points", [1.64, 1.74])}
+    for sid, (name, units, vals) in series.items():
+        rows.append({"series_id": sid, "source": "eurostat", "source_code": "x", "name": name,
+                     "frequency": "annual", "units": units, "staleness_days": 9999, "cache": "store"})
+        store.replace_macro_series(con, sid, _frame(years, vals), "eurostat:x")
+    store.upsert_macro_catalog(con, pd.DataFrame(rows))
+    store.close_checkpointed(con)
+    ids = ["gdp_contrib_hh_es", "gdp_contrib_net_es", "gdp_contrib_rest_es", "gdp_annual_es",
+           "us_cpi", "jp_policy_rate", "gdp_contrib_hh_es"]
+    assert not _call("chart_series", {"series_ids": ids[:7]}).is_error    # seven accepted
+    c = _call("chart_series", {"series_ids": ids[:4]}).structured_content["chart"]
+    assert c["form"] == "stacked_bars" and c["total"] == "gdp_annual_es"
+    assert c["title"] == "Real GDP growth, annual — Spain, by contribution"
+    assert c["axes"]["right"] is None                                   # one scale
+    assert {s["id"]: s["kind"] for s in c["series"]}["gdp_contrib_net_es"] == "part"
+    assert any("add up to the total within 0.05" in n for n in c["footnotes"])
+    lines = _call("chart_series", {"series_ids": ["us_cpi"]}).structured_content["chart"]
+    assert lines["form"] == "lines" and lines["total"] is None

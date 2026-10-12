@@ -31,8 +31,10 @@ charts, or ask for every series as an index (`transform="index_to"`). The
 recipe marks a series it could not place `drawn: false`.
 
 **Colours follow the order the series were asked for**, from a fixed set of
-seven hues chosen to stay distinct for colour-blind readers, so a series keeps
-its colour across the charts of one conversation. Order sets the scales too:
+seven hues chosen to stay distinct for colour-blind readers (the Okabe–Ito
+set without its yellow): `#0072B2`, `#E69F00`, `#009E73`, `#D55E00`,
+`#56B4E9`, `#CC79A7`, `#7F7F7F`, in that order, repeating after the
+seventh. A series keeps its colour across the charts of one conversation. Order sets the scales too:
 to add a series to a chart already drawn, list it after the others, and
 nothing already drawn moves.
 
@@ -56,7 +58,11 @@ has one ("personal use only", "fetched live, not stored").
 for the period shown, a period not over yet, a quarter missing a month, rows
 cut from a long span, a series drawn as a step.
 
-**Lines by default.** Bars only when every series has a single period.
+**Lines by default.** Bars only when every series has a single period, and
+stacked bars for contributions to a total (GDP growth by expenditure): the
+parts stacked from zero, positive up and negative down, with the total's
+growth rate as a dot or a line on the same scale, and a footnote saying
+whether the parts drawn add up to it.
 A chart whenever there is more than one period; a table only when the reader
 asks for one, or to compare many places at a single date.
 

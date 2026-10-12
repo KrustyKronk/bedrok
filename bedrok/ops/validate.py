@@ -46,6 +46,7 @@ def main() -> int:
 
     problems += license_check(con)
     problems += staleness_report(con)
+    problems += adding_up_check(con)
 
     con.close()
     print(f"\n{'ALL CHECKS PASSED' if problems == 0 else f'{problems} item(s) need a look'}\n")
@@ -170,3 +171,51 @@ def staleness_report(con) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+# The six parts of GDP growth by expenditure (session C), and how far their sum
+# may sit from the total before it is worth a look. Eurostat's annual parts add
+# up within 0.06 points; its quarterly ones are each seasonally adjusted, so
+# they miss by more (Greece up to 1.3 points in 2011) and are reported as info.
+_PARTS = ("hh", "gov", "gfcf", "inv", "exp", "imp")
+_TOLERANCE = 0.1
+
+
+def adding_up(con) -> list[tuple[str, str, int, float, str]]:
+    """(basis, geography, periods compared, worst gap, its date) for every
+    geography whose six stored parts and total are both held."""
+    parts = "|".join(_PARTS)
+    rows = con.execute(f"""
+        WITH p AS (
+            SELECT regexp_extract(series_id, '^gdp_contrib_(q_)?({parts})_(.+)$', 1) AS q,
+                   regexp_extract(series_id, '^gdp_contrib_(q_)?({parts})_(.+)$', 3) AS geo,
+                   date, value
+            FROM macro_series WHERE regexp_matches(series_id, '^gdp_contrib_(q_)?({parts})_')),
+        s AS (SELECT q, geo, date, sum(value) AS total, count(*) AS n FROM p GROUP BY ALL HAVING n = 6),
+        g AS (SELECT s.q, s.geo, s.date, abs(s.total - t.value) AS gap FROM s JOIN macro_series t
+                ON t.date = s.date
+               AND t.series_id = CASE WHEN s.q = '' THEN 'gdp_annual_' ELSE 'gdp_yoy_' END || s.geo)
+        SELECT q, geo, count(*) AS n, max(gap) AS worst, arg_max(date, gap) AS at
+        FROM g GROUP BY q, geo ORDER BY q, geo""").fetchall()
+    return [("quarterly" if q else "annual", geo, n, worst, str(at)) for q, geo, n, worst, at in rows]
+
+
+def adding_up_check(con) -> int:
+    """The parts of GDP growth add up to the total. An annual miss beyond the
+    tolerance is a finding (Eurostat's annual parts are additive); a quarterly
+    one is reported as info, because each quarterly part is adjusted alone."""
+    rows = adding_up(con)
+    if not rows:
+        return 0
+    print("\n=== GDP PARTS ADD UP (six contributions against the total) ===")
+    problems = 0
+    for basis, geo, n, worst, at in rows:
+        if worst <= _TOLERANCE:
+            continue
+        loud = basis == "annual"
+        problems += loud
+        print(f"  {'WARN' if loud else 'info':<4}  {basis:<9} {geo:<10} worst gap {worst:.2f} "
+              f"points at {at} ({n} periods)")
+    ok = sum(1 for *_, worst, _ in rows if worst <= _TOLERANCE)
+    print(f"  {ok} of {len(rows)} geography-and-basis pairs add up within {_TOLERANCE} points")
+    return problems

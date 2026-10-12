@@ -91,7 +91,8 @@ timing signals. Currency and units are in the catalog, never inferred.
 Session-only series (FRED's) are fetched live and are not visible to query().
 What Bedrok does not carry may be fetched another way (a web search, another
 tool): say that part did not come through Bedrok, and where Bedrok stores the
-headline, check the outside number against it first.
+headline, check the outside number against it first. A claim not drawn
+from data (a cause, a policy, an event) is labelled as background.
 """
 
 def _version() -> str:
@@ -334,6 +335,14 @@ def list_sources() -> dict[str, Any]:
 # What people ask for → the words series are named by. Small on purpose: only
 # where the everyday word never appears in the names (session 11: "spain
 # inflation" found a bond spread before Spain's CPI).
+# Words that ask for the parts of GDP growth rather than the total.
+_CONTRIB_WORDS = {"contribution", "contributions", "component", "components", "breakdown",
+                  "consumption", "household", "households", "government", "investment",
+                  "gfcf", "inventories", "inventory", "exports", "imports", "trade",
+                  "expenditure", "spending", "demand", "driving", "drivers", "driven",
+                  "drove", "parts"}
+_CONTRIB_PREFIXES = ("gdp_contrib_", "us_gdp_contrib_")
+
 _SYNONYMS = {
     "inflation": {"cpi", "hicp", "prices", "price"},
     "prices": {"cpi", "hicp"},
@@ -377,6 +386,7 @@ def search_series(
         cat = cat[cat["source"] == source]
     if frequency:
         cat = cat[cat["frequency"] == frequency]
+    everything = cat
     if places and not cat.empty:
         cat = cat[[geo.of_series(sid, src) in places
                    for sid, src in zip(cat["series_id"], cat["source"])]]
@@ -411,9 +421,18 @@ def search_series(
         total += sum(3 for a, b in zip(words, words[1:]) if f"{a} {b}" in name)
         return total + (10 if "_".join(words) == sid else 0)
 
-    cat = cat.assign(score=cat.apply(score, axis=1)) if not cat.empty else cat
-    hits = cat[cat["score"] > 0].sort_values(["score", "series_id"], ascending=[False, True]) \
-        if words else cat.sort_values("series_id")
+    def ranked(frame):
+        frame = frame.assign(score=frame.apply(score, axis=1)) if not frame.empty else frame
+        out = frame[frame["score"] > 0].sort_values(["score", "series_id"], ascending=[False, True]) \
+            if words else frame.sort_values("series_id")
+        # Contributions to growth are 180 rows that would bury the headline in
+        # every "spain growth": shown only when the words ask for parts (the
+        # owner's decision, 2026-10-12).
+        if not set(words) & _CONTRIB_WORDS:
+            out = out[~out["series_id"].str.startswith(_CONTRIB_PREFIXES)]
+        return out
+
+    hits = ranked(cat)
     found = warnings.search(text)
     if not places and found:
         # The text names a place Bedrok does not cover (Argentina, Turkey):
@@ -423,11 +442,22 @@ def search_series(
     rows = [{"series_id": r.series_id, "name": r.name, "source": r.source,
              "frequency": r.frequency, "units": r.units, "cache": r.cache,
              "last_date": _iso(r.last_date)} for r in page.itertuples()]
-    return {"matches": rows, "total_matches": int(len(hits)),
-            "next_offset": offset + limit if offset + limit < len(hits) else None,
-            # Documented cases where an official number is in doubt, matched by
-            # place: they answer even when Bedrok carries nothing for that country.
-            "warnings": found}
+    out = {"matches": rows, "total_matches": int(len(hits)),
+           "next_offset": offset + limit if offset + limit < len(hits) else None,
+           # Documented cases where an official number is in doubt, matched by
+           # place: they answer even when Bedrok carries nothing for that country.
+           "warnings": found}
+    if hits.empty and words and not (not places and found):
+        # Nothing matched: say what is nearest rather than an empty list the
+        # assistant reads as "Bedrok has nothing" (the 2026-10-12 logs).
+        near = ranked(everything).head(3)
+        if not near.empty:
+            out["nearest"] = near["series_id"].tolist()
+            out["note"] = ("nothing matched for that place; the nearest series elsewhere are "
+                           "listed in `nearest`" if places else
+                           "nothing matched every word; the nearest series by name are "
+                           "listed in `nearest`")
+    return out
 
 
 @server.tool(annotations=READ)
@@ -450,7 +480,7 @@ def list_series(
     with _store() as con:
         cat = con.execute(
             "SELECT mc.series_id, mc.source, mc.name, mc.frequency, mc.units, "
-            "coalesce(mc.cache, 'store') AS cache, "
+            "coalesce(mc.cache, 'store') AS cache, min(ms.date) AS first_date, "
             "max(ms.date) FILTER (WHERE ms.date <= current_date) AS last_date "
             "FROM macro_catalog mc LEFT JOIN macro_series ms USING (series_id) "
             "GROUP BY ALL ORDER BY mc.series_id").fetch_df()
@@ -475,7 +505,8 @@ def list_series(
     return {
         "series": [{"series_id": r.series_id, "name": r.name, "source": r.source,
                     "frequency": r.frequency, "units": r.units, "cache": r.cache,
-                    "last_date": _iso(r.last_date)} for r in page.itertuples()],
+                    "first_date": _iso(r.first_date), "last_date": _iso(r.last_date)}
+                   for r in page.itertuples()],
         "total": int(len(cat)),
         "next_offset": offset + limit if offset + limit < len(cat) else None,
     }
@@ -505,9 +536,38 @@ def describe_series(series_id: str) -> dict[str, Any]:
     }
 
 
+_PARTS = ("hh", "gov", "gfcf", "inv", "exp", "imp", "net")
+
+
+def _gdp_family(series_id: str) -> list[str]:
+    """A GDP total and its parts by expenditure point at each other: family
+    notes are shared across geographies, so this cannot come from the notes."""
+    m = re.fullmatch(r"gdp_(annual|yoy|qoq)_(.+)", series_id)
+    if m:
+        kind, geo = m.groups()
+        annual = [f"gdp_contrib_{p}_{geo}" for p in _PARTS]
+        quarterly = [f"gdp_contrib_q_{p}_{geo}" for p in _PARTS]
+        return {"annual": annual + [f"gdp_yoy_{geo}"],
+                "yoy": quarterly + [f"gdp_annual_{geo}"],
+                "qoq": [f"gdp_yoy_{geo}"]}[kind]
+    m = re.fullmatch(r"gdp_contrib_(q_)?(hh|gov|gfcf|inv|exp|imp|net)_(.+)", series_id)
+    if m:
+        q, _, geo = m.groups()
+        q = q or ""
+        return [f"gdp_{'yoy' if q else 'annual'}_{geo}"] + [f"gdp_contrib_{q}{p}_{geo}" for p in _PARTS]
+    if series_id == "us_gdp_growth_saar" or series_id.startswith("us_gdp_contrib_"):
+        return ["us_gdp_growth_saar"] + [f"us_gdp_contrib_{p}" for p in
+                                         ("hh", "inv_total", "gfcf", "inv", "net", "exp", "imp", "gov")]
+    if series_id in ("uk_gdp_yoy", "uk_gdp_annual", "uk_gdp_qoq"):
+        return ["uk_gdp_annual", "uk_gdp_yoy", "uk_gdp_qoq", "uk_gdp_level"]
+    return []
+
+
 def _related(con, series_id: str, row: dict) -> list[dict]:
-    """Series computed from this one, this one's inputs, and ids its notes name."""
+    """Series computed from this one, this one's inputs, ids its notes name,
+    and a GDP total's parts by expenditure (and theirs)."""
     ids = [d["series_id"] for d in derived.DERIVED if series_id in d["inputs"]]
+    ids += _gdp_family(series_id)
     ids += _derived_inputs(series_id)
     ids += re.findall(r"\b[a-z][a-z0-9]*_[a-z0-9_]+\b", row.get("notes") or "")
     ids = [i for i in dict.fromkeys(ids) if i != series_id]
@@ -667,6 +727,7 @@ def _get_aligned(series_ids, start, end, transform, index_date, max_rows,
         "columns": {k: [_iso(x) for x in v] for k, v in columns.items()},
         "stepped": {k: n["stepped"] for k, n in notes.items()},
         "partial_last": {k: n["partial_last"] for k, n in notes.items()},
+        "partial": {k: n["partial"] for k, n in notes.items() if n.get("partial")},
         "incomplete": {k: n["incomplete"] for k, n in notes.items() if n["incomplete"]},
         "total_rows": total, "truncated": total > len(dates),
         **_cut(total, len(dates), dates[0] if dates else None),
@@ -676,8 +737,9 @@ def _get_aligned(series_ids, start, end, transform, index_date, max_rows,
 
 @server.tool(annotations=READ_FETCHING)
 def chart_series(
-    series_ids: Annotated[list[str], Field(min_length=1, max_length=5,
-                                           description="one to five catalog ids, main series first")],
+    series_ids: Annotated[list[str], Field(min_length=1, max_length=7,
+                                           description="one to seven catalog ids, main series "
+                                                       "first (six parts of growth and a total)")],
     start: Annotated[str | None, Field(description="first date: YYYY, YYYY-MM or YYYY-MM-DD")] = None,
     end: Annotated[str | None, Field(description="last date: YYYY, YYYY-MM or YYYY-MM-DD")] = None,
     transform: Literal["level", "yoy", "mom3_ann", "index_to"] = "level",
@@ -706,7 +768,10 @@ def chart_series(
     footnotes that matter, anything the chart cannot show. No analysis unless
     asked. If `axes.problem` is set, follow it rather than adding a third
     scale; the series it names come back with `drawn: false` and are listed in
-    `not_drawn`. The order of `series_ids` sets the scales and the colours: to
+    `not_drawn`. Contributions to growth (gdp_contrib_*, us_gdp_contrib_*)
+    come back with `form: stacked_bars`: stack the parts, positive up and
+    negative down, and draw the `total` (its growth rate) as a dot or line on
+    the same scale; a footnote says whether the parts add up. The order of `series_ids` sets the scales and the colours: to
     add a series to a chart already drawn, list it after the others."""
     start, end = _span(start, end)
     if frequency == "auto":
@@ -716,7 +781,15 @@ def chart_series(
     if not table:
         return got
     entries = [e for e in got["series"] if "error" not in e]
-    placed = charting.axes([(e["series_id"], e["units"]) for e in entries])
+    # Contributions to growth are drawn as stacked bars with the total beside
+    # them on one scale: the parts are in percentage points of the total's
+    # percent, so for this form the two units are one scale (session C).
+    parts = [e for e in entries if charting.is_contribution(e)]
+    totals = [e for e in entries if e not in parts and e["units"] == "percent"] if parts else []
+    total = totals[0] if len(totals) == 1 else None
+    stacked = {e["series_id"] for e in parts} | ({total["series_id"]} if total else set())
+    placed = charting.axes([(e["series_id"], "percentage points" if e["series_id"] in stacked
+                             else e["units"]) for e in entries])
     left = set(placed["left"]["series"])
     right = set((placed.get("right") or {}).get("series", []))
     # A series a third unit left off both scales is not drawn, and nothing
@@ -727,7 +800,9 @@ def chart_series(
     have = [d for i, d in enumerate(days)
             if any(table["columns"][e["series_id"]][i] is not None for e in drawn)]
     got["chart"] = {
-        "title": title or charting.title_suggestion([e["name"] for e in drawn]),
+        # A breakdown is titled by what it breaks down, not by its first part.
+        "title": title or (f"{total['name']}, by contribution" if parts and total
+                           else charting.title_suggestion([e["name"] for e in drawn])),
         "subtitle": charting.subtitle(placed, frequency, table["how"],
                                       have[0] if have else None, have[-1] if have else None),
         "axes": placed,
@@ -738,9 +813,12 @@ def chart_series(
                             "left" if e["series_id"] in left else None,
                     "drawn": e["series_id"] in left | right,
                     "dashed": e["series_id"] in right, "colour": charting.colour(i),
-                    "stepped": table["stepped"].get(e["series_id"], False)}
+                    "stepped": table["stepped"].get(e["series_id"], False),
+                    "kind": "part" if e in parts else "total" if e is total else None}
                    for i, e in enumerate(entries)],
         "not_drawn": [e["series_id"] for e in entries if e["series_id"] not in left | right],
+        "form": "stacked_bars" if parts else "lines",
+        "total": total["series_id"] if total else None,
         "x": charting.x_labels(days, frequency),
         "source": charting.source_line(
             [(e.get("publisher") or e["series_id"], e.get("license") == licensing.RESTRICTED,
@@ -748,6 +826,11 @@ def chart_series(
         "footnotes": charting.footnotes(drawn, table, frequency),
         "layout": charting.LAYOUT,
     }
+    if parts and total:
+        note = charting.adding_up([table["columns"][e["series_id"]] for e in parts],
+                                  table["columns"][total["series_id"]], table["dates"])
+        if note:
+            got["chart"]["footnotes"].append(note)
     return got
 
 
@@ -825,7 +908,9 @@ def query(
     cache), macro_series (series_id, date, value), fx_rates (pair, date, rate,
     source); view all_series (kind, series_id, date, value). One statement;
     files, URLs and extensions are disabled. Session-only series (cache =
-    'session') are never in the store, so SQL cannot see them."""
+    'session') are never in the store, so SQL cannot see them. DuckDB keeps
+    `first` and `last` as function names: alias a column `AS first_d`, never
+    a bare `first`."""
     stmt = sql.strip().rstrip(";").strip()
     if ";" in stmt:
         raise ToolError("one statement per call, please.")

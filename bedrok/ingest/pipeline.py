@@ -337,7 +337,11 @@ EUROSTAT_BULK_SETS = [
      "code": "namq_10_gdp?na_item=B1GQ&unit=CLV_PCH_SM&s_adj=SCA",
      "label": "Real GDP YoY", "frequency": "quarterly", "units": "percent",
      "staleness_days": 260,
-     "name_tmpl": "Real GDP YoY — {geo}", "notes": "chain-linked volumes"},
+     "name_tmpl": "Real GDP YoY — {geo}",
+     "notes": "chain-linked volumes, on the same quarter a year earlier. The "
+              "average of a year's four quarters is close to that year's growth "
+              "but is not it; gdp_annual_ for the same geography is. Its parts "
+              "by expenditure are gdp_contrib_q_"},
     {"prefix": "gdp_qoq_",
      "code": "namq_10_gdp?na_item=B1GQ&unit=CLV_PCH_PRE&s_adj=SCA",
      "label": "Real GDP QoQ", "frequency": "quarterly",
@@ -395,6 +399,76 @@ EUROSTAT_BULK_SETS = [
 ]
 
 
+# GDP by expenditure (session C, 2026-10-12): each part is one Eurostat item,
+# published as its contribution to real GDP growth, in percentage points, so
+# the six add up to growth (imports are already negative). One family per part
+# and frequency, because fetch_multi_geo splits by geography only.
+#
+#   annual     nama_10_gdp CON_PPCH_PRE: contribution to the year's growth
+#   quarterly  namq_10_gdp CON_PPCH_SM:  to growth on the same quarter a year
+#              earlier, the basis of gdp_yoy_. Eurostat publishes no seasonally
+#              adjusted yoy contributions for Germany or the Netherlands
+#              (owner's decision: leave them out; gaps.md says so).
+#
+# The euro area is EA21 only: annual EA20 equals EA21 exactly, and quarterly
+# EA21 equals the changing-composition EA where EA20 drifts by up to 0.03 pp.
+GDP_PARTS = [  # (part, Eurostat item, words in the name)
+    ("hh", "P31_S14_S15", "household consumption"),
+    ("gov", "P3_S13", "government consumption"),
+    ("gfcf", "P51G", "fixed investment"),
+    ("inv", "P52_P53", "inventories and valuables"),
+    ("exp", "P6", "exports"),
+    ("imp", "P7", "imports"),
+]
+GDP_CONTRIB_MISSING_Q = ["DE", "NL"]
+# A year is dated to its first day and the next one arrives about fifteen
+# months after it ends: 2025 (dated 2025-01-01) lands in early 2027.
+_ANNUAL_STALENESS = 800
+
+
+def _gdp_breakdown_sets() -> list[dict]:
+    out = [{"prefix": "gdp_annual_", "ea_codes": ["EA21"],
+            "code": "nama_10_gdp?na_item=B1GQ&unit=CLV_PCH_PRE",
+            "label": "Real GDP growth, annual", "frequency": "annual", "units": "percent",
+            "staleness_days": _ANNUAL_STALENESS,
+            "name_tmpl": "Real GDP growth, annual — {geo}",
+            "notes": "chain-linked volumes, percent change on the previous year. The "
+                     "quarterly rate is gdp_yoy_; its parts by expenditure are "
+                     "gdp_contrib_ (annual) and gdp_contrib_q_ (quarterly)"}]
+    for part, item, words in GDP_PARTS:
+        out.append({
+            "prefix": f"gdp_contrib_{part}_", "ea_codes": ["EA21"],
+            "code": f"nama_10_gdp?na_item={item}&unit=CON_PPCH_PRE",
+            "label": f"GDP contribution, {words}, annual", "frequency": "annual",
+            "units": "percentage points", "staleness_days": _ANNUAL_STALENESS,
+            "name_tmpl": f"Contribution of {words} to annual GDP growth — {{geo}}",
+            "notes": f"contribution of {words} ({item}) to the year's real GDP growth, "
+                     "as Eurostat publishes it. Imports are negative, so the six parts "
+                     "(gdp_contrib_hh_, _gov_, _gfcf_, _inv_, _exp_, _imp_) add up to "
+                     "gdp_annual_ for the same geography; net trade is gdp_contrib_net_"})
+        out.append({
+            "prefix": f"gdp_contrib_q_{part}_", "ea_codes": ["EA21"],
+            "missing": GDP_CONTRIB_MISSING_Q,
+            "code": f"namq_10_gdp?na_item={item}&unit=CON_PPCH_SM&s_adj=SCA",
+            "label": f"GDP contribution, {words}, quarterly", "frequency": "quarterly",
+            "units": "percentage points", "staleness_days": 260,
+            "name_tmpl": f"Contribution of {words} to GDP growth on a year earlier — {{geo}}",
+            "notes": f"contribution of {words} ({item}) to real GDP growth on the same "
+                     "quarter a year earlier, seasonally and calendar adjusted, as "
+                     "Eurostat publishes it. The six parts add up to gdp_yoy_ for the "
+                     "same geography only approximately: each is adjusted on its own, "
+                     "so for Greece the gap reaches 1.3 points (2011) and exceeds 0.05 "
+                     "in most quarters, for Portugal in about half; the annual parts "
+                     "(gdp_contrib_) add up within 0.06. Net trade is "
+                     "gdp_contrib_q_net_. Eurostat publishes no such series for "
+                     "Germany or the Netherlands"})
+    return out
+
+
+EUROSTAT_BULK_SETS[EUROSTAT_BULK_SETS.index(next(s for s in EUROSTAT_BULK_SETS
+                                                  if s["prefix"] == "youth_unemp_")):0] = \
+    _gdp_breakdown_sets()
+
 # Bulk families whose rows share source='eurostat' with per-series catalog rows,
 # so sync_macro can only tell them apart by series_id prefix.
 BULK_PREFIXES = [HICP_PREFIX] + [s["prefix"] for s in EUROSTAT_BULK_SETS]
@@ -403,9 +477,9 @@ BULK_PREFIXES = [HICP_PREFIX] + [s["prefix"] for s in EUROSTAT_BULK_SETS]
 def _bulk_incremental_start(con, prefix: str) -> str | None:
     """Oldest 'latest date' across a bulk family, as YYYY-MM.
 
-    Eurostat accepts YYYY-MM for quarterly datasets as happily as for monthly
-    ones (verified against namq_10_gdp and prc_hpi_q), so one format covers
-    every set — no per-set period flag needed."""
+    Eurostat accepts YYYY-MM for quarterly and annual datasets as happily as for
+    monthly ones (verified against namq_10_gdp, prc_hpi_q and, for annual,
+    nama_10_gdp on 2026-10-12), so one format covers every set."""
     last = con.execute(
         "SELECT min(hi) FROM (SELECT max(date) hi FROM macro_series "
         "WHERE series_id LIKE ? GROUP BY series_id)", [prefix + "%"]).fetchone()[0]
@@ -416,9 +490,12 @@ def sync_eurostat_multi(con, incremental=False, prefixes=None) -> list[tuple]:
     """Sync every curated Eurostat multi-geo set (one API call per indicator),
     or only the sets whose series_id prefix is in `prefixes`."""
     from datetime import date as _date, timedelta as _td
-    cutoff = _date.today() - _td(days=400)
     report = []
     for spec in EUROSTAT_BULK_SETS:
+        # A geography that stopped publishing is dead after 400 days; an annual
+        # value is dated to its year's first day and is already ~650 days old
+        # when the next one arrives, so annual families get twice the room.
+        cutoff = _date.today() - _td(days=800 if spec["frequency"] == "annual" else 400)
         if prefixes is not None and spec["prefix"] not in prefixes:
             continue
         prefix, label = spec["prefix"], spec["label"]

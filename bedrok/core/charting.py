@@ -36,8 +36,35 @@ LAYOUT = {
     "y_axis": "labelled with the units; left scale solid lines, right scale dashed",
     "x_axis": "the labels given, every `tick_every`-th one shown",
     "gaps": "leave empty: never draw a line across a null",
-    "type": "lines; bars only when every series has a single period",
+    "type": "lines; bars only when every series has a single period; stacked bars "
+            "when `form` is stacked_bars (contributions to a total), positive parts "
+            "stacked up from zero and negative ones down, with the `total` drawn as a "
+            "dot or a line on the same scale",
 }
+
+
+def is_contribution(entry: dict) -> bool:
+    """A part of a total measured in percentage points: GDP growth's parts by
+    expenditure, from Eurostat or BEA. Known by units and name, so any later
+    family named the same way is drawn the same way."""
+    return entry.get("units") == "percentage points" and \
+        "contribution" in str(entry.get("name", "")).lower()
+
+
+def adding_up(parts: list[list], total: list, dates: list) -> str | None:
+    """A footnote on whether the parts drawn add up to the total over the
+    dates where all of them have a value: they do within 0.05 points when all
+    are drawn and the publisher's parts are additive; otherwise say by how
+    much they miss, and the likeliest reasons."""
+    gaps = [(abs(sum(p[i] for p in parts) - total[i]), d) for i, d in enumerate(dates)
+            if total[i] is not None and all(p[i] is not None for p in parts)]
+    if not gaps:
+        return None
+    worst, when = max(gaps)
+    if worst <= 0.05:
+        return "The parts drawn add up to the total within 0.05 points in every period shown."
+    return (f"The parts drawn differ from the total by up to {worst:.2f} points ({when}): "
+            "a part is not drawn, or the publisher adjusts each part on its own.")
 
 _HOW_WORDS = {
     ("weekly", "last"): "weekly closes", ("weekly", "mean"): "weekly averages",
@@ -168,7 +195,19 @@ def footnotes(entries: list[dict], table: dict, frequency: str) -> list[str]:
                          "it is drawn as a step, each value held until the next.")
     for sid, partial in (table.get("partial_last") or {}).items():
         if partial:
-            notes.append(f"{names.get(sid, sid)}: the latest period is not over yet.")
+            held = (table.get("partial") or {}).get(sid)
+            how_much = ""
+            if held:
+                # How much of the period the point stands on: six trading days
+                # of a quarter read as a move unless this is said (self-test).
+                a, b = date.fromisoformat(held["first"]), date.fromisoformat(held["last"])
+                span = (f"{a.day} to {b.day} {_MONTHS[b.month - 1]} {b.year}" if (a.year, a.month)
+                        == (b.year, b.month) else
+                        f"{a.day} {_MONTHS[a.month - 1]} to {b.day} {_MONTHS[b.month - 1]} {b.year}")
+                obs = "observation" if held["n"] == 1 else "observations"
+                how_much = f" (it holds {held['n']} {obs}, {span})" if a != b else \
+                    f" (it holds 1 observation, {b.day} {_MONTHS[b.month - 1]} {b.year})"
+            notes.append(f"{names.get(sid, sid)}: the latest period is not over yet{how_much}.")
     for sid, short in (table.get("incomplete") or {}).items():
         notes.append(f"{names.get(sid, sid)}: {', '.join(short)} hold only part of their period "
                      "(a month or quarter not published).")
