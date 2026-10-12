@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-12, session 12.** Bedrok is a local MCP server and store of
+**Updated 2026-10-12, end of session 12.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -10,7 +10,11 @@ held only for the conversation), 4 (the source list and one SDMX client), 5
 wave of publishers) and 7b (warnings, the gaps note, the menu review) built
 it. The owner then used it as an analyst would (2026-10-11), and the feedback
 became sessions 8 (lining up the data), 9 (charts and answers), 10 (the data
-the questions needed) and 11 (tidying the catalog). Session 12 opens it.
+the questions needed) and 11 (tidying the catalog). Session 12 opened it:
+**Bedrok 0.2.0 is public**, at `github.com/KrustyKronk/bedrok` and on PyPI
+(`uvx --python 3.12 bedrok serve`), with the Desktop bundle on the release.
+Next is session 13, revisions and the release calendar, or the open items
+below.
 
 **Owner-side items** — the ones that need the owner's accounts or describe one
 machine — live in `profile/STATE-private.md`, which is gitignored. This file
@@ -33,6 +37,9 @@ with no secrets; `tests/test_smoke.py` pins its verdicts. `CONTRIBUTING.md`, a
 source-request issue form and a README for a stranger complete the public
 face. The public repository is `github.com/KrustyKronk/bedrok`, created from
 one clean commit of this tree; the old one is archived and stays private.
+Proven after release: `publish.yml` uploaded the wheel and sdist by trusted
+publishing, and the package from PyPI, started from an empty home with no keys,
+fetched live and answered nine calls in 41 seconds (`scripts/mcp_smoke.py`).
 
 **Session 11 in one paragraph.** One id per concept: six family ids that
 duplicated seed ids (`hicp_yoy_es` and `es_hicp_yoy`, …) are aliases in
@@ -241,18 +248,18 @@ None holds a secret.
 Completed items are removed rather than ticked — git history is the record.
 Owner-side items are in `profile/STATE-private.md`.
 
-1. **Publishers refusing or down on 2026-10-11, and the liveness run will say
-   so.** The OECD and the CFTC answered every request with a Cloudflare bot
-   check (403, "Just a moment…"), home pages included; never try to get past a
-   bot check. The Bundesbank dropped the TLS handshake on its data service, so
-   session 10's daily Bund series waits (it is
+1. **Publishers that refused on 2026-10-11, and what liveness says now.** The
+   OECD and the CFTC answered every request with a Cloudflare bot check (403,
+   "Just a moment…"); never try to get past a bot check. On 2026-10-12 the
+   CFTC answered again; the OECD still refused a home connection in the
+   morning but passed from GitHub's runner an hour later, in the first
+   liveness run (25 of 25, no stale data). Bot checks come and go: read a
+   single red liveness run as "look", and a publisher red for weeks as
+   session 14's "retire or re-point". The Bundesbank dropped the TLS handshake
+   on its data service, so session 10's daily Bund series waits (it is
    `BBSIS/D.I.ZAR.ZI.EUR.S1311.B.A604.R10XX.R.A.A._Z._Z.A` on the SDMX client,
-   with a `bundesbank` source row to add). BEA answered 503 through the day.
-   On 2026-10-12 a keyless `smoke` from a home connection passed 23 of 24:
-   the CFTC answered again, the OECD still refused, and no check was stale.
-   Expect the first liveness runs to be red for the OECD at least; a publisher that stays refused belongs to session 14's "retire or
-   re-point", not to a retry. GitHub's runners sit in datacentre address
-   ranges, which bot checks treat worse than a home connection.
+   with a `bundesbank` source row to add). BEA answered 503 through 2026-10-11;
+   it is keyed, so liveness does not see it.
 
 2. **Jobless claims: revisit the Labor Department's API** when convenient. It
    matched FRED exactly but ended four weeks behind on 2026-10-10. If it
@@ -334,3 +341,11 @@ Owner-side items are in `profile/STATE-private.md`.
     (BEA, Census, EIA, FRED, Destatis, e-Stat) would need their keys as
     repository secrets, and a secret-holding workflow must never run on
     `pull_request`.
+
+15. **A fresh store lists 436 series, not 531.** `list_series` on a new install
+    counts only what the catalog load knows before any bulk stage has run: the
+    World Bank's 50 Pink Sheet series (and a few Eurostat family members)
+    appear after their first download. Each answers when asked by id, so
+    nothing is lost, but the README's "more than 500" is only true of a store
+    that has refreshed once. Either load the bulk families' rows at catalog
+    load, as session 11 did for Eurostat, or count them in `list_series`.
