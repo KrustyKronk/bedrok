@@ -183,3 +183,17 @@ def test_net_trade_covers_exactly_the_geographies_its_parts_are_built_for():
         return [g.lower() for g in pipeline.family_geos(spec)]
     assert derived.GDP_NET_GEOS == geos("gdp_contrib_exp_") == geos("gdp_contrib_imp_")
     assert derived.GDP_NET_GEOS_Q == geos("gdp_contrib_q_exp_") == geos("gdp_contrib_q_imp_")
+
+
+def test_validate_finds_parts_that_do_not_add_up(con):
+    """Session C: the adding-up check, on the annual basis (a finding) and the
+    quarterly one (info only)."""
+    from bedrok.ops import validate
+    for part, v in zip(("hh", "gov", "gfcf", "inv", "exp", "imp"), (1.7, 0.46, 1.11, 0.16, 0.96, -1.8)):
+        _seed(con, f"gdp_contrib_{part}_es", [("2025-01-01", v)])
+        _seed(con, f"gdp_contrib_{part}_fr", [("2025-01-01", v)])
+    _seed(con, "gdp_annual_es", [("2025-01-01", 2.6)])
+    _seed(con, "gdp_annual_fr", [("2025-01-01", 3.0)])          # misses by 0.41
+    rows = {r[1]: r for r in validate.adding_up(con)}
+    assert rows["es"][3] == pytest.approx(0.01, abs=1e-9) and rows["fr"][3] == pytest.approx(0.41)
+    assert validate.adding_up_check(con) == 1
