@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 from mcp import Client
 
-from bedrok.core import config, store
+from bedrok.core import charting, config, store
 from bedrok.ingest import pipeline
 from bedrok.surfaces import mcp_server
 
@@ -388,3 +388,23 @@ def test_dates_read_one_way_everywhere_and_refusals_say_why(srv):
     assert r.is_error and "after" in r.content[0].text
     r = _call("percentile", {"series_id": "us_cpi", "since": "2099"})
     assert r.is_error and "no observations on or after" in r.content[0].text
+
+
+def test_a_series_no_scale_can_take_is_marked_not_drawn_and_described_nowhere(srv):
+    """The 2026-10-12 self-test: with a third unit, `problem` said a series was
+    not placed while `series` put it on the left axis, and a host following
+    `series` would have drawn dollars on the percent scale."""
+    con = duckdb.connect(str(config.DB_PATH))
+    store.upsert_macro_catalog(con, pd.DataFrame([
+        {"series_id": "us_oil", "source": "fedboard", "source_code": "X:OIL", "name": "Test oil",
+         "frequency": "monthly", "units": "USD per barrel", "license": "public_domain",
+         "cache": "store"}]))
+    store.replace_macro_series(con, "us_oil", _monthly(36, TODAY), "fedboard:X:OIL")
+    store.close_checkpointed(con)
+    c = _call("chart_series", {"series_ids": ["us_cpi", "jp_policy_rate", "us_oil"]}) \
+        .structured_content["chart"]
+    assert "us_oil is not placed" in c["axes"]["problem"]
+    oil = next(s for s in c["series"] if s["id"] == "us_oil")
+    assert oil["axis"] is None and oil["drawn"] is False and c["not_drawn"] == ["us_oil"]
+    assert "Test oil" not in c["title"]
+    assert [s["colour"] for s in c["series"]][:2] == [charting.colour(0), charting.colour(1)]

@@ -702,7 +702,9 @@ def chart_series(
     After the chart, say at most three short lines: the as-of date, the
     footnotes that matter, anything the chart cannot show. No analysis unless
     asked. If `axes.problem` is set, follow it rather than adding a third
-    scale."""
+    scale; the series it names come back with `drawn: false` and are listed in
+    `not_drawn`. The order of `series_ids` sets the scales and the colours: to
+    add a series to a chart already drawn, list it after the others."""
     start, end = _span(start, end)
     if frequency == "auto":
         frequency = _auto_frequency(series_ids)
@@ -712,25 +714,35 @@ def chart_series(
         return got
     entries = [e for e in got["series"] if "error" not in e]
     placed = charting.axes([(e["series_id"], e["units"]) for e in entries])
+    left = set(placed["left"]["series"])
     right = set((placed.get("right") or {}).get("series", []))
-    dates = [pd.Timestamp(d).date() for d in table["dates"]]
-    have = [d for i, d in enumerate(dates)
-            if any(table["columns"][e["series_id"]][i] is not None for e in entries)]
+    # A series a third unit left off both scales is not drawn, and nothing
+    # else in the recipe may describe it as if it were: before 2026-10-12 it
+    # came back on the left axis while `problem` said it was not placed.
+    drawn = [e for e in entries if e["series_id"] in left | right]
+    days = [pd.Timestamp(d).date() for d in table["dates"]]
+    have = [d for i, d in enumerate(days)
+            if any(table["columns"][e["series_id"]][i] is not None for e in drawn)]
     got["chart"] = {
-        "title": title or charting.title_suggestion([e["name"] for e in entries]),
+        "title": title or charting.title_suggestion([e["name"] for e in drawn]),
         "subtitle": charting.subtitle(placed, frequency, table["how"],
                                       have[0] if have else None, have[-1] if have else None),
         "axes": placed,
+        # Colour by position among all the series asked for, so adding one at
+        # the end never recolours the others.
         "series": [{"id": e["series_id"], "label": e["name"], "units": e["units"],
-                    "axis": "right" if e["series_id"] in right else "left",
+                    "axis": "right" if e["series_id"] in right else
+                            "left" if e["series_id"] in left else None,
+                    "drawn": e["series_id"] in left | right,
                     "dashed": e["series_id"] in right, "colour": charting.colour(i),
                     "stepped": table["stepped"].get(e["series_id"], False)}
                    for i, e in enumerate(entries)],
-        "x": charting.x_labels(dates, frequency),
+        "not_drawn": [e["series_id"] for e in entries if e["series_id"] not in left | right],
+        "x": charting.x_labels(days, frequency),
         "source": charting.source_line(
             [(e.get("publisher") or e["series_id"], e.get("license") == licensing.RESTRICTED,
-              str(e.get("fetched", "")).startswith("fetched live")) for e in entries]),
-        "footnotes": charting.footnotes(entries, table, frequency),
+              str(e.get("fetched", "")).startswith("fetched live")) for e in drawn]),
+        "footnotes": charting.footnotes(drawn, table, frequency),
         "layout": charting.LAYOUT,
     }
     return got
