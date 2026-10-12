@@ -136,8 +136,10 @@ def to_frequency(df: pd.DataFrame, native: str | None, frequency: str,
     ever interpolated.
 
     notes: how, stepped, partial_last (the last period has not ended yet),
-    incomplete (periods holding fewer native observations than they should,
-    e.g. a quarter with a missing month)."""
+    partial (when it has not: how many native observations it holds and
+    their first and last dates, so "the quarter is six trading days old" can
+    be said), incomplete (periods holding fewer native observations than they
+    should, e.g. a quarter with a missing month)."""
     if frequency not in FREQUENCIES:
         raise ValueError(f"unknown frequency {frequency!r}; one of {FREQUENCIES}")
     how = how or default_how(frequency)
@@ -177,6 +179,13 @@ def to_frequency(df: pd.DataFrame, native: str | None, frequency: str,
 
     today_ts = pd.Timestamp(today or date.today())
     notes["partial_last"] = bool(_period_end(out["date"].iloc[-1], frequency) >= today_ts)
+    n_last = int(counts.iloc[-1])
+    if notes["partial_last"] and n_last:
+        # The bins are in date order, so the last period's observations are
+        # the series' last n_last ones.
+        inside = s.sort_index().index[-n_last:]
+        notes["partial"] = {"n": n_last, "first": inside[0].date().isoformat(),
+                            "last": inside[-1].date().isoformat()}
     parts = _PARTS.get((native, frequency))
     if parts:
         short = counts[(counts > 0) & (counts < parts)]

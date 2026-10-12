@@ -78,5 +78,8 @@ def test_footnotes_carry_what_the_chart_cannot_say():
                         "More detail.")
     assert any("Fed funds" in n and "step" in n for n in notes)
     assert any("not over yet" in n for n in notes)
+    table["partial"] = {"us_cpi": {"n": 6, "first": "2026-10-01", "last": "2026-10-08"}}
+    notes = charting.footnotes(entries, table, "quarterly")
+    assert "US CPI: the latest period is not over yet (it holds 6 observations, 1 to 8 Oct 2026)." in notes
     assert any("2025-10-01" in n for n in notes)
     assert notes[-1].startswith("the oldest 3")

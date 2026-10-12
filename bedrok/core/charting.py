@@ -168,7 +168,19 @@ def footnotes(entries: list[dict], table: dict, frequency: str) -> list[str]:
                          "it is drawn as a step, each value held until the next.")
     for sid, partial in (table.get("partial_last") or {}).items():
         if partial:
-            notes.append(f"{names.get(sid, sid)}: the latest period is not over yet.")
+            held = (table.get("partial") or {}).get(sid)
+            how_much = ""
+            if held:
+                # How much of the period the point stands on: six trading days
+                # of a quarter read as a move unless this is said (self-test).
+                a, b = date.fromisoformat(held["first"]), date.fromisoformat(held["last"])
+                span = (f"{a.day} to {b.day} {_MONTHS[b.month - 1]} {b.year}" if (a.year, a.month)
+                        == (b.year, b.month) else
+                        f"{a.day} {_MONTHS[a.month - 1]} to {b.day} {_MONTHS[b.month - 1]} {b.year}")
+                obs = "observation" if held["n"] == 1 else "observations"
+                how_much = f" (it holds {held['n']} {obs}, {span})" if a != b else \
+                    f" (it holds 1 observation, {b.day} {_MONTHS[b.month - 1]} {b.year})"
+            notes.append(f"{names.get(sid, sid)}: the latest period is not over yet{how_much}.")
     for sid, short in (table.get("incomplete") or {}).items():
         notes.append(f"{names.get(sid, sid)}: {', '.join(short)} hold only part of their period "
                      "(a month or quarter not published).")

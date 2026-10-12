@@ -102,6 +102,15 @@ def test_an_unfinished_period_is_marked_partial():
     assert notes["partial_last"] is True
 
 
+def test_an_unfinished_period_says_how_much_of_it_there_is():
+    """The self-test: a Q4 point built on six trading days read as a move."""
+    df = _daily("2026-07-01", "2026-10-08")
+    _, notes = transforms.to_frequency(df, "daily", "quarterly", today=date(2026, 10, 12))
+    held = notes["partial"]
+    assert held["first"] == "2026-10-01" and held["last"] == "2026-10-08"
+    assert held["n"] == len(_daily("2026-10-01", "2026-10-08"))
+
+
 def test_a_slower_series_is_stepped_and_stops_after_its_last_period():
     weekly, _ = transforms.to_frequency(_daily("2026-08-03", "2026-10-09"), "daily", "weekly",
                                         today=date(2027, 1, 1))
