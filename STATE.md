@@ -13,8 +13,9 @@ became sessions 8 (lining up the data), 9 (charts and answers), 10 (the data
 the questions needed) and 11 (tidying the catalog). Session 12 opened it:
 **Bedrok 0.2.0 is public**, at `github.com/KrustyKronk/bedrok` and on PyPI
 (`uvx --python 3.12 bedrok serve`), with the Desktop bundle on the release.
-Next is session 13, revisions and the release calendar, or the open items
-below.
+**Next: not chosen.** Session 13 (revisions and the release calendar) was
+deferred by the owner on 2026-10-12; the next session picks from the open items
+below or the later sessions in `docs/rebuild-plan.md`.
 
 **Owner-side items** — the ones that need the owner's accounts or describe one
 machine — live in `profile/STATE-private.md`, which is gitignored. This file
@@ -115,8 +116,7 @@ Two findings that are not Bedrok faults but are said in the catalog:
   what the server returns and says reaches every host (Claude on the web
   included), which is why the house style is served from the server.
 
-Not scheduled yet, from the same log: a one-call fetch of a series with its
-parts (`us_10y` with its real yield, breakeven and term premium).
+One ask from the same log is still open: item 16 below.
 
 ## Read this first if you are picking the project up
 
@@ -138,7 +138,10 @@ current, and the server serves them as `bedrok://…` resources.
 `packaging/mcpb/manifest.json` together (`tests/test_install.py` fails on
 drift), merge, then `gh release create v<version>`: `publish.yml` puts it on
 PyPI. Build the bundle Mac-side with `scripts/build-mcpb.sh` and
-`gh release upload v<version> dist/bedrok-<version>.mcpb`.
+`gh release upload v<version> dist/bedrok-<version>.mcpb`. **Never change the
+manifest's `author` or `name`:** Claude Desktop files an extension as
+`local.mcpb.<author>.<name>`, so a new author installs a second extension with
+no settings instead of upgrading (it happened at 0.2.0; `docs/engineering/notes.md`).
 
 **Bedrok is an MCP server.** `bedrok serve` (`bedrok/surfaces/mcp_server.py`,
 official `mcp` SDK v2) exposes nine tools: `list_sources`, `search_series`,
@@ -349,3 +352,22 @@ Owner-side items are in `profile/STATE-private.md`.
     nothing is lost, but the README's "more than 500" is only true of a store
     that has refreshed once. Either load the bulk families' rows at catalog
     load, as session 11 did for Eurostat, or count them in `list_series`.
+
+16. **A series with its parts in one call.** The feedback log offered twice,
+    and never ran, `us_10y` together with its real yield, breakeven and term
+    premium. `describe_series` already lists `related` series; a `get_series`
+    or `chart_series` option that fetches them alongside would make the
+    decomposition one call instead of four.
+
+17. **`scripts/mcp_smoke.py` can pass for the wrong reason.** Started from the
+    repo folder it finds `./profile` and answers from the developer's own
+    store, not the empty home it was given (it happened in session 12). It
+    should fail when the profile it reports is not under the `HOME` it was
+    started with, unless told otherwise. CI is safe today only because a fresh
+    checkout has no `profile/`.
+
+18. **The later sessions in `docs/rebuild-plan.md` are unplanned:** 13
+    (revisions and the release calendar; deferred 2026-10-12) and 14 (the
+    maintenance loop: triage source requests from the issue form, retire stale
+    publishers, a second pass over the register for the next thirty).
+
