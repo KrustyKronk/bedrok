@@ -646,6 +646,25 @@ found, and why each fix has the shape it has:
   the old attribution said. The broad set loops over the API response, so it
   filters by `pipeline.REUSE_GEOS`; Kosovo is outside and retired.
 
+**Chart mechanics (session D1, 2026-10-12).**
+- *A scale is a dimension, not a string.* `units.dimension` maps every
+  percentage-like unit to "rate" and each index base to its own; `axes`
+  groups by it. The vocabulary's "percent change on a year earlier" (what
+  `yoy` returns) is outside `units.GRAMMAR`, which only pins catalog rows.
+- *A daily calendar must be the days the series have.* `pd.date_range(freq="D")`
+  puts a slot on every weekend, and "never join across a null" would then
+  break every line on Saturday; `align` takes the union of the non-stepped
+  series' dates instead.
+- *An event series needs three treatments.* On a daily calendar it is
+  reindexed to every day to its last change; on a resampled one the bins are
+  extended to the period holding today and forward-filled; in `align` the
+  value is the last on or before each slot, so it reaches the chart's end.
+  It is never a partial period.
+- *The server's `transforms` module is shadowed by the tool parameter of the
+  same name,* so it is imported as `transforms_mod`.
+- *Pydantic models for nested tool input* (`Outside`, `Obs`) are the first
+  in the server; the MCP SDK renders them as JSON schema without help.
+
 **GDP by expenditure (session C, 2026-10-12).**
 - *An annual Eurostat family needs room the monthly ones don't.* A year is
   dated to its first day, so 2025's value is ~650 days old in late 2026, and
