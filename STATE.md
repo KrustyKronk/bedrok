@@ -13,12 +13,15 @@ became sessions 8 (lining up the data), 9 (charts and answers), 10 (the data
 the questions needed) and 11 (tidying the catalog). Session 12 opened it:
 **Bedrok 0.2.0 is public**, at `github.com/KrustyKronk/bedrok` and on PyPI
 (`uvx --python 3.12 bedrok serve`), with the Desktop bundle on the release.
-**Next: not chosen.** Session 13 (revisions and the release calendar) was
-deferred by the owner on 2026-10-12. A session of its own for breakdown
-questions ("what is driving GDP growth") is recorded and decided as open item 1,
-and the bugs a cold-session self-test found the same day are items 2 to 4;
-the next session picks from the open items below or the later sessions in
-`docs/rebuild-plan.md`.
+**Next: four sessions, in this order** (the owner, 2026-10-12):
+- **A. Correct answers:** item 2, item 3 once the owner has read the terms,
+  and item 9's instruction line. These change answers today.
+- **B. The Fed Board migration:** item 10, before the week of 2026-11-09.
+- **C. Breakdown questions:** item 1, already decided.
+- **D. Charts and tool friction:** item 4, item 20, and outside rows in
+  `chart_series` (decided below).
+
+Session 13 (revisions and the release calendar) stays deferred.
 
 **Owner-side items** — the ones that need the owner's accounts or describe one
 machine — live in `profile/STATE-private.md`, which is gitignored. This file
@@ -137,7 +140,9 @@ found:
   Eurostat with a general web tool, and after that it went to the web on the
   first ask (Japan's GDP, Argentina and Turkey, China's youth unemployment).
   That tool passes numbers through a summarising model, and twice nothing in
-  Bedrok could check them. Items 1 and 9 (`fetch_dataset`) are the answer.
+  Bedrok could check them. Going to the web for what Bedrok lacks is fine
+  (see "Bedrok answers what it can" under the decisions); the fix is item 1
+  for what Bedrok should carry, and item 9's labelling line for the rest.
 - **Some of those trips were Bedrok's own fault:** a search that returns
   nothing for "trade balance" or "government debt", and a stored Turkish
   series that search cannot find. Item 2.
@@ -236,6 +241,14 @@ None holds a secret.
 
 ## Decisions in force
 
+- **Bedrok answers what it can, and does not stand in the way of the rest**
+  (the owner, 2026-10-12). A question Bedrok can answer should be answered
+  from Bedrok: it is purpose-built for it, and a bug that sends Claude
+  elsewhere when the data is in the store is a bug. What Bedrok does not
+  carry, Claude may fetch natively (search, a web fetch, another tool);
+  Bedrok never forces itself onto an answer and never tries to stop that.
+  Whenever outside data sits beside Bedrok's, in a chart or a sentence, the
+  answer says which part did not come through Bedrok.
 - **The rethink decisions of 2026-10-09** are in `docs/rebuild-plan.md`: local
   MCP, FRED as an optional extra held only for the conversation, equity prices
   out of the core, Python with `uv`, a fresh public repository, about thirty
@@ -321,9 +334,9 @@ Owner-side items are in `profile/STATE-private.md`.
    - **Done when** both logged questions, put through the MCP server again,
      need no call outside Bedrok.
    - **Left out on purpose:** output by sector (A10; it doubles the catalog
-     and its contributions are a method choice), a `decompose` tool, and
-     `chart_series` taking rows from outside Bedrok (its source line would sit
-     under numbers it did not fetch).
+     and its contributions are a method choice) and a `decompose` tool.
+     `chart_series` taking rows from outside Bedrok was excluded here at
+     first; the owner reversed that on 2026-10-12, and it moved to item 4.
 
 2. **Bugs the cold-session self-test found (2026-10-12).** Each was hit by
    a real question, not only read in the code; repro calls are in the owner's
@@ -370,6 +383,12 @@ Owner-side items are in `profile/STATE-private.md`.
    the terms and decides.
 
 4. **Friction from the self-test, smaller each, worth a pass together:**
+   - **`chart_series` accepts outside rows** (decided 2026-10-12, reversing
+     item 1's first exclusion): rows Claude fetched elsewhere, each with a
+     label and its source, drawn in the house style, with the source line
+     naming the outside part ("World Bank (fetched by Claude, not via
+     Bedrok)"). Today a mixed chart falls back to hand styling and labels
+     nothing.
    - FX pairs live only in `fx_rates`, so EURUSD needs SQL: no recipe, no
      percentile. A catalog row per pair (or an alias layer) fixes it.
    - Search ranks the seasonally adjusted `us_cpi` above `us_cpi_nsa`, whose
@@ -448,12 +467,13 @@ Owner-side items are in `profile/STATE-private.md`.
    11), right for "is this stale" but not for "is this the latest vintage": a
    WEO update shows only as revised values. Freshness by vintage needs the
    release dates (session 13). Also still open from session 5: live SDMX
-   discovery beyond the catalog, and SQL over session-only series. The
-   2026-10-12 logs are the first demand for discovery: a session-only
-   `fetch_dataset` through Bedrok's own Eurostat and SDMX clients, for
-   publishers in `sources.csv`, never stored, licence and attribution attached,
-   would keep a question inside Bedrok when the catalog lacks it. A new kind of
-   tool; it needs its own design.
+   discovery beyond the catalog, and SQL over session-only series. A
+   session-only `fetch_dataset` was proposed on 2026-10-12 to keep uncatalogued
+   questions inside Bedrok; under "Bedrok answers what it can" that is no
+   longer needed, and it is shelved. What remains is one line in the server
+   instructions (session A): numbers fetched outside Bedrok are labelled as
+   such, and, where Bedrok stores the headline, checked against it, because a
+   general web fetch can pass numbers through a summarising model.
 
 10. **The Fed Board zips are the fragile link.** The Board is retiring its Data
     Download Program ("Build Your Package" goes the week of 2026-11-09) and
