@@ -164,3 +164,22 @@ def test_stored_values_carry_no_binary_noise(con):
     _seed(con, "us_10y_real", [("2026-10-08", 2.87)])
     derived.sync_derived(con)
     assert _value(con, "us_breakeven_10y", "2026-10-08") == 2.35
+
+
+def test_net_trade_is_exports_plus_imports_because_imports_come_negative(con):
+    """Session C: Eurostat publishes the imports contribution already negative,
+    so net trade is a sum. Spain 2025, as published: exports 0.96, imports -1.80."""
+    _seed(con, "gdp_contrib_exp_es", [("2025-01-01", 0.96)])
+    _seed(con, "gdp_contrib_imp_es", [("2025-01-01", -1.80)])
+    derived.sync_derived(con)
+    assert _value(con, "gdp_contrib_net_es", pd.Timestamp("2025-01-01").date()) == pytest.approx(-0.84)
+
+
+def test_net_trade_covers_exactly_the_geographies_its_parts_are_built_for():
+    """derived cannot import pipeline (a cycle), so the geography lists are
+    kept by hand and pinned here against the families."""
+    def geos(prefix):
+        spec = next(s for s in pipeline.EUROSTAT_BULK_SETS if s["prefix"] == prefix)
+        return [g.lower() for g in pipeline.family_geos(spec)]
+    assert derived.GDP_NET_GEOS == geos("gdp_contrib_exp_") == geos("gdp_contrib_imp_")
+    assert derived.GDP_NET_GEOS_Q == geos("gdp_contrib_q_exp_") == geos("gdp_contrib_q_imp_")

@@ -125,6 +125,31 @@ DERIVED: list[dict] = [
      "staleness_days": 60, "license": licensing.ATTRIBUTION},
 ]
 
+# Net trade per geography (session C): exports plus imports, because Eurostat
+# publishes the imports contribution already negative. The geographies are the
+# GDP breakdown families' own (pipeline.family_geos on gdp_contrib_*; a test
+# pins the match, since pipeline cannot be imported here without a cycle).
+GDP_NET_GEOS = ["ea21", "eu27_2020", "de", "fr", "it", "es", "nl", "be", "at", "pt",
+                "ie", "el", "fi"]
+GDP_NET_GEOS_Q = [g for g in GDP_NET_GEOS if g not in ("de", "nl")]
+_NET_NOTE = ("imports are published as a negative contribution, so net trade is "
+             "exports plus imports. One of the parts that add up to GDP growth")
+DERIVED += [
+    {"series_id": f"gdp_contrib_net_{g}", "op": "sum",
+     "inputs": [f"gdp_contrib_exp_{g}", f"gdp_contrib_imp_{g}"],
+     "name": f"Contribution of net trade to annual GDP growth — {g.upper()}",
+     "frequency": "annual", "units": "percentage points", "staleness_days": 800,
+     "notes": _NET_NOTE + f" (gdp_annual_{g})"}
+    for g in GDP_NET_GEOS
+] + [
+    {"series_id": f"gdp_contrib_q_net_{g}", "op": "sum",
+     "inputs": [f"gdp_contrib_q_exp_{g}", f"gdp_contrib_q_imp_{g}"],
+     "name": f"Contribution of net trade to GDP growth on a year earlier — {g.upper()}",
+     "frequency": "quarterly", "units": "percentage points", "staleness_days": 260,
+     "notes": _NET_NOTE + f" (gdp_yoy_{g})"}
+    for g in GDP_NET_GEOS_Q
+]
+
 
 def _series(con, series_id: str) -> pd.DataFrame:
     return con.execute(
@@ -138,6 +163,15 @@ def _diff(con, inputs: list[str]) -> pd.DataFrame:
         return pd.DataFrame(columns=["date", "value"])
     out = a.merge(b, on="date", suffixes=("_a", "_b"))
     out["value"] = out["value_a"] - out["value_b"]
+    return out[["date", "value"]]
+
+
+def _sum(con, inputs: list[str]) -> pd.DataFrame:
+    a, b = (_series(con, s) for s in inputs)
+    if a.empty or b.empty:
+        return pd.DataFrame(columns=["date", "value"])
+    out = a.merge(b, on="date", suffixes=("_a", "_b"))
+    out["value"] = out["value_a"] + out["value_b"]
     return out[["date", "value"]]
 
 
@@ -166,7 +200,7 @@ def _nber_recession(con, inputs: list[str]) -> pd.DataFrame:
     return nber.recession_months(nber.fetch_cycles(), date(today.year, today.month, 1))
 
 
-OPS = {"diff": _diff, "mom3_ann": _mom3_ann, "fwd5y5y": _fwd5y5y,
+OPS = {"diff": _diff, "sum": _sum, "mom3_ann": _mom3_ann, "fwd5y5y": _fwd5y5y,
        "nber_recession": _nber_recession}
 
 

@@ -8,7 +8,7 @@ Bedrok is wired to 31 publishers. 25 need no key at all; the others take a free 
 |---|---|---|---|---|---|
 | **Federal Reserve Bank of St. Louis — FRED** (`fred`) | 9 curated | [`FRED_API_KEY`](https://fredaccount.stlouisfed.org/apikeys) | FRED terms (never stored) | no — fetched live | [terms](https://fred.stlouisfed.org/legal/) |
 | **European Central Bank** (`ecb`) | 21 curated | none | reuse with attribution | yes | [terms](https://www.ecb.europa.eu/services/disclaimer/html/index.en.html) |
-| **Eurostat** (`eurostat`) | 10 curated + 18 families | none | reuse with attribution | yes | [terms](https://ec.europa.eu/eurostat/web/main/help/copyright-notice) |
+| **Eurostat** (`eurostat`) | 10 curated + 31 families | none | reuse with attribution | yes | [terms](https://ec.europa.eu/eurostat/web/main/help/copyright-notice) |
 | **U.S. Energy Information Administration** (`eia`) | 8 curated | [`EIA_API_KEY`](https://www.eia.gov/opendata/register.php) | public domain | yes | [terms](https://www.eia.gov/about/copyrights_reuse.php) |
 | **Office for National Statistics** (`ons`) | 9 curated | none | reuse with attribution | yes | [terms](https://www.ons.gov.uk/help/termsandconditions) |
 | **Bank of England** (`boe`) | 6 curated | none | reuse with attribution | yes | [terms](https://www.bankofengland.co.uk/legal) |
@@ -21,7 +21,7 @@ Bedrok is wired to 31 publishers. 25 need no key at all; the others take a free 
 | **Federal Reserve Bank of New York — Markets Data and surveys** (`nyfed`) | 6 curated | none | reuse with attribution | yes | [terms](https://www.newyorkfed.org/privacy/termsofuse) |
 | **The World Bank — Commodity Markets (Pink Sheet)** (`worldbank`) | 1 family | none | reuse with attribution | yes | [terms](https://data.worldbank.org/summary-terms-of-use) |
 | **U.S. Commodity Futures Trading Commission — Commitments of Traders** (`cftc`) | 1 family | none | public domain | yes | [terms](https://www.cftc.gov/) |
-| **Bedrok (computed from stored series)** (`derived`) | 12 families | none | reuse with attribution | yes |  |
+| **Bedrok (computed from stored series)** (`derived`) | 36 families | none | reuse with attribution | yes |  |
 | **Bank for International Settlements** (`bis`) | 17 curated | none | reuse with attribution | yes | [terms](https://data.bis.org/help/legal) |
 | **International Monetary Fund** (`imf`) | 6 curated | none | reuse with attribution | yes | [terms](https://www.imf.org/en/About/copyright-and-terms) |
 | **Istituto Nazionale di Statistica (Istat)** (`istat`) | 1 curated | none | reuse with attribution | yes | [terms](https://www.istat.it/note-legali/) |
@@ -105,6 +105,19 @@ Bedrok is wired to 31 publishers. 25 need no key at all; the others take a free 
 - HICP food annual rate (hicp_food_*, 14 geographies)
 - HICP goods annual rate (hicp_goods_*, 14 geographies)
 - HICP services annual rate (hicp_services_*, 14 geographies)
+- Real GDP growth, annual (gdp_annual_*, 13 geographies)
+- GDP contribution, household consumption, annual (gdp_contrib_hh_*, 13 geographies)
+- GDP contribution, household consumption, quarterly (gdp_contrib_q_hh_*, 11 geographies)
+- GDP contribution, government consumption, annual (gdp_contrib_gov_*, 13 geographies)
+- GDP contribution, government consumption, quarterly (gdp_contrib_q_gov_*, 11 geographies)
+- GDP contribution, fixed investment, annual (gdp_contrib_gfcf_*, 13 geographies)
+- GDP contribution, fixed investment, quarterly (gdp_contrib_q_gfcf_*, 11 geographies)
+- GDP contribution, inventories and valuables, annual (gdp_contrib_inv_*, 13 geographies)
+- GDP contribution, inventories and valuables, quarterly (gdp_contrib_q_inv_*, 11 geographies)
+- GDP contribution, exports, annual (gdp_contrib_exp_*, 13 geographies)
+- GDP contribution, exports, quarterly (gdp_contrib_q_exp_*, 11 geographies)
+- GDP contribution, imports, annual (gdp_contrib_imp_*, 13 geographies)
+- GDP contribution, imports, quarterly (gdp_contrib_q_imp_*, 11 geographies)
 - Youth unemployment (youth_unemp_*, 13 geographies)
 
 ### U.S. Energy Information Administration
@@ -263,6 +276,30 @@ Bedrok is wired to 31 publishers. 25 need no key at all; the others take a free 
 - us_breakeven_5y — US 5-year breakeven inflation rate
 - us_5y5y_fwd_inflation — US 5-year, 5-year forward inflation expectation rate
 - us_recession — US recession indicator (NBER)
+- gdp_contrib_net_ea21 — Contribution of net trade to annual GDP growth — EA21
+- gdp_contrib_net_eu27_2020 — Contribution of net trade to annual GDP growth — EU27_2020
+- gdp_contrib_net_de — Contribution of net trade to annual GDP growth — DE
+- gdp_contrib_net_fr — Contribution of net trade to annual GDP growth — FR
+- gdp_contrib_net_it — Contribution of net trade to annual GDP growth — IT
+- gdp_contrib_net_es — Contribution of net trade to annual GDP growth — ES
+- gdp_contrib_net_nl — Contribution of net trade to annual GDP growth — NL
+- gdp_contrib_net_be — Contribution of net trade to annual GDP growth — BE
+- gdp_contrib_net_at — Contribution of net trade to annual GDP growth — AT
+- gdp_contrib_net_pt — Contribution of net trade to annual GDP growth — PT
+- gdp_contrib_net_ie — Contribution of net trade to annual GDP growth — IE
+- gdp_contrib_net_el — Contribution of net trade to annual GDP growth — EL
+- gdp_contrib_net_fi — Contribution of net trade to annual GDP growth — FI
+- gdp_contrib_q_net_ea21 — Contribution of net trade to GDP growth on a year earlier — EA21
+- gdp_contrib_q_net_eu27_2020 — Contribution of net trade to GDP growth on a year earlier — EU27_2020
+- gdp_contrib_q_net_fr — Contribution of net trade to GDP growth on a year earlier — FR
+- gdp_contrib_q_net_it — Contribution of net trade to GDP growth on a year earlier — IT
+- gdp_contrib_q_net_es — Contribution of net trade to GDP growth on a year earlier — ES
+- gdp_contrib_q_net_be — Contribution of net trade to GDP growth on a year earlier — BE
+- gdp_contrib_q_net_at — Contribution of net trade to GDP growth on a year earlier — AT
+- gdp_contrib_q_net_pt — Contribution of net trade to GDP growth on a year earlier — PT
+- gdp_contrib_q_net_ie — Contribution of net trade to GDP growth on a year earlier — IE
+- gdp_contrib_q_net_el — Contribution of net trade to GDP growth on a year earlier — EL
+- gdp_contrib_q_net_fi — Contribution of net trade to GDP growth on a year earlier — FI
 
 ### Bank for International Settlements
 

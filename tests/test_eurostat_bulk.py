@@ -147,3 +147,33 @@ def test_the_broad_hicp_set_keeps_only_geos_inside_the_reuse_grant(con, monkeypa
     assert got == {"hicp_yoy_pl", "hicp_yoy_tr", "hicp_yoy_ch"}
     assert ("hicp_yoy_xk", "skip", "outside Eurostat's reuse grant") in report
     assert "hicp_yoy_xk" in pipeline.RETIRED
+
+
+def test_an_annual_family_is_not_mistaken_for_a_dead_geography(con, monkeypatch):
+    """Session C: a year is dated to its first day, so 2025's value is ~650
+    days old in late 2026. The 400-day dead-geo rule would have dropped every
+    annual geography on the first sync."""
+    spec = {"prefix": "testann_", "code": "nama_test?unit=X", "label": "Annual test",
+            "frequency": "annual", "units": "percent", "staleness_days": 800,
+            "ea_codes": ["EA21"], "name_tmpl": "Annual test — {geo}", "notes": "n"}
+    monkeypatch.setattr(pipeline, "EUROSTAT_BULK_SETS", [spec])
+    year = pd.Timestamp.today().year - 1
+    payload = {"EA21": _frame([f"{year}-01-01"], [1.2]), "DE": _frame([f"{year}-01-01"], [0.2]),
+               "FR": _frame(["2019-01-01"], [1.0])}          # FR: really stopped
+    monkeypatch.setattr(pipeline.eurostat, "fetch_multi_geo", lambda code, start=None: (payload, {}))
+    report = pipeline.sync_eurostat_multi(con)
+    got = {r[0] for r in con.execute("SELECT DISTINCT series_id FROM macro_series").fetchall()}
+    assert got == {"testann_ea21", "testann_de"}
+    assert ("testann_fr", "skip", "dead/stale geo") in report
+
+
+def test_the_gdp_breakdown_families_name_their_parts_and_leave_out_de_nl_quarterly():
+    rows = pipeline.static_catalog_rows().set_index("series_id")
+    for part, _, _ in pipeline.GDP_PARTS:
+        assert f"gdp_contrib_{part}_de" in rows.index
+        assert f"gdp_contrib_q_{part}_es" in rows.index
+        assert f"gdp_contrib_q_{part}_de" not in rows.index
+        assert f"gdp_contrib_q_{part}_nl" not in rows.index
+    assert rows.loc["gdp_annual_ea21", "frequency"] == "annual"
+    assert rows.loc["gdp_contrib_hh_es", "units"] == "percentage points"
+    assert "gdp_annual_ea20" not in rows.index           # EA21 only
