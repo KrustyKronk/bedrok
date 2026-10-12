@@ -69,6 +69,7 @@ def adding_up(parts: list[list], total: list, dates: list) -> str | None:
             "a part is not drawn, or the publisher adjusts each part on its own.")
 
 _HOW_WORDS = {
+    ("daily", ""): "daily values", ("daily", "last"): "daily values",
     ("weekly", "last"): "weekly closes", ("weekly", "mean"): "weekly averages",
     ("weekly", "sum"): "weekly totals", ("weekly", "first"): "first value of each week",
     ("monthly", "mean"): "monthly averages", ("monthly", "last"): "month-end values",
@@ -128,6 +129,8 @@ def axes(series: list[tuple[str, str]]) -> dict:
 
 
 def _span_label(d: date, frequency: str) -> str:
+    if frequency == "daily":
+        return f"{d.day} {_MONTHS[d.month - 1]} {d.year}"
     if frequency == "quarterly":
         return f"Q{(d.month - 1) // 3 + 1} {d.year}"
     if frequency == "annual":
@@ -170,7 +173,11 @@ def subtitle(placed: dict, frequency: str, how: str | None, first: date | None,
 
 def x_labels(dates: list[date], frequency: str) -> dict:
     """Labels by frequency, and how many to skip so about ten show."""
+    years = {d.year for d in dates}
+
     def one(d: date) -> str:
+        if frequency == "daily":
+            return f"{d.day} {_MONTHS[d.month - 1]}" + (f" {d.year}" if len(years) > 1 else "")
         if frequency == "weekly":
             return f"{d.day} {_MONTHS[d.month - 1]} {d.year}"
         if frequency == "monthly":
@@ -220,6 +227,11 @@ def footnotes(entries: list[dict], table: dict, frequency: str) -> list[str]:
         if e.get("outside"):
             notes.append(f"{e.get('name', e['series_id'])}: supplied by the assistant, not from "
                          f"Bedrok ({e.get('publisher') or 'source not given'}).")
+    for sid, held in (table.get("carried") or {}).items():
+        d = date.fromisoformat(held["last_change"])
+        notes.append(f"{names.get(sid, sid)} changes only at decisions; its last change "
+                     f"({d.day} {_MONTHS[d.month - 1]} {d.year}, {held['value']:g}) is held to "
+                     "the end of the chart.")
     for sid, stepped in (table.get("stepped") or {}).items():
         if stepped:
             notes.append(f"{names.get(sid, sid)} is published less often than {frequency}; "

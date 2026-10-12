@@ -78,6 +78,10 @@ def test_footnotes_carry_what_the_chart_cannot_say():
                         "More detail.")
     assert any("Fed funds" in n and "step" in n for n in notes)
     assert any("not over yet" in n for n in notes)
+    table["carried"] = {"us_fed_funds": {"last_change": "2026-09-16", "value": 2.5}}
+    notes = charting.footnotes(entries, table, "monthly")
+    assert "Fed funds changes only at decisions; its last change (16 Sep 2026, 2.5) is held to the end of the chart." in notes
+    del table["carried"]
     table["partial"] = {"us_cpi": {"n": 6, "first": "2026-10-01", "last": "2026-10-08"}}
     notes = charting.footnotes(entries, table, "quarterly")
     assert "US CPI: the latest period is not over yet (it holds 6 observations, 1 to 8 Oct 2026)." in notes
@@ -106,3 +110,10 @@ def test_a_rebased_series_names_the_period_it_was_rebased_to():
     assert charting.index_base_label(date(2020, 2, 15), "monthly") == "index Feb-2020=100"
     assert charting.index_base_label(date(2020, 2, 15), "annual") == "index 2020=100"
     assert charting.index_base_label(date(2020, 2, 15), "daily") == "index 2020-02-15=100"
+
+
+def test_daily_labels_carry_the_year_only_when_the_span_crosses_one():
+    one = charting.x_labels([date(2026, 10, 1), date(2026, 10, 2)], "daily")
+    assert one["labels"] == ["1 Oct", "2 Oct"]
+    two = charting.x_labels([date(2025, 12, 31), date(2026, 1, 2)], "daily")
+    assert two["labels"] == ["31 Dec 2025", "2 Jan 2026"]

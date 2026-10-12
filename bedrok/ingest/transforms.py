@@ -87,8 +87,11 @@ def apply(df: pd.DataFrame, transform: str = "level", index_date=None) -> pd.Dat
 # and years by their first day, the store's own convention, so a resampled
 # monthly series lines up with a stored monthly one.
 
-FREQUENCIES = ("weekly", "monthly", "quarterly", "annual")
+FREQUENCIES = ("daily", "weekly", "monthly", "quarterly", "annual")
 HOWS = ("last", "mean", "sum", "first")
+# "daily" has no resample rule: a daily calendar is the union of the days the
+# series have (never a weekend slot, which the house rule "never join across
+# a null" would turn into a break every week).
 _RULE = {"weekly": "W-FRI", "monthly": "MS", "quarterly": "QS", "annual": "YS"}
 # How fast a catalog frequency is; `event` (dated at each change, like the ECB's
 # rates) counts as daily, and is carried forward rather than averaged.
@@ -106,7 +109,7 @@ def default_how(frequency: str) -> str:
 
 
 def _period_end(start: pd.Timestamp, frequency: str) -> pd.Timestamp:
-    if frequency == "weekly":
+    if frequency in ("weekly", "daily"):
         return start      # a week is labelled by its last day already
     step = {"monthly": pd.DateOffset(months=1), "quarterly": pd.DateOffset(months=3),
             "annual": pd.DateOffset(years=1)}[frequency]
@@ -115,6 +118,8 @@ def _period_end(start: pd.Timestamp, frequency: str) -> pd.Timestamp:
 
 def _floor(ts: pd.Series, frequency: str) -> pd.Series:
     """Each date → the label of the period that contains it."""
+    if frequency == "daily":
+        return ts.dt.normalize()
     if frequency == "weekly":
         return ts + pd.to_timedelta((4 - ts.dt.weekday) % 7, unit="D")
     if frequency == "monthly":
@@ -154,6 +159,14 @@ def to_frequency(df: pd.DataFrame, native: str | None, frequency: str,
     if rank_native > rank_target:
         notes.update(stepped=True, how=None)
         return _out(d, d["value"]), notes
+    if frequency == "daily" and native == "event":
+        # A change-dated rate on a daily calendar: one row per day it was in
+        # force, to the day of the last change; align carries it on from there.
+        notes["how"] = None
+        days = pd.date_range(d["date"].min(), d["date"].max(), freq="D")
+        held = d.set_index("date")["value"].reindex(days).ffill()
+        notes["carried"] = _carried(d)
+        return _out(pd.DataFrame({"date": days}), held.values), notes
     if rank_native == rank_target:
         # One observation per period already; only the label moves, so a
         # Tuesday-dated weekly series (CFTC) lands on the shared Friday.
@@ -165,9 +178,16 @@ def to_frequency(df: pd.DataFrame, native: str | None, frequency: str,
     s = d.set_index("date")["value"]
     r = s.resample(_RULE[frequency])
     counts = r.count()
+    today_ts = pd.Timestamp(today or date.today())
     if native == "event":
-        # A change-dated rate holds until it changes: carry it forward.
-        values = r.last().ffill()
+        # A change-dated rate holds until it changes, and is still in force
+        # today: carry it to the period holding today, not only to its last
+        # change (the self-test's ECB line stopped in September).
+        last = r.last()
+        upto = _floor(pd.Series([today_ts]), frequency).iloc[0]
+        values = last.reindex(pd.date_range(last.index[0], max(last.index[-1], upto),
+                                            freq=_RULE[frequency])).ffill()
+        notes["carried"] = _carried(d)
     elif how == "sum":
         values = r.sum(min_count=1)
     else:
@@ -177,8 +197,9 @@ def to_frequency(df: pd.DataFrame, native: str | None, frequency: str,
     if out.empty:
         return _out(out, out["value"]), notes
 
-    today_ts = pd.Timestamp(today or date.today())
-    notes["partial_last"] = bool(_period_end(out["date"].iloc[-1], frequency) >= today_ts)
+    # A rate in force is not a partial period: its last value is the value.
+    notes["partial_last"] = native != "event" and \
+        bool(_period_end(out["date"].iloc[-1], frequency) >= today_ts)
     n_last = int(counts.iloc[-1])
     if notes["partial_last"] and n_last:
         # The bins are in date order, so the last period's observations are
@@ -192,6 +213,12 @@ def to_frequency(df: pd.DataFrame, native: str | None, frequency: str,
         notes["incomplete"] = [ts.date().isoformat() for ts in short.index]
     res = pd.DataFrame({"date": out["date"].dt.date, "value": out["value"]})
     return res.reset_index(drop=True), notes
+
+
+def _carried(d: pd.DataFrame) -> dict:
+    """What a chart footnote says about a change-dated rate: its last change."""
+    return {"last_change": d["date"].iloc[-1].date().isoformat(),
+            "value": float(d["value"].iloc[-1])}
 
 
 def align(frames: dict[str, tuple[pd.DataFrame, str, bool]], frequency: str,
@@ -218,7 +245,14 @@ def align(frames: dict[str, tuple[pd.DataFrame, str, bool]], frequency: str,
         lo = max(lo, _floor(pd.Series([pd.Timestamp(start)]), frequency).iloc[0])
     if end is not None:
         hi = min(hi, pd.Timestamp(end))
-    calendar = pd.date_range(lo, hi, freq=_RULE[frequency]) if lo <= hi else pd.DatetimeIndex([])
+    if lo > hi:
+        calendar = pd.DatetimeIndex([])
+    elif frequency == "daily":
+        # The days the series have, so a weekend is no slot rather than a gap.
+        days = sorted({ts for x in spans for ts in x if lo <= ts <= hi})
+        calendar = pd.DatetimeIndex(days)
+    else:
+        calendar = pd.date_range(lo, hi, freq=_RULE[frequency])
     cal = pd.Series(calendar)
     columns: dict[str, list[float | None]] = {}
     for k, (d, native, stepped) in prepared.items():
@@ -230,6 +264,10 @@ def align(frames: dict[str, tuple[pd.DataFrame, str, bool]], frequency: str,
             key = _floor(cal, own)
             lookup = dict(zip(_floor(d["date"], own), d["value"]))
             vals = [lookup.get(x) for x in key]
+        elif native == "event":
+            # In force until it changes: the last value on or before each slot.
+            s = d.set_index("date")["value"].sort_index()
+            vals = [s[:x].iloc[-1] if len(s[:x]) else None for x in cal]
         else:
             lookup = dict(zip(d["date"], d["value"]))
             vals = [lookup.get(x) for x in cal]

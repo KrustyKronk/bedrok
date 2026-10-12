@@ -607,7 +607,7 @@ def get_series(
     transform: Literal["level", "yoy", "mom3_ann", "index_to"] = "level",
     index_date: Annotated[str | None, Field(description="for index_to: the date set to 100")] = None,
     max_rows: Annotated[int, Field(ge=1, le=MAX_ROWS)] = 300,
-    frequency: Annotated[Literal["native", "weekly", "monthly", "quarterly", "annual"],
+    frequency: Annotated[Literal["native", "daily", "weekly", "monthly", "quarterly", "annual"],
                          Field(description="put every series on this calendar; "
                                            "native = as published")] = "native",
     how: Annotated[Literal["last", "mean", "sum", "first"] | None,
@@ -780,6 +780,7 @@ def _get_aligned(series_ids, start, end, transform, index_date, max_rows,
         "stepped": {k: n["stepped"] for k, n in notes.items()},
         "partial_last": {k: n["partial_last"] for k, n in notes.items()},
         "partial": {k: n["partial"] for k, n in notes.items() if n.get("partial")},
+        "carried": {k: n["carried"] for k, n in notes.items() if n.get("carried")},
         "incomplete": {k: n["incomplete"] for k, n in notes.items() if n["incomplete"]},
         "total_rows": total, "truncated": total > len(dates_kept),
         **_cut(total, len(dates_kept), dates_kept[0] if dates_kept else None),
@@ -796,8 +797,9 @@ def chart_series(
     end: Annotated[str | None, Field(description="last date: YYYY, YYYY-MM or YYYY-MM-DD")] = None,
     transform: Literal["level", "yoy", "mom3_ann", "index_to"] = "level",
     index_date: Annotated[str | None, Field(description="for index_to: the date set to 100")] = None,
-    frequency: Annotated[Literal["auto", "weekly", "monthly", "quarterly", "annual"],
-                         Field(description="the chart's calendar; auto = weekly for daily data, "
+    frequency: Annotated[Literal["auto", "daily", "weekly", "monthly", "quarterly", "annual"],
+                         Field(description="the chart's calendar; auto = daily for daily data "
+                                           "over up to three years, weekly beyond that, "
                                            "otherwise the fastest series' own")] = "auto",
     how: Annotated[Literal["last", "mean", "sum", "first"] | None,
                    Field(description="how a faster series becomes one value per period")] = None,
@@ -841,7 +843,7 @@ def chart_series(
     if len(series_ids) + len(extra or []) > 7:
         raise ToolError("a chart takes at most seven series, catalog ids and extra together.")
     if frequency == "auto":
-        frequency = _auto_frequency(series_ids)
+        frequency = _auto_frequency(series_ids, start)
     got = _get_aligned(series_ids, start, end, transform, index_date, MAX_ROWS, frequency, how,
                        transforms, extra)
     table = got.get("table")
@@ -901,20 +903,26 @@ def chart_series(
     return got
 
 
-def _auto_frequency(series_ids: list[str]) -> str:
-    """The calendar a chart gets when none is asked for: weekly for anything
-    daily (a daily line over years is noise and a lot of rows), otherwise the
-    fastest series' own frequency, so nothing slower is averaged away."""
+def _auto_frequency(series_ids: list[str], start=None) -> str:
+    """The calendar a chart gets when none is asked for: daily when every
+    series is daily and the span asked for is three years or less (a month of
+    the VIX was four weekly points), weekly for daily data over longer spans
+    (noise, and more than a thousand rows), otherwise the fastest series' own
+    frequency, so nothing slower is averaged away."""
     order = ["weekly", "monthly", "quarterly", "annual"]
-    best = "annual"
+    best, natives = "annual", []
     for sid in series_ids:
         try:
             f = (_find(sid).get("frequency") or "daily").lower()
         except ToolError:
             continue
+        natives.append(f)
         f = "weekly" if f in ("daily", "event", "weekly") else f
         if f in order and order.index(f) < order.index(best):
             best = f
+    if natives and all(f in ("daily", "event") for f in natives) and start is not None \
+            and (date.today() - start).days <= 3 * 366:
+        return "daily"
     return best
 
 

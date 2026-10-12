@@ -125,10 +125,30 @@ def test_a_slower_series_is_stepped_and_stops_after_its_last_period():
     assert None not in cols["oas"]
 
 
-def test_a_change_dated_rate_is_carried_forward():
+def test_a_change_dated_rate_is_carried_forward_to_today():
+    """A rate in force is the value until the next decision: it is held to
+    the period holding today, not only to its last change (session D1: the
+    self-test's ECB line stopped in September although 2.50% stood)."""
     ecb = pd.DataFrame({"date": [date(2024, 6, 12), date(2024, 9, 18)], "value": [3.75, 3.5]})
-    out, _ = transforms.to_frequency(ecb, "event", "monthly", today=date(2025, 1, 1))
-    assert out["value"].tolist() == [3.75, 3.75, 3.75, 3.5]   # Jun, Jul, Aug held; Sep changed
+    out, notes = transforms.to_frequency(ecb, "event", "monthly", today=date(2025, 1, 1))
+    assert out["value"].tolist() == [3.75, 3.75, 3.75, 3.5, 3.5, 3.5, 3.5, 3.5]   # to Jan 2025
+    assert str(out["date"].iloc[-1]) == "2025-01-01"
+    assert notes["carried"] == {"last_change": "2024-09-18", "value": 3.5}
+    assert notes["partial_last"] is False                        # in force, not partial
+
+
+def test_a_daily_calendar_is_the_days_the_series_have():
+    """Session D1: a month of daily data was four weekly points. Daily keeps
+    every trading day and no weekend slot, so lines never break on Saturdays."""
+    vix = _daily("2026-09-14", "2026-10-09")
+    out, notes = transforms.to_frequency(vix, "daily", "daily", today=date(2026, 10, 12))
+    assert len(out) == len(vix) and notes["how"] is None
+    ecb = pd.DataFrame({"date": [date(2026, 9, 16)], "value": [2.5]})
+    held, notes = transforms.to_frequency(ecb, "event", "daily", today=date(2026, 10, 12))
+    dates, cols = transforms.align({"vix": (out, "daily", False), "ecb": (held, "event", False)}, "daily")
+    assert date(2026, 9, 19) not in dates                        # a Saturday is no slot
+    assert cols["ecb"][dates.index(date(2026, 10, 9))] == 2.5    # in force on the last day
+    assert cols["ecb"][dates.index(date(2026, 9, 14))] is None   # before the first decision
 
 
 def test_resampling_comes_before_yoy():
