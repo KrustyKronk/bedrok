@@ -610,4 +610,12 @@ because cutting at the first ". " breaks on "incl.".
   started from a checkout answers from the developer's own store and passes for
   the wrong reason. Run it with the empty home as the working directory too.
   CI is safe only because a fresh checkout has no `profile/`.
+- *A bundle's identity is its author and its name, so never change either.*
+  Claude Desktop files an extension as `local.mcpb.<author>.<name>`. 0.2.0
+  changed the manifest's author, so Desktop installed it as a second extension
+  beside 0.1.8 instead of upgrading it: the new one started with no settings
+  (no folder, so an empty store in the per-user folder and no keys) while the
+  old one kept running with the real store, and the assistant saw both sets of
+  tools. The author is now fixed for good; the fix for an affected install is
+  to set the folder on the new extension and uninstall the old one.
 
