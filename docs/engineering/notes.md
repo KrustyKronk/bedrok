@@ -482,6 +482,19 @@ Smaller ones:
   required. The token goes in a `username` header, never in a URL. Its
   `helloworld/logincheck` answer **echoes the token back** in plain text, so
   never print or log that response.
+- GENESIS can stop serving one statistic while the rest of the service
+  answers. On 2026-10-12 both CPI tables (61111-0001 annual, 61111-0002
+  monthly) returned Status Code 7000, in German whatever `language` says:
+  "Für die Teiltabelle mit der Metadatenkombination … wurde kein Datenquader
+  gefunden! (Keine Datenquader oder Zeitscheibe nach PTable)", i.e. no data
+  cube for that combination. It failed for every `startyear` back to 1900,
+  the tables were still listed in `catalogue/tables` under the same codes,
+  and industrial production (42153-0001) answered normally. The request had
+  not changed and had worked days earlier, so the fault was Destatis's
+  (a CPI republication or rebase in progress is the likely reason). The
+  stored history stands; recheck before changing anything. The refresh
+  report used to cut this message to 82 characters, which kept only its
+  first words; the per-series detail now keeps 200 on one line.
 - GENESIS answers a table too big to cut directly with HTTP 200 and Status Code
   98 ("use job=true"). Narrowing the request with `classifyingvariable1` and
   `classifyingkey1` avoids the job machinery entirely. Its flat CSV puts the
@@ -575,6 +588,29 @@ because cutting at the first ". " breaks on "incl.".
 - Search synonyms are deliberately few: only where the everyday word never
   appears in names. With "inflation → CPI" added, "argentina inflation" found
   US CPI, so a place only the warnings know now returns no series at all.
+
+**Correct answers (session A, 2026-10-12).** What a cold-session self-test
+found, and why each fix has the shape it has:
+- *A fixed euro-area code goes stale silently.* The surveys sat on EA20,
+  which Eurostat stopped at 2025-12; every refresh "succeeded" with nothing
+  new, for nine months, and only a question about PMIs showed it. EA21 carries
+  the whole history there, so the EA20 ids are aliases. Before aliasing,
+  check the new code's depth: catalog load deletes an alias's stored rows.
+  Industrial production, retail and government debt still publish EA20.
+- *A warning's country is a name, not a bag of words.* Tokenising
+  "Caucasus and Central Asia (mirror trade)" made "trade" a place, and the
+  rule that answers an uncovered place with its warning alone then emptied
+  "trade balance". Match countries as phrases; a bracket describes the case.
+- *Every stored geography needs a place, or search cannot reach it.* The
+  broad HICP set stores 40-odd countries; those outside `CODES` now sit in
+  `geography.FAMILY_CODES`. Never add a code that is a word ("is", "me") to
+  `NAMES`, and leave Georgia out: it is a US state first.
+- *Only a ToolError's text reaches the assistant.* Any other exception reads
+  "Error executing tool X", which it cannot act on; parse what a person
+  types (`core/dates.py`) and refuse in words.
+- *Eurostat's grant is EU, EFTA and candidate countries,* not "EU only" as
+  the old attribution said. The broad set loops over the API response, so it
+  filters by `pipeline.REUSE_GEOS`; Kosovo is outside and retired.
 
 **Opening the repository (session 12, 2026-10-12).**
 

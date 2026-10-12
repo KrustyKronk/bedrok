@@ -138,8 +138,10 @@ class MissingKey(Exception):
 
 def error_detail(e: Exception, width: int = 70) -> str:
     """One-line failure text with any API key removed BEFORE it is cut to width
-    (a requests error names its URL, and some URLs carry a key)."""
-    return sources.redact(f"{type(e).__name__}: {e}")[:width + len(type(e).__name__) + 2]
+    (a requests error names its URL, and some URLs carry a key). Line breaks
+    become spaces: GENESIS answers in several lines, and the report is one."""
+    text = " ".join(f"{type(e).__name__}: {e}".split())
+    return sources.redact(text)[:width + len(type(e).__name__) + 2]
 
 
 def _fetcher(source: str, row: dict):
@@ -634,7 +636,7 @@ def sync_macro(con, incremental=False, only=None, prime=True) -> list[tuple]:
             report.append((sid, "skip", str(e)))
             continue  # no network call happened — don't pace
         except Exception as e:  # noqa: BLE001
-            report.append((sid, "FAIL", error_detail(e, 70)))
+            report.append((sid, "FAIL", error_detail(e, 200)))
         _pace(row["source"])
     return report
 

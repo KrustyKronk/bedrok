@@ -100,3 +100,12 @@ def test_retired_series_are_removed_and_stay_out(catalog):
     pipeline.load_catalog(con)
     assert con.execute("SELECT count(*) FROM macro_series WHERE series_id = 'wb_barley'").fetchone()[0] == 0
     assert con.execute("SELECT count(*) FROM macro_catalog WHERE series_id = 'wb_barley'").fetchone()[0] == 0
+
+
+def test_a_failure_detail_is_one_line_and_keeps_the_part_that_explains_it():
+    """GENESIS answers error 7000 over eight lines; cut at 82 characters, the
+    2026-10-12 refresh kept only "Für die Teiltabelle mit der Metadatenkombinat"."""
+    err = ValueError("GENESIS 61111-0002: 7000 Für die Teiltabelle mit der Metadatenkombination:\n"
+                     "Verbraucherpreisindex für Deutschland (61111)\nwurde kein Datenquader gefunden!")
+    detail = pipeline.error_detail(err, 200)
+    assert "\n" not in detail and "kein Datenquader gefunden" in detail
