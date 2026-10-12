@@ -461,3 +461,35 @@ def test_a_gdp_total_and_its_parts_point_at_each_other(srv):
 def test_list_series_gives_the_first_date_too(srv):
     s = _call("list_series", {"prefix": "us_cpi"}).structured_content["series"][0]
     assert s["first_date"] and s["first_date"] <= s["last_date"]
+
+
+def test_contributions_chart_as_stacked_bars_on_one_scale_with_their_total(srv):
+    """Session C: the canonical picture of "what drove growth". Parts in
+    percentage points and the total in percent share one scale here, and a
+    footnote says whether the parts add up."""
+    con = duckdb.connect(str(config.DB_PATH))
+    rows, years = [], ["2024-01-01", "2025-01-01"]
+    series = {"gdp_annual_es": ("Real GDP growth, annual — Spain", "percent", [3.7, 2.6]),
+              "gdp_contrib_hh_es": ("Contribution of household consumption to annual GDP growth — Spain",
+                                    "percentage points", [1.74, 1.70]),
+              "gdp_contrib_net_es": ("Contribution of net trade to annual GDP growth — ES",
+                                     "percentage points", [0.32, -0.84]),
+              "gdp_contrib_rest_es": ("Contribution of everything else to annual GDP growth — Spain",
+                                      "percentage points", [1.64, 1.74])}
+    for sid, (name, units, vals) in series.items():
+        rows.append({"series_id": sid, "source": "eurostat", "source_code": "x", "name": name,
+                     "frequency": "annual", "units": units, "staleness_days": 9999, "cache": "store"})
+        store.replace_macro_series(con, sid, _frame(years, vals), "eurostat:x")
+    store.upsert_macro_catalog(con, pd.DataFrame(rows))
+    store.close_checkpointed(con)
+    ids = ["gdp_contrib_hh_es", "gdp_contrib_net_es", "gdp_contrib_rest_es", "gdp_annual_es",
+           "us_cpi", "jp_policy_rate", "gdp_contrib_hh_es"]
+    assert not _call("chart_series", {"series_ids": ids[:7]}).is_error    # seven accepted
+    c = _call("chart_series", {"series_ids": ids[:4]}).structured_content["chart"]
+    assert c["form"] == "stacked_bars" and c["total"] == "gdp_annual_es"
+    assert c["title"] == "Real GDP growth, annual — Spain, by contribution"
+    assert c["axes"]["right"] is None                                   # one scale
+    assert {s["id"]: s["kind"] for s in c["series"]}["gdp_contrib_net_es"] == "part"
+    assert any("add up to the total within 0.05" in n for n in c["footnotes"])
+    lines = _call("chart_series", {"series_ids": ["us_cpi"]}).structured_content["chart"]
+    assert lines["form"] == "lines" and lines["total"] is None

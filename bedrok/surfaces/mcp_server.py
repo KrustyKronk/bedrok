@@ -737,8 +737,9 @@ def _get_aligned(series_ids, start, end, transform, index_date, max_rows,
 
 @server.tool(annotations=READ_FETCHING)
 def chart_series(
-    series_ids: Annotated[list[str], Field(min_length=1, max_length=5,
-                                           description="one to five catalog ids, main series first")],
+    series_ids: Annotated[list[str], Field(min_length=1, max_length=7,
+                                           description="one to seven catalog ids, main series "
+                                                       "first (six parts of growth and a total)")],
     start: Annotated[str | None, Field(description="first date: YYYY, YYYY-MM or YYYY-MM-DD")] = None,
     end: Annotated[str | None, Field(description="last date: YYYY, YYYY-MM or YYYY-MM-DD")] = None,
     transform: Literal["level", "yoy", "mom3_ann", "index_to"] = "level",
@@ -767,7 +768,10 @@ def chart_series(
     footnotes that matter, anything the chart cannot show. No analysis unless
     asked. If `axes.problem` is set, follow it rather than adding a third
     scale; the series it names come back with `drawn: false` and are listed in
-    `not_drawn`. The order of `series_ids` sets the scales and the colours: to
+    `not_drawn`. Contributions to growth (gdp_contrib_*, us_gdp_contrib_*)
+    come back with `form: stacked_bars`: stack the parts, positive up and
+    negative down, and draw the `total` (its growth rate) as a dot or line on
+    the same scale; a footnote says whether the parts add up. The order of `series_ids` sets the scales and the colours: to
     add a series to a chart already drawn, list it after the others."""
     start, end = _span(start, end)
     if frequency == "auto":
@@ -777,7 +781,15 @@ def chart_series(
     if not table:
         return got
     entries = [e for e in got["series"] if "error" not in e]
-    placed = charting.axes([(e["series_id"], e["units"]) for e in entries])
+    # Contributions to growth are drawn as stacked bars with the total beside
+    # them on one scale: the parts are in percentage points of the total's
+    # percent, so for this form the two units are one scale (session C).
+    parts = [e for e in entries if charting.is_contribution(e)]
+    totals = [e for e in entries if e not in parts and e["units"] == "percent"] if parts else []
+    total = totals[0] if len(totals) == 1 else None
+    stacked = {e["series_id"] for e in parts} | ({total["series_id"]} if total else set())
+    placed = charting.axes([(e["series_id"], "percentage points" if e["series_id"] in stacked
+                             else e["units"]) for e in entries])
     left = set(placed["left"]["series"])
     right = set((placed.get("right") or {}).get("series", []))
     # A series a third unit left off both scales is not drawn, and nothing
@@ -788,7 +800,9 @@ def chart_series(
     have = [d for i, d in enumerate(days)
             if any(table["columns"][e["series_id"]][i] is not None for e in drawn)]
     got["chart"] = {
-        "title": title or charting.title_suggestion([e["name"] for e in drawn]),
+        # A breakdown is titled by what it breaks down, not by its first part.
+        "title": title or (f"{total['name']}, by contribution" if parts and total
+                           else charting.title_suggestion([e["name"] for e in drawn])),
         "subtitle": charting.subtitle(placed, frequency, table["how"],
                                       have[0] if have else None, have[-1] if have else None),
         "axes": placed,
@@ -799,9 +813,12 @@ def chart_series(
                             "left" if e["series_id"] in left else None,
                     "drawn": e["series_id"] in left | right,
                     "dashed": e["series_id"] in right, "colour": charting.colour(i),
-                    "stepped": table["stepped"].get(e["series_id"], False)}
+                    "stepped": table["stepped"].get(e["series_id"], False),
+                    "kind": "part" if e in parts else "total" if e is total else None}
                    for i, e in enumerate(entries)],
         "not_drawn": [e["series_id"] for e in entries if e["series_id"] not in left | right],
+        "form": "stacked_bars" if parts else "lines",
+        "total": total["series_id"] if total else None,
         "x": charting.x_labels(days, frequency),
         "source": charting.source_line(
             [(e.get("publisher") or e["series_id"], e.get("license") == licensing.RESTRICTED,
@@ -809,6 +826,11 @@ def chart_series(
         "footnotes": charting.footnotes(drawn, table, frequency),
         "layout": charting.LAYOUT,
     }
+    if parts and total:
+        note = charting.adding_up([table["columns"][e["series_id"]] for e in parts],
+                                  table["columns"][total["series_id"]], table["dates"])
+        if note:
+            got["chart"]["footnotes"].append(note)
     return got
 
 

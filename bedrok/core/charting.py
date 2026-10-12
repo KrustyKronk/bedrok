@@ -36,8 +36,35 @@ LAYOUT = {
     "y_axis": "labelled with the units; left scale solid lines, right scale dashed",
     "x_axis": "the labels given, every `tick_every`-th one shown",
     "gaps": "leave empty: never draw a line across a null",
-    "type": "lines; bars only when every series has a single period",
+    "type": "lines; bars only when every series has a single period; stacked bars "
+            "when `form` is stacked_bars (contributions to a total), positive parts "
+            "stacked up from zero and negative ones down, with the `total` drawn as a "
+            "dot or a line on the same scale",
 }
+
+
+def is_contribution(entry: dict) -> bool:
+    """A part of a total measured in percentage points: GDP growth's parts by
+    expenditure, from Eurostat or BEA. Known by units and name, so any later
+    family named the same way is drawn the same way."""
+    return entry.get("units") == "percentage points" and \
+        "contribution" in str(entry.get("name", "")).lower()
+
+
+def adding_up(parts: list[list], total: list, dates: list) -> str | None:
+    """A footnote on whether the parts drawn add up to the total over the
+    dates where all of them have a value: they do within 0.05 points when all
+    are drawn and the publisher's parts are additive; otherwise say by how
+    much they miss, and the likeliest reasons."""
+    gaps = [(abs(sum(p[i] for p in parts) - total[i]), d) for i, d in enumerate(dates)
+            if total[i] is not None and all(p[i] is not None for p in parts)]
+    if not gaps:
+        return None
+    worst, when = max(gaps)
+    if worst <= 0.05:
+        return "The parts drawn add up to the total within 0.05 points in every period shown."
+    return (f"The parts drawn differ from the total by up to {worst:.2f} points ({when}): "
+            "a part is not drawn, or the publisher adjusts each part on its own.")
 
 _HOW_WORDS = {
     ("weekly", "last"): "weekly closes", ("weekly", "mean"): "weekly averages",
