@@ -510,3 +510,24 @@ def test_a_transform_per_series_puts_a_rate_beside_an_index_in_one_recipe(srv):
     g = _call("get_series", {"series_ids": ["us_cpi"], "transform": "index_to",
                              "index_date": "2025-02-15", "frequency": "quarterly"}).structured_content
     assert g["series"][0]["units"] == "index 2025Q1=100"
+
+
+def test_outside_rows_are_drawn_in_house_style_and_named_as_outside(srv):
+    """Session D1: what Bedrok does not carry may be drawn beside what it
+    does, labelled. Before, a mixed chart fell back to hand styling and
+    labelled nothing (the self-test's Spain breakdown and Japan GDP)."""
+    extra = [{"label": "Japan real GDP growth", "units": "percent", "source": "World Bank",
+              "frequency": "annual",
+              "observations": [{"date": "2023-01-01", "value": 0.7}, {"date": "2024-01-01", "value": -0.2},
+                               {"date": "2025-01-01", "value": 1.2}]}]
+    r = _call("chart_series", {"series_ids": ["jp_policy_rate"], "extra": extra, "frequency": "annual"}) \
+        .structured_content
+    c = r["chart"]
+    jp = next(s for s in c["series"] if s["id"] == "extra:Japan real GDP growth")
+    assert jp["drawn"] and jp["colour"] == charting.colour(1) and jp["kind"] is None
+    assert "World Bank (fetched by Claude, not via Bedrok)" in c["source"]
+    assert any("supplied by the assistant" in n for n in c["footnotes"])
+    at = r["table"]["dates"].index("2025-01-01")
+    assert r["table"]["columns"]["extra:Japan real GDP growth"][at] == 1.2
+    too_many = _call("chart_series", {"series_ids": ["us_cpi"] * 5, "extra": extra * 3})
+    assert too_many.is_error and "seven" in too_many.content[0].text

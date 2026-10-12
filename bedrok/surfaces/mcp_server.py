@@ -47,7 +47,7 @@ import pandas as pd
 from mcp.server import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from bedrok.core import aliases, charting, config, dates, licensing, sources, store, warnings
 from bedrok.core import geography as geo
@@ -108,6 +108,23 @@ server = MCPServer(name="bedrok", instructions=INSTRUCTIONS, version=_version())
 
 MAX_ROWS = 1000
 _TRANSFORMS = Literal["level", "yoy", "mom3_ann", "index_to"]
+
+
+class Obs(BaseModel):
+    date: str
+    value: float | None = None
+
+
+class Outside(BaseModel):
+    """A series the assistant fetched itself, to draw beside Bedrok's in the
+    house style. Bedrok does not stand in the way of what it does not carry
+    (the owner, 2026-10-12); it labels it. The label and the source are what
+    the reader sees, so both are required."""
+    label: str = Field(min_length=1, max_length=120, description="what the series is, as the legend shows it")
+    units: str = Field(min_length=1, max_length=60, description="in Bedrok's words: 'percent', 'USD per barrel', 'index 2015=100'")
+    source: str = Field(min_length=1, max_length=120, description="the publisher, as the source line names it")
+    frequency: Literal["daily", "weekly", "monthly", "quarterly", "annual", "event"] | None = None
+    observations: list[Obs] = Field(min_length=1, max_length=5000)
 LOCK_WAIT_S = 20
 RETRY_AFTER_S = 6 * 3600
 BUSY = ("The Bedrok store is busy: another process (probably `bedrok refresh` in a "
@@ -697,7 +714,7 @@ def _cut(total: int, kept: int, first_kept) -> dict:
 
 
 def _get_aligned(series_ids, start, end, transform, index_date, max_rows,
-                 frequency, how, per_id=None) -> dict[str, Any]:
+                 frequency, how, per_id=None, extra=None) -> dict[str, Any]:
     """get_series with `frequency`: every series on one shared calendar."""
     out, frames, notes = [], {}, {}
     for sid in series_ids:
@@ -720,6 +737,24 @@ def _get_aligned(series_ids, start, end, transform, index_date, max_rows,
             "freshness": _freshness(row["series_id"]) if row.get("cache") != licensing.SESSION
             else {"status": "session"},
         })
+    for item in extra or []:
+        # Outside data goes through the same calendar and transform as the
+        # catalog's, after the catalog ids so their colours do not move.
+        sid = f"extra:{item.label}"
+        try:
+            df = pd.DataFrame([{"date": dates.parse(o.date, name="date"), "value": o.value}
+                               for o in item.observations])
+            df, note = transforms_mod.to_frequency(df, item.frequency, frequency, how)
+            df = transforms_mod.apply(df, transform, index_date)
+        except (ToolError, ValueError) as e:
+            out.append({"series_id": sid, "error": str(e)})
+            continue
+        frames[sid] = (df, item.frequency or "daily", note["stepped"])
+        notes[sid] = note
+        out.append({"series_id": sid, "name": item.label, "units": item.units,
+                    "catalog_units": item.units, "transform": transform,
+                    "frequency": item.frequency, "fetched": "supplied by the assistant",
+                    "publisher": item.source, "outside": True, "warnings": []})
     if not frames:
         return {"series": out}
     days, columns = transforms_mod.align(frames, frequency, start=start, end=end)
@@ -729,7 +764,7 @@ def _get_aligned(series_ids, start, end, transform, index_date, max_rows,
     columns = {k: v[keep:] for k, v in columns.items()}
     for entry in out:
         sid = entry["series_id"]
-        if sid not in columns:
+        if sid not in columns or entry.get("outside"):
             continue
         have = [d for d, v in zip(dates_kept, columns[sid]) if v is not None]
         entry["warnings"] = warnings.for_series(entry.get("alias_of") or sid, have[0], have[-1],
@@ -771,6 +806,11 @@ def chart_series(
                           Field(description="a transform per id, overriding `transform` for "
                                             "that id: {'us_cpi_nsa': 'yoy'} beside published "
                                             "rates")] = None,
+    extra: Annotated[list[Outside] | None,
+                     Field(max_length=3, description="up to three series you fetched elsewhere "
+                                                     "(what Bedrok does not carry), each with a "
+                                                     "label, units and source; drawn beside the "
+                                                     "catalog ids and named as outside data")] = None,
 ) -> dict[str, Any]:
     """Use this for every chart: when someone asks to show, plot, chart or
     compare series over time. It returns the data on one calendar (`table`)
@@ -789,16 +829,21 @@ def chart_series(
     footnotes that matter, anything the chart cannot show. No analysis unless
     asked. If `axes.problem` is set, follow it rather than adding a third
     scale; the series it names come back with `drawn: false` and are listed in
-    `not_drawn`. Contributions to growth (gdp_contrib_*, us_gdp_contrib_*)
+    `not_drawn`. What Bedrok does not carry may be drawn beside what it does:
+    pass it as `extra`, with a label, units and the publisher; the source
+    line and a footnote say that part did not come through Bedrok, and it
+    never joins a contribution stack. Contributions to growth (gdp_contrib_*, us_gdp_contrib_*)
     come back with `form: stacked_bars`: stack the parts, positive up and
     negative down, and draw the `total` (its growth rate) as a dot or line on
     the same scale; a footnote says whether the parts add up. The order of `series_ids` sets the scales and the colours: to
     add a series to a chart already drawn, list it after the others."""
     start, end = _span(start, end)
+    if len(series_ids) + len(extra or []) > 7:
+        raise ToolError("a chart takes at most seven series, catalog ids and extra together.")
     if frequency == "auto":
         frequency = _auto_frequency(series_ids)
     got = _get_aligned(series_ids, start, end, transform, index_date, MAX_ROWS, frequency, how,
-                       transforms)
+                       transforms, extra)
     table = got.get("table")
     if not table:
         return got
@@ -806,9 +851,9 @@ def chart_series(
     # Contributions to growth are drawn as stacked bars with the total beside
     # them (session C); percent and percentage points are one dimension, so
     # axes puts them on one scale by itself.
-    parts = [e for e in entries if charting.is_contribution(e)]
-    totals = [e for e in entries if e not in parts and e["catalog_units"] == "percent"] \
-        if parts else []
+    parts = [e for e in entries if charting.is_contribution(e) and not e.get("outside")]
+    totals = [e for e in entries if e not in parts and e["catalog_units"] == "percent"
+              and not e.get("outside")] if parts else []
     total = totals[0] if len(totals) == 1 else None
     placed = charting.axes([(e["series_id"], e["units"]) for e in entries])
     left = set(placed["left"]["series"])
@@ -843,7 +888,8 @@ def chart_series(
         "x": charting.x_labels(days, frequency),
         "source": charting.source_line(
             [(e.get("publisher") or e["series_id"], e.get("license") == licensing.RESTRICTED,
-              str(e.get("fetched", "")).startswith("fetched live")) for e in drawn]),
+              str(e.get("fetched", "")).startswith("fetched live"), bool(e.get("outside")))
+             for e in drawn]),
         "footnotes": charting.footnotes(drawn, table, frequency),
         "layout": charting.LAYOUT,
     }

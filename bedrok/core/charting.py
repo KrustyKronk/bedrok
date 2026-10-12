@@ -183,15 +183,19 @@ def x_labels(dates: list[date], frequency: str) -> dict:
             "tick_every": max(1, math.ceil(n / MAX_TICKS))}
 
 
-def source_line(publishers: list[tuple[str, bool, bool]]) -> str:
-    """[(publisher name, personal use?, fetched live?)] → one line, each
-    publisher once, in order, with its condition when it has one."""
+def source_line(publishers: list[tuple]) -> str:
+    """[(publisher name, personal use?, fetched live?[, outside?])] → one line,
+    each publisher once, in order, with its condition when it has one. An
+    outside publisher is one the assistant fetched itself; the line says so,
+    because the reader must know which part did not come through Bedrok."""
     seen, parts = set(), []
-    for name, personal, live in publishers:
+    for name, personal, live, *rest in publishers:
+        outside = bool(rest and rest[0])
         if name in seen:
             continue
         seen.add(name)
-        cond = [c for c, on in (("personal use only", personal), ("fetched live, not stored", live)) if on]
+        cond = [c for c, on in (("personal use only", personal), ("fetched live, not stored", live),
+                                ("fetched by Claude, not via Bedrok", outside)) if on]
         parts.append(name + (f" ({', '.join(cond)})" if cond else ""))
     return "Source: " + "; ".join(parts) + "." if parts else ""
 
@@ -212,6 +216,10 @@ def footnotes(entries: list[dict], table: dict, frequency: str) -> list[str]:
             line = f"{names[e['series_id']]}, {period}: {(w.get('effect_on_data') or '').strip()}"
             if line not in notes:
                 notes.append(line)
+    for e in entries:
+        if e.get("outside"):
+            notes.append(f"{e.get('name', e['series_id'])}: supplied by the assistant, not from "
+                         f"Bedrok ({e.get('publisher') or 'source not given'}).")
     for sid, stepped in (table.get("stepped") or {}).items():
         if stepped:
             notes.append(f"{names.get(sid, sid)} is published less often than {frequency}; "
