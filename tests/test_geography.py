@@ -16,6 +16,18 @@ def test_a_series_place_comes_from_its_first_or_last_token():
     assert geography.of_series("weo_gdp_growth_us") == "us"
 
 
+def test_family_only_countries_and_the_ecb_have_a_place():
+    """The 2026-10-12 self-test: a stored Turkish HICP was unreachable by
+    "turkey", and "euro area deposit rate" filtered the ECB's rates out."""
+    assert geography.of_series("hicp_yoy_tr") == "tr"
+    assert geography.of_series("hicp_yoy_pl") == "pl"
+    assert geography.of_series("hicp_yoy_ea19") == "ea"
+    assert geography.of_series("hicp_yoy_eea") is None
+    assert geography.of_series("ecb_deposit_rate", "ecb") == "ea"
+    assert geography.in_text("turkey inflation") == ({"tr"}, ["inflation"])
+    assert geography.in_text("is me")[0] == set()       # codes that are words stay words
+
+
 def test_commodities_and_positioning_have_no_place():
     assert geography.of_series("wb_banana_us", "worldbank") is None
     assert geography.of_series("cot_es_net_noncomm", "cftc") is None   # es is the E-mini S&P

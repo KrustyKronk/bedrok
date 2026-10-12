@@ -46,13 +46,47 @@ NAMES = {
     "denmark": "dk", "danish": "dk",
 }
 
+# Places Bedrok carries only as the last token of a broad family (Eurostat's
+# HICP for every European country, `hicp_yoy_tr`). They are not in CODES: no
+# seed id leads with them, and the names test pins CODES to how seed names
+# begin. Without them a stored Turkish series could not be found by "turkey"
+# (the 2026-10-12 self-test).
+FAMILY_CODES = {
+    "al": "Albania", "bg": "Bulgaria", "cy": "Cyprus", "cz": "Czechia", "ee": "Estonia",
+    "ge": "Georgia", "hr": "Croatia", "hu": "Hungary", "is": "Iceland", "lt": "Lithuania",
+    "lu": "Luxembourg", "lv": "Latvia", "me": "Montenegro", "mk": "North Macedonia",
+    "mt": "Malta", "pl": "Poland", "ro": "Romania", "rs": "Serbia", "si": "Slovenia",
+    "sk": "Slovakia", "tr": "Türkiye",
+}
+
+# Their names. Never the bare codes: "is" and "me" are words. Georgia is left
+# out on purpose: it is a US state before it is a country in most questions.
+NAMES.update({
+    "albania": "al", "albanian": "al", "bulgaria": "bg", "bulgarian": "bg",
+    "cyprus": "cy", "cypriot": "cy", "czechia": "cz", "czech": "cz",
+    "estonia": "ee", "estonian": "ee", "croatia": "hr", "croatian": "hr",
+    "hungary": "hu", "hungarian": "hu", "iceland": "is", "icelandic": "is",
+    "lithuania": "lt", "lithuanian": "lt", "luxembourg": "lu", "latvia": "lv",
+    "latvian": "lv", "montenegro": "me", "north macedonia": "mk", "macedonia": "mk",
+    "malta": "mt", "maltese": "mt", "poland": "pl", "polish": "pl", "romania": "ro",
+    "romanian": "ro", "serbia": "rs", "serbian": "rs", "slovenia": "si",
+    "slovenian": "si", "slovakia": "sk", "slovak": "sk", "turkey": "tr",
+    "turkish": "tr", "turkiye": "tr",
+})
+
 # Where an id suffix spells a place differently: OECD's ISO-3 codes and
 # Eurostat's euro-area and EU aggregates.
 _SUFFIX = {"usa": "us", "deu": "de", "fra": "fr", "ita": "it", "esp": "es", "gbr": "uk",
-           "jpn": "jp", "chn": "cn", "ea20": "ea", "ea21": "ea", "eu27": "eu", "cn": "cn"}
+           "jpn": "jp", "chn": "cn", "ea19": "ea", "ea20": "ea", "ea21": "ea", "eu27": "eu",
+           "cn": "cn"}
+
+# Where an id prefix is an institution rather than a place: the ECB's rates are
+# the euro area's, and a search for "euro area deposit rate" must find them.
+_PREFIX = {"ecb": "ea"}
 
 # ISO 3166 alpha-2 where it differs from the id code (the warnings carry ISO).
-ISO2 = {**{c: c.upper() for c in CODES}, "uk": "GB", "el": "GR", "ea": "", "eu": ""}
+ISO2 = {**{c: c.upper() for c in CODES}, **{c: c.upper() for c in FAMILY_CODES},
+        "uk": "GB", "el": "GR", "ea": "", "eu": ""}
 
 # Sources whose series are not about a country.
 _PLACELESS_SOURCES = {"worldbank", "cftc"}
@@ -66,11 +100,13 @@ def of_series(series_id: str, source: str | None = None) -> str | None:
     first = sid.split("_", 1)[0]
     if first in CODES:
         return first
+    if first in _PREFIX:
+        return _PREFIX[first]
     sid = re.sub(r"_eu27_2020$", "_eu27", sid)
     last = sid.rsplit("_", 1)[-1]
     if last in _SUFFIX:
         return _SUFFIX[last]
-    return last if last in CODES and "_" in sid else None
+    return last if (last in CODES or last in FAMILY_CODES) and "_" in sid else None
 
 
 def in_text(text: str) -> tuple[set[str], list[str]]:

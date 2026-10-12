@@ -261,6 +261,30 @@ def test_search_answers_with_warnings_for_a_country_bedrok_does_not_carry(srv, m
     assert r["matches"] == [] and [w["warning_id"] for w in r["warnings"]] == ["ar_cpi"]
 
 
+def test_ordinary_words_and_family_countries_find_their_series(srv):
+    """The 2026-10-12 self-test: "trade balance" returned no series because a
+    warning's country mentioned "trade"; "turkey inflation" found nothing
+    although Bedrok stores Türkiye's HICP. Against the real warnings seed."""
+    con = duckdb.connect(str(config.DB_PATH))
+    store.upsert_macro_catalog(con, pd.DataFrame([
+            {"series_id": "us_trade_balance", "source": "census", "source_code": "x",
+             "name": "US trade balance goods and services", "frequency": "monthly",
+             "units": "millions USD"},
+            {"series_id": "hicp_yoy_tr", "source": "eurostat", "source_code": "x",
+             "name": "HICP annual rate — Türkiye", "frequency": "monthly", "units": "percent"},
+            {"series_id": "ecb_deposit_rate", "source": "ecb", "source_code": "x",
+             "name": "ECB deposit facility rate", "frequency": "event", "units": "percent"}]))
+    store.close_checkpointed(con)
+
+    def found(text):
+        r = _call("search_series", {"text": text}).structured_content
+        return [m["series_id"] for m in r["matches"]], [w["warning_id"] for w in r["warnings"]]
+    assert found("trade balance") == (["us_trade_balance"], [])
+    series, warned = found("turkey inflation")
+    assert series == ["hicp_yoy_tr"] and "tr_cpi_item_prices_2022" in warned
+    assert "ecb_deposit_rate" in found("euro area deposit rate")[0]
+
+
 def test_series_of_different_frequencies_come_back_on_one_calendar(srv):
     """Session 8: the assistant asks for a frequency instead of lining rows up."""
     r = _call("get_series", {"series_ids": ["us_vix", "us_cpi"], "frequency": "weekly"}).structured_content
