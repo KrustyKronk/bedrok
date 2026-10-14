@@ -443,7 +443,9 @@ def search_series(
         # Adjacent words found together in the name ("high yield", "policy rate")
         # outrank the same words scattered across a different series.
         total += sum(3 for a, b in zip(words, words[1:]) if f"{a} {b}" in name)
-        return total + (10 if "_".join(words) == sid else 0)
+        total += 10 if "_".join(words) == sid else 0
+        # A headline breaks a tie with its near twin, never a real difference.
+        return total + (1 if total and sid in aliases.HEADLINES else 0)
 
     def ranked(frame):
         if frame.empty:

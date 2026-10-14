@@ -203,7 +203,7 @@ Bedrok is wired to 31 publishers. 25 need no key at all; the others take a free 
 - `us_ci_loans` — US commercial and industrial loans
 - `us_cc_delinquency` — US credit-card delinquency rate
 - `us_mortgage_delinquency` — US single-family mortgage delinquency rate
-- `us_fed_balance_sheet` — US Federal Reserve total assets (H.4.1)
+- `us_fed_balance_sheet` — US Federal Reserve balance sheet, total assets (H.4.1)
 - `us_bank_reserves` — US reserve balances with Federal Reserve Banks
 - `us_tga` — US Treasury general account at the Fed
 - `us_10y_real` — US 10-year TIPS real yield

@@ -54,7 +54,7 @@ us_bank_credit,fedboard,H8:B1001NCBA:billions,US bank credit all commercial bank
 us_ci_loans,fedboard,H8:B1023NCBAM:billions,US commercial and industrial loans,monthly,billions USD,the deepest-history credit aggregate (1947+),90,public_domain,store
 us_cc_delinquency,fedboard,CHGDEL:STFBQDCC%STFBAILCC_XEOP_MA.Q,US credit-card delinquency rate,quarterly,percent,household credit stress,260,public_domain,store
 us_mortgage_delinquency,fedboard,CHGDEL:STFBQDSS%STFBAILSS_XEOP_XDO_MA.Q,US single-family mortgage delinquency rate,quarterly,percent,housing credit stress,260,public_domain,store
-us_fed_balance_sheet,fedboard,H41:RESPPMA_N.WW,US Federal Reserve total assets (H.4.1),weekly,millions USD,QE/QT stance; electronic history starts 2002-12,21,public_domain,store
+us_fed_balance_sheet,fedboard,H41:RESPPMA_N.WW,"US Federal Reserve balance sheet, total assets (H.4.1)",weekly,millions USD,QE/QT stance; electronic history starts 2002-12,21,public_domain,store
 us_bank_reserves,fedboard,H41:RESH4R_XAW_N.WW,US reserve balances with Federal Reserve Banks,weekly,millions USD,the binding constraint late in QT,21,public_domain,store
 us_tga,fedboard,H41:RESPPLLDT_XAW_N.WW,US Treasury general account at the Fed,weekly,millions USD,fiscal cash swings drain and add system liquidity,21,public_domain,store
 us_on_rrp,nyfed,rrp_tsy,US Fed overnight reverse repo (Treasury securities),daily,billions USD,the liquidity buffer QT drains first,10,attribution,store

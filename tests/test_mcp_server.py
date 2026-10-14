@@ -588,3 +588,24 @@ def test_a_money_level_percentile_carries_its_caveat(srv):
     store.close_checkpointed(con)
     assert "grows with the economy" in _call("percentile", {"series_id": "us_m2"}).structured_content["caveat"]
     assert "caveat" not in _call("percentile", {"series_id": "us_cpi"}).structured_content
+
+
+def _seed_rows(*ids):
+    """Catalog rows exactly as the seed has them, for tests about wording."""
+    seed = pd.read_csv(pipeline.CATALOG_CSV, dtype=str).set_index("series_id")
+    con = duckdb.connect(str(config.DB_PATH))
+    store.upsert_macro_catalog(con, seed.loc[list(ids)].reset_index())
+    store.close_checkpointed(con)
+
+
+def test_the_headline_wins_a_tie_and_the_fed_balance_sheet_is_found_by_name(srv):
+    """Session D2: the adjusted CPI beat the headline on the alphabet, and the
+    BIS policy rates beat the Fed's balance sheet on the words in their names."""
+    _seed_rows("us_cpi", "us_cpi_nsa", "us_fed_balance_sheet", "au_policy_rate",
+               "ca_policy_rate")
+
+    def ids(text):
+        return [m["series_id"] for m in
+                _call("search_series", {"text": text}).structured_content["matches"]]
+    assert ids("us cpi")[:2] == ["us_cpi_nsa", "us_cpi"]
+    assert ids("central bank balance sheet")[0] == "us_fed_balance_sheet"

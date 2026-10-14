@@ -37,3 +37,10 @@ ALIASES: dict[str, str] = {
 
 def canonical(series_id: str) -> str:
     return ALIASES.get(series_id, series_id)
+
+
+# Series that are the published headline among near-identical rows: on a tie in
+# search they come first (session D2). BLS computes the annual CPI rate it
+# publishes from the unadjusted index; the adjusted one tied with it on every
+# word of "us cpi" and won on the alphabet.
+HEADLINES: frozenset[str] = frozenset({"us_cpi_nsa"})
