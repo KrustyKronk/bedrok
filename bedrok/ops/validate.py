@@ -121,6 +121,8 @@ def staleness_report(con) -> int:
     summaries = pipeline.bulk_summary_specs()
     bulk_clause = " ".join(
         f"AND mc.series_id NOT LIKE '{prefix}%'" for _, prefix, _ in summaries)
+    # The FX pairs' catalog rows mirror fx_rates, reported once, below.
+    bulk_clause += pipeline._NOT_FX.replace("series_id", "mc.series_id")
     rows = con.execute(
         # Forecast observations (IMF WEO to 2031) never count as fresh data.
         "SELECT mc.series_id, mc.frequency, mc.staleness_days, "
@@ -160,9 +162,10 @@ def staleness_report(con) -> int:
     for pair, hi in con.execute(
             "SELECT pair, max(date) FROM fx_rates GROUP BY pair").fetchall():
         age = (today - hi).days
-        if age > 14:
+        if age > pipeline.FX_ALLOWANCE_DAYS:
             problems += 1
-            print(f"  WARN  {pair:<24} last rate {hi} ({age}d old, allowance 14d)")
+            print(f"  WARN  {pair:<24} last rate {hi} ({age}d old, "
+                  f"allowance {pipeline.FX_ALLOWANCE_DAYS}d)")
 
     if problems == 0:
         print("  all series fresh within allowance")

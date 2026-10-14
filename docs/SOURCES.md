@@ -414,6 +414,12 @@ Bedrok is wired to 31 publishers. 25 need no key at all; the others take a free 
 
 These ids still answer, with `alias_of` naming the one Bedrok keeps: the same number from the same dataset is held once.
 
+- `EURGBP` → `eurgbp`
+- `EURUSD` → `eurusd`
+- `GBPEUR` → `gbpeur`
+- `GBPUSD` → `gbpusd`
+- `USDEUR` → `usdeur`
+- `USDGBP` → `usdgbp`
 - `cons_conf_ea20` → `cons_conf_ea21`
 - `esi_ea20` → `esi_ea21`
 - `gdp_annual_uk` → `uk_gdp_annual`

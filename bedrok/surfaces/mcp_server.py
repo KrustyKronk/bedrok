@@ -390,6 +390,8 @@ def search_series(
     as a word. Ids follow a pattern: a geography prefix (us_, ea_, uk_, jp_,
     de_, …), then the measure — e.g. us_10y, ea_hicp_yoy, jp_policy_rate; the
     bulk families end with the geography instead (hicp_core_es, gdp_qoq_de).
+    Exchange rates are series too: eurusd, eurgbp, gbpusd and their inverses
+    (usdeur, gbpeur, usdgbp), each in quote currency per 1 unit of the base.
     Empty text lists everything (with source/frequency filters); to walk the
     whole catalog or get counts, use list_series. Returns the best matches with
     their frequency, units, whether they are stored or fetched live, and their
@@ -444,7 +446,12 @@ def search_series(
         return total + (10 if "_".join(words) == sid else 0)
 
     def ranked(frame):
-        frame = frame.assign(score=frame.apply(score, axis=1)) if not frame.empty else frame
+        if frame.empty:
+            # A place or filter that leaves nothing (session D2: this raised
+            # KeyError 'score', which reached the assistant as "Error
+            # executing tool").
+            return frame
+        frame = frame.assign(score=frame.apply(score, axis=1))
         out = frame[frame["score"] > 0].sort_values(["score", "series_id"], ascending=[False, True]) \
             if words else frame.sort_values("series_id")
         # Contributions to growth are 180 rows that would bury the headline in
@@ -605,7 +612,9 @@ def _related(con, series_id: str, row: dict) -> list[dict]:
     it is a `part` of the series (what it is made of) or a `companion`."""
     parts = _parts(series_id, row)
     ids = parts + [d["series_id"] for d in derived.DERIVED if series_id in d["inputs"]]
-    ids += re.findall(r"\b[a-z][a-z0-9]*_[a-z0-9_]+\b", row.get("notes") or "")
+    notes = row.get("notes") or ""
+    ids += re.findall(r"\b[a-z][a-z0-9]*_[a-z0-9_]+\b", notes)
+    ids += [i for i in pipeline.FX_IDS if re.search(rf"\b{i}\b", notes)]  # no underscore
     ids = [i for i in dict.fromkeys(ids) if i != series_id]
     if not ids:
         return []
@@ -1108,7 +1117,8 @@ def query(
     anything the other tools do not cover. Tables: macro_catalog (series_id,
     source, source_code, name, frequency, units, notes, staleness_days, license,
     cache), macro_series (series_id, date, value), fx_rates (pair, date, rate,
-    source); view all_series (kind, series_id, date, value). One statement;
+    source); view all_series (kind, series_id, date, value), where a pair
+    shows twice: kind 'fx' as EURUSD, kind 'macro' as eurusd. One statement;
     files, URLs and extensions are disabled. Session-only series (cache =
     'session') are never in the store, so SQL cannot see them. DuckDB keeps
     `first` and `last` as function names: alias a column `AS first_d`, never
