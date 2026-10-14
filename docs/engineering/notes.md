@@ -646,6 +646,31 @@ found, and why each fix has the shape it has:
   the old attribution said. The broad set loops over the API response, so it
   filters by `pipeline.REUSE_GEOS`; Kosovo is outside and retired.
 
+**Discovery and catalog (session D2, 2026-10-14).**
+- *The FX pairs are mirrored, not branched.* `sync_fx` writes each pair to
+  `fx_rates` (what the engines and `bedrok pctile EURUSD` read) and copies
+  it to `macro_series` under the lower-case id, with a static catalog row.
+  The macro stage must never fetch those rows: `_NOT_FX` guards
+  `sync_macro` and `per_series_catalog`. The capitals are aliases, and
+  `all_series` shows a pair twice, once per kind. An inverse is credited to
+  the publisher of the rate it inverts, so `_terms` needs no FX case.
+- *A pair id has no underscore,* so the notes regex `_related` uses never
+  saw one; the six ids are matched by name.
+- *Stage reports name rows three ways.* A series id (`sync_macro`, the
+  per-member rows of every bulk stage, every derived series), a family
+  label when the one download fails (`EUROSTAT_BULK_SETS` labels,
+  `hicp_europe_bulk`, `worldbank_pink_sheet`, `cftc_cot`), or the pair in
+  capitals (`sync_fx`). Filtering a report on "not a catalog id" would let
+  another geography's dead-geo skip rows through; `_FAMILY_ROWS` lists the
+  labels instead.
+- *An empty frame has no `score` column.* A search whose place or filter
+  left nothing raised KeyError, read as "Error executing tool".
+- *A covered place needs a concept word for its warnings;* an uncovered one
+  does not, because there the warning is the whole answer.
+- *Two Bedrok servers can be registered at once* (the cold-session test saw
+  `mcp__bedrok__*` and `mcp__Bedrok__*` with different schemas): a session
+  may pick the older one. Which is which is an owner-side question.
+
 **Chart mechanics (session D1, 2026-10-12).**
 - *A scale is a dimension, not a string.* `units.dimension` maps every
   percentage-like unit to "rate" and each index base to its own; `axes`
