@@ -47,12 +47,14 @@ import pandas as pd
 from mcp.server import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from bedrok.core import aliases, charting, config, dates, licensing, sources, store, warnings
+from bedrok.core import units as units_vocab
 from bedrok.core import geography as geo
 from bedrok.engines import pctile
-from bedrok.ingest import derived, live, pipeline, transforms
+from bedrok.ingest import derived, live, pipeline
+from bedrok.ingest import transforms as transforms_mod
 from bedrok.ops import docs, freshness
 
 log = logging.getLogger("bedrok.mcp")
@@ -83,7 +85,9 @@ Keep answers short. A request to show or plot something gets the chart and at
 most three short lines: how recent the data is, the footnotes that matter, and
 anything the chart cannot show. Warnings are always said. No analysis unless
 asked; when asked, give it fully. When you quote a level, say where it sits in
-its own history with percentile, unless the reader only asked for a chart.
+its own history with percentile, unless the reader only asked for a chart; a
+level in money terms (a deficit in dollars, M2) grows with the economy, so rank
+its ratio to GDP or its growth instead, or say so beside its percentile.
 
 Rules: quote a percentile only with its sample (start, end, n). Bedrok
 measures and contextualises; it never gives investment advice or buy/sell
@@ -106,6 +110,24 @@ def _version() -> str:
 server = MCPServer(name="bedrok", instructions=INSTRUCTIONS, version=_version())
 
 MAX_ROWS = 1000
+_TRANSFORMS = Literal["level", "yoy", "mom3_ann", "index_to"]
+
+
+class Obs(BaseModel):
+    date: str
+    value: float | None = None
+
+
+class Outside(BaseModel):
+    """A series the assistant fetched itself, to draw beside Bedrok's in the
+    house style. Bedrok does not stand in the way of what it does not carry
+    (the owner, 2026-10-12); it labels it. The label and the source are what
+    the reader sees, so both are required."""
+    label: str = Field(min_length=1, max_length=120, description="what the series is, as the legend shows it")
+    units: str = Field(min_length=1, max_length=60, description="in Bedrok's words: 'percent', 'USD per barrel', 'index 2015=100'")
+    source: str = Field(min_length=1, max_length=120, description="the publisher, as the source line names it")
+    frequency: Literal["daily", "weekly", "monthly", "quarterly", "annual", "event"] | None = None
+    observations: list[Obs] = Field(min_length=1, max_length=5000)
 LOCK_WAIT_S = 20
 RETRY_AFTER_S = 6 * 3600
 BUSY = ("The Bedrok store is busy: another process (probably `bedrok refresh` in a "
@@ -563,12 +585,26 @@ def _gdp_family(series_id: str) -> list[str]:
     return []
 
 
+def _parts(series_id: str, row: dict) -> list[str]:
+    """What a series is made of: a derived series' inputs, a GDP total's
+    parts by expenditure, and the ids its notes name after "parts:". These
+    are what `with_related` fetches alongside (item 17)."""
+    ids = _derived_inputs(series_id) + _gdp_family(series_id)
+    notes = row.get("notes") or ""
+    if "parts:" in notes.lower():
+        # The sentence after "parts:", up to its full stop or semicolon: a
+        # "see also" that follows is a companion, not a part.
+        clause = re.split(r"[.;]", notes.split("arts:", 1)[1], maxsplit=1)[0]
+        ids += re.findall(r"\b[a-z][a-z0-9]*_[a-z0-9_]+\b", clause)
+    return [i for i in dict.fromkeys(ids) if i != series_id]
+
+
 def _related(con, series_id: str, row: dict) -> list[dict]:
     """Series computed from this one, this one's inputs, ids its notes name,
-    and a GDP total's parts by expenditure (and theirs)."""
-    ids = [d["series_id"] for d in derived.DERIVED if series_id in d["inputs"]]
-    ids += _gdp_family(series_id)
-    ids += _derived_inputs(series_id)
+    and a GDP total's parts by expenditure (and theirs). Each says whether
+    it is a `part` of the series (what it is made of) or a `companion`."""
+    parts = _parts(series_id, row)
+    ids = parts + [d["series_id"] for d in derived.DERIVED if series_id in d["inputs"]]
     ids += re.findall(r"\b[a-z][a-z0-9]*_[a-z0-9_]+\b", row.get("notes") or "")
     ids = [i for i in dict.fromkeys(ids) if i != series_id]
     if not ids:
@@ -576,7 +612,24 @@ def _related(con, series_id: str, row: dict) -> list[dict]:
     ph = ", ".join("?" for _ in ids)
     found = dict(con.execute(
         f"SELECT series_id, name FROM macro_catalog WHERE series_id IN ({ph})", ids).fetchall())
-    return [{"series_id": i, "name": found[i]} for i in ids if i in found]
+    return [{"series_id": i, "name": found[i], "role": "part" if i in parts else "companion"}
+            for i in ids if i in found]
+
+
+def _with_parts(series_ids: list[str], cap: int) -> tuple[list[str], dict, list[str]]:
+    """The ids asked for plus each one's parts, deduped and cut at `cap`:
+    (ids, {id: [parts added]}, dropped)."""
+    out, added = list(series_ids), {}
+    for sid in series_ids:
+        try:
+            row = _find(sid)
+        except ToolError:
+            continue
+        new = [p for p in _parts(row["series_id"], row) if p not in out]
+        if new:
+            added[sid] = new
+            out += new
+    return out[:cap], added, out[cap:]
 
 
 @server.tool(annotations=READ_FETCHING)
@@ -588,16 +641,25 @@ def get_series(
     transform: Literal["level", "yoy", "mom3_ann", "index_to"] = "level",
     index_date: Annotated[str | None, Field(description="for index_to: the date set to 100")] = None,
     max_rows: Annotated[int, Field(ge=1, le=MAX_ROWS)] = 300,
-    frequency: Annotated[Literal["native", "weekly", "monthly", "quarterly", "annual"],
+    frequency: Annotated[Literal["native", "daily", "weekly", "monthly", "quarterly", "annual"],
                          Field(description="put every series on this calendar; "
                                            "native = as published")] = "native",
     how: Annotated[Literal["last", "mean", "sum", "first"] | None,
                    Field(description="how a faster series becomes one value per period; "
                                      "default: last for weekly, mean otherwise")] = None,
+    transforms: Annotated[dict[str, _TRANSFORMS] | None,
+                          Field(description="a transform per id, overriding `transform` for "
+                                            "that id: {'us_cpi_nsa': 'yoy'} beside published "
+                                            "rates")] = None,
+    with_related: Annotated[bool, Field(description="also fetch what each series is made of "
+                                                    "(a yield's real yield, breakeven and term "
+                                                    "premium; growth's parts), up to five in all")] = False,
 ) -> dict[str, Any]:
     """Observations for up to five series, newest last. transform: level (as
     published), yoy (% change on a year earlier, by date), mom3_ann (3-month
-    change annualised), index_to (rebased to 100 at index_date). A stored series
+    change annualised), index_to (rebased to 100 at index_date); `transforms`
+    sets one per id, so an index level charted as a rate can sit beside a
+    published rate. A stored series
     that is stale or empty is re-fetched from its publisher first; a
     session-only series is fetched live and not stored — `fetched` says which.
 
@@ -617,14 +679,20 @@ def get_series(
     When more rows match than max_rows, the most recent are kept and `cut`
     says how many of the oldest went; narrow with start, or use a frequency."""
     start, end = _span(start, end)
+    expanded = {}
+    if with_related:
+        series_ids, added, dropped = _with_parts(series_ids, 5)
+        expanded = {"expanded_from": added, "dropped": dropped}
     if frequency != "native":
-        return _get_aligned(series_ids, start, end, transform, index_date, max_rows,
-                            frequency, how)
+        return {**_get_aligned(series_ids, start, end, transform, index_date, max_rows,
+                               frequency, how, transforms), **expanded}
     out = []
     for sid in series_ids:
+        t = (transforms or {}).get(sid, transform)
         try:
             df, fetched, row = _load(sid)
-            df = transforms.apply(df, transform, index_date)
+            df = transforms_mod.apply(df, t, index_date)
+            units = _units(row, t, index_date)
         except (ToolError, ValueError) as e:
             out.append({"series_id": sid, "error": str(e)})
             continue
@@ -636,8 +704,8 @@ def get_series(
         df = df.tail(max_rows)
         out.append({
             "series_id": sid, **_alias(row), "name": row["name"],
-            "units": _units(row, transform, index_date),
-            "transform": transform, "frequency": row["frequency"], "fetched": fetched,
+            "units": units, "catalog_units": row["units"],
+            "transform": t, "frequency": row["frequency"], "fetched": fetched,
             "observations": [{"date": _iso(d), "value": _iso(float(v))}
                              for d, v in zip(df["date"], df["value"])],
             "total_rows": total, "truncated": total > len(df),
@@ -649,7 +717,7 @@ def get_series(
             "freshness": _freshness(row["series_id"]) if row.get("cache") != licensing.SESSION
             else {"status": "session"},
         })
-    return {"series": out}
+    return {"series": out, **expanded}
 
 
 def _span(start: str | None, end: str | None) -> tuple:
@@ -666,10 +734,15 @@ def _span(start: str | None, end: str | None) -> tuple:
     return s, e
 
 
-def _units(row: dict, transform: str, index_date) -> str:
-    return row["units"] if transform == "level" else \
-        {"yoy": "percent change on a year earlier", "mom3_ann": "percent, annualised",
-         "index_to": f"index {index_date}=100"}[transform]
+def _units(row: dict, transform: str, index_date, frequency: str | None = None) -> str:
+    if transform == "level":
+        return row["units"]
+    if transform == "index_to":
+        when = dates.parse(index_date, name="index_date")
+        return charting.index_base_label(when, frequency or row.get("frequency"))
+    return {"yoy": "percent change on a year earlier",
+            "mom3_ann": "percent, annualised"}[transform]
+
 
 
 def _cut(total: int, kept: int, first_kept) -> dict:
@@ -682,14 +755,16 @@ def _cut(total: int, kept: int, first_kept) -> dict:
 
 
 def _get_aligned(series_ids, start, end, transform, index_date, max_rows,
-                 frequency, how) -> dict[str, Any]:
+                 frequency, how, per_id=None, extra=None) -> dict[str, Any]:
     """get_series with `frequency`: every series on one shared calendar."""
     out, frames, notes = [], {}, {}
     for sid in series_ids:
+        t = (per_id or {}).get(sid, transform)
         try:
             df, fetched, row = _load(sid)
-            df, note = transforms.to_frequency(df, row.get("frequency"), frequency, how)
-            df = transforms.apply(df, transform, index_date)
+            df, note = transforms_mod.to_frequency(df, row.get("frequency"), frequency, how)
+            df = transforms_mod.apply(df, t, index_date)
+            units = _units(row, t, index_date, frequency)
         except (ToolError, ValueError) as e:
             out.append({"series_id": sid, "error": str(e)})
             continue
@@ -697,24 +772,42 @@ def _get_aligned(series_ids, start, end, transform, index_date, max_rows,
         notes[sid] = note
         out.append({
             "series_id": sid, **_alias(row), "name": row["name"],
-            "units": _units(row, transform, index_date),
-            "transform": transform, "frequency": row["frequency"], "fetched": fetched,
+            "units": units, "catalog_units": row["units"],
+            "transform": t, "frequency": row["frequency"], "fetched": fetched,
             **_terms_for(row),
             "freshness": _freshness(row["series_id"]) if row.get("cache") != licensing.SESSION
             else {"status": "session"},
         })
+    for item in extra or []:
+        # Outside data goes through the same calendar and transform as the
+        # catalog's, after the catalog ids so their colours do not move.
+        sid = f"extra:{item.label}"
+        try:
+            df = pd.DataFrame([{"date": dates.parse(o.date, name="date"), "value": o.value}
+                               for o in item.observations])
+            df, note = transforms_mod.to_frequency(df, item.frequency, frequency, how)
+            df = transforms_mod.apply(df, transform, index_date)
+        except (ToolError, ValueError) as e:
+            out.append({"series_id": sid, "error": str(e)})
+            continue
+        frames[sid] = (df, item.frequency or "daily", note["stepped"])
+        notes[sid] = note
+        out.append({"series_id": sid, "name": item.label, "units": item.units,
+                    "catalog_units": item.units, "transform": transform,
+                    "frequency": item.frequency, "fetched": "supplied by the assistant",
+                    "publisher": item.source, "outside": True, "warnings": []})
     if not frames:
         return {"series": out}
-    dates, columns = transforms.align(frames, frequency, start=start, end=end)
-    total = len(dates)
+    days, columns = transforms_mod.align(frames, frequency, start=start, end=end)
+    total = len(days)
     keep = max(total - max_rows, 0)
-    dates = dates[keep:]
+    dates_kept = days[keep:]
     columns = {k: v[keep:] for k, v in columns.items()}
     for entry in out:
         sid = entry["series_id"]
-        if sid not in columns:
+        if sid not in columns or entry.get("outside"):
             continue
-        have = [d for d, v in zip(dates, columns[sid]) if v is not None]
+        have = [d for d, v in zip(dates_kept, columns[sid]) if v is not None]
         entry["warnings"] = warnings.for_series(entry.get("alias_of") or sid, have[0], have[-1],
                                                 loud_only=True) \
             if have else []
@@ -723,14 +816,16 @@ def _get_aligned(series_ids, start, end, transform, index_date, max_rows,
         # Only when something was actually aggregated: a monthly series charted
         # monthly was not averaged, and saying so would be false.
         "how": next((n["how"] for n in notes.values() if n["how"]), None),
-        "dates": [_iso(d) for d in dates],
+        "dates": [_iso(d) for d in dates_kept],
         "columns": {k: [_iso(x) for x in v] for k, v in columns.items()},
         "stepped": {k: n["stepped"] for k, n in notes.items()},
         "partial_last": {k: n["partial_last"] for k, n in notes.items()},
         "partial": {k: n["partial"] for k, n in notes.items() if n.get("partial")},
+        "carried": {k: n["carried"] for k, n in notes.items() if n.get("carried")},
+        "ended_early": {k: n["ended_early"] for k, n in notes.items() if n.get("ended_early")},
         "incomplete": {k: n["incomplete"] for k, n in notes.items() if n["incomplete"]},
-        "total_rows": total, "truncated": total > len(dates),
-        **_cut(total, len(dates), dates[0] if dates else None),
+        "total_rows": total, "truncated": total > len(dates_kept),
+        **_cut(total, len(dates_kept), dates_kept[0] if dates_kept else None),
     }
     return {"series": out, "table": table}
 
@@ -744,12 +839,28 @@ def chart_series(
     end: Annotated[str | None, Field(description="last date: YYYY, YYYY-MM or YYYY-MM-DD")] = None,
     transform: Literal["level", "yoy", "mom3_ann", "index_to"] = "level",
     index_date: Annotated[str | None, Field(description="for index_to: the date set to 100")] = None,
-    frequency: Annotated[Literal["auto", "weekly", "monthly", "quarterly", "annual"],
-                         Field(description="the chart's calendar; auto = weekly for daily data, "
+    frequency: Annotated[Literal["auto", "daily", "weekly", "monthly", "quarterly", "annual"],
+                         Field(description="the chart's calendar; auto = daily for daily data "
+                                           "over up to three years, weekly beyond that, "
                                            "otherwise the fastest series' own")] = "auto",
     how: Annotated[Literal["last", "mean", "sum", "first"] | None,
                    Field(description="how a faster series becomes one value per period")] = None,
     title: Annotated[str | None, Field(description="your title; Bedrok suggests one if empty")] = None,
+    transforms: Annotated[dict[str, _TRANSFORMS] | None,
+                          Field(description="a transform per id, overriding `transform` for "
+                                            "that id: {'us_cpi_nsa': 'yoy'} beside published "
+                                            "rates")] = None,
+    extra: Annotated[list[Outside] | None,
+                     Field(max_length=3, description="up to three series you fetched elsewhere "
+                                                     "(what Bedrok does not carry), each with a "
+                                                     "label, units and source; drawn beside the "
+                                                     "catalog ids and named as outside data")] = None,
+    with_related: Annotated[bool, Field(description="also draw what each series is made of "
+                                                    "(a yield's real yield, breakeven and term "
+                                                    "premium; growth's parts), up to seven in all")] = False,
+    at: Annotated[str | None, Field(description="one date instead of a span: a bar per series "
+                                                "with its last value on or before this date "
+                                                "(the debt of thirteen countries at Q1 2026)")] = None,
 ) -> dict[str, Any]:
     """Use this for every chart: when someone asks to show, plot, chart or
     compare series over time. It returns the data on one calendar (`table`)
@@ -768,28 +879,39 @@ def chart_series(
     footnotes that matter, anything the chart cannot show. No analysis unless
     asked. If `axes.problem` is set, follow it rather than adding a third
     scale; the series it names come back with `drawn: false` and are listed in
-    `not_drawn`. Contributions to growth (gdp_contrib_*, us_gdp_contrib_*)
+    `not_drawn`. What Bedrok does not carry may be drawn beside what it does:
+    pass it as `extra`, with a label, units and the publisher; the source
+    line and a footnote say that part did not come through Bedrok, and it
+    never joins a contribution stack. Contributions to growth (gdp_contrib_*, us_gdp_contrib_*)
     come back with `form: stacked_bars`: stack the parts, positive up and
     negative down, and draw the `total` (its growth rate) as a dot or line on
     the same scale; a footnote says whether the parts add up. The order of `series_ids` sets the scales and the colours: to
     add a series to a chart already drawn, list it after the others."""
     start, end = _span(start, end)
+    expanded = {}
+    if with_related:
+        series_ids, added, dropped = _with_parts(series_ids, 7 - len(extra or []))
+        expanded = {"expanded_from": added, "dropped": dropped}
+    if len(series_ids) + len(extra or []) > 7:
+        raise ToolError("a chart takes at most seven series, catalog ids and extra together.")
+    if at is not None:
+        return {**_chart_at(series_ids, at, transform, index_date, transforms, title), **expanded}
     if frequency == "auto":
-        frequency = _auto_frequency(series_ids)
-    got = _get_aligned(series_ids, start, end, transform, index_date, MAX_ROWS, frequency, how)
+        frequency = _auto_frequency(series_ids, start)
+    got = _get_aligned(series_ids, start, end, transform, index_date, MAX_ROWS, frequency, how,
+                       transforms, extra)
     table = got.get("table")
     if not table:
         return got
     entries = [e for e in got["series"] if "error" not in e]
     # Contributions to growth are drawn as stacked bars with the total beside
-    # them on one scale: the parts are in percentage points of the total's
-    # percent, so for this form the two units are one scale (session C).
-    parts = [e for e in entries if charting.is_contribution(e)]
-    totals = [e for e in entries if e not in parts and e["units"] == "percent"] if parts else []
+    # them (session C); percent and percentage points are one dimension, so
+    # axes puts them on one scale by itself.
+    parts = [e for e in entries if charting.is_contribution(e) and not e.get("outside")]
+    totals = [e for e in entries if e not in parts and e["catalog_units"] == "percent"
+              and not e.get("outside")] if parts else []
     total = totals[0] if len(totals) == 1 else None
-    stacked = {e["series_id"] for e in parts} | ({total["series_id"]} if total else set())
-    placed = charting.axes([(e["series_id"], "percentage points" if e["series_id"] in stacked
-                             else e["units"]) for e in entries])
+    placed = charting.axes([(e["series_id"], e["units"]) for e in entries])
     left = set(placed["left"]["series"])
     right = set((placed.get("right") or {}).get("series", []))
     # A series a third unit left off both scales is not drawn, and nothing
@@ -802,7 +924,10 @@ def chart_series(
     got["chart"] = {
         # A breakdown is titled by what it breaks down, not by its first part.
         "title": title or (f"{total['name']}, by contribution" if parts and total
-                           else charting.title_suggestion([e["name"] for e in drawn])),
+                           else charting.title_suggestion(
+                               [e["name"] for e in drawn],
+                               transform if all(e["transform"] == transform for e in drawn)
+                               else "level")),
         "subtitle": charting.subtitle(placed, frequency, table["how"],
                                       have[0] if have else None, have[-1] if have else None),
         "axes": placed,
@@ -822,7 +947,8 @@ def chart_series(
         "x": charting.x_labels(days, frequency),
         "source": charting.source_line(
             [(e.get("publisher") or e["series_id"], e.get("license") == licensing.RESTRICTED,
-              str(e.get("fetched", "")).startswith("fetched live")) for e in drawn]),
+              str(e.get("fetched", "")).startswith("fetched live"), bool(e.get("outside")))
+             for e in drawn]),
         "footnotes": charting.footnotes(drawn, table, frequency),
         "layout": charting.LAYOUT,
     }
@@ -831,23 +957,93 @@ def chart_series(
                                   table["columns"][total["series_id"]], table["dates"])
         if note:
             got["chart"]["footnotes"].append(note)
+    got.update(expanded)
     return got
 
 
-def _auto_frequency(series_ids: list[str]) -> str:
-    """The calendar a chart gets when none is asked for: weekly for anything
-    daily (a daily line over years is noise and a lot of rows), otherwise the
-    fastest series' own frequency, so nothing slower is averaged away."""
+def _chart_at(series_ids, at, transform, index_date, per_id, title) -> dict[str, Any]:
+    """Many series at one date: a bar each, the last value on or before `at`.
+    The cross-section the house style allowed ("bars only when every series
+    has a single period") but no call could produce (the self-test's debt
+    ranking was drawn by hand)."""
+    try:
+        when = dates.parse(at, name="at")
+    except ValueError as err:
+        raise ToolError(str(err)) from None
+    out, rows = [], []
+    for sid in series_ids:
+        t = (per_id or {}).get(sid, transform)
+        try:
+            df, fetched, row = _load(sid)
+            df = transforms_mod.apply(df, t, index_date)
+            units = _units(row, t, index_date)
+        except (ToolError, ValueError) as e:
+            out.append({"series_id": sid, "error": str(e)})
+            continue
+        df = df[df["date"] <= when]
+        if df.empty:
+            out.append({"series_id": sid, "error": f"no observation on or before {when}"})
+            continue
+        last = df.iloc[-1]
+        out.append({"series_id": sid, **_alias(row), "name": row["name"], "units": units,
+                    "catalog_units": row["units"], "transform": t, "frequency": row["frequency"],
+                    "fetched": fetched, **_terms_for(row),
+                    "warnings": warnings.for_series(row["series_id"], last["date"], last["date"],
+                                                    loud_only=True)})
+        rows.append({"id": sid, "label": row["name"], "value": float(last["value"]),
+                     "date": _iso(last["date"])})
+    entries = [e for e in out if "error" not in e]
+    if not entries:
+        return {"series": out}
+    placed = charting.axes([(e["series_id"], e["units"]) for e in entries])
+    left = set(placed["left"]["series"])
+    right = set((placed.get("right") or {}).get("series", []))
+    stale = [r for r in rows if r["date"] != _iso(when)]
+    footnotes = [f"{e['name']}, {w.get('period_start', '')}: {(w.get('effect_on_data') or '').strip()}"
+                 for e in entries for w in e.get("warnings") or []]
+    if stale:
+        footnotes.append("Older than the date asked: " + "; ".join(
+            f"{r['label']} ({r['date']})" for r in stale) + ".")
+    return {"series": out,
+            "table": {"at": _iso(when), "rows": rows},
+            "chart": {"title": title or f"{charting.title_suggestion([e['name'] for e in entries])} at {_iso(when)}",
+                      "subtitle": charting.subtitle(placed, "at a date", None, None, None),
+                      "axes": placed,
+                      "series": [{"id": e["series_id"], "label": e["name"], "units": e["units"],
+                                  "axis": "right" if e["series_id"] in right else
+                                          "left" if e["series_id"] in left else None,
+                                  "drawn": e["series_id"] in left | right, "dashed": False,
+                                  "colour": charting.colour(i), "stepped": False, "kind": None}
+                                 for i, e in enumerate(entries)],
+                      "not_drawn": [e["series_id"] for e in entries if e["series_id"] not in left | right],
+                      "form": "bars", "total": None,
+                      "x": {"labels": [r["label"] for r in rows], "tick_every": 1},
+                      "source": charting.source_line(
+                          [(e.get("publisher") or e["series_id"], e.get("license") == licensing.RESTRICTED,
+                            str(e.get("fetched", "")).startswith("fetched live")) for e in entries]),
+                      "footnotes": footnotes, "layout": charting.LAYOUT}}
+
+
+def _auto_frequency(series_ids: list[str], start=None) -> str:
+    """The calendar a chart gets when none is asked for: daily when every
+    series is daily and the span asked for is three years or less (a month of
+    the VIX was four weekly points), weekly for daily data over longer spans
+    (noise, and more than a thousand rows), otherwise the fastest series' own
+    frequency, so nothing slower is averaged away."""
     order = ["weekly", "monthly", "quarterly", "annual"]
-    best = "annual"
+    best, natives = "annual", []
     for sid in series_ids:
         try:
             f = (_find(sid).get("frequency") or "daily").lower()
         except ToolError:
             continue
+        natives.append(f)
         f = "weekly" if f in ("daily", "event", "weekly") else f
         if f in order and order.index(f) < order.index(best):
             best = f
+    if natives and all(f in ("daily", "event") for f in natives) and start is not None \
+            and (date.today() - start).days <= 3 * 366:
+        return "daily"
     return best
 
 
@@ -891,6 +1087,12 @@ def percentile(
         # A supplied value has no date of its own; the latest observation's
         # date beside it would read as that day's close.
         out["value_date"] = None
+    if units_vocab.is_money_level(row["units"]):
+        # A trade deficit or M2 grows with the economy: its rank mostly says
+        # how recent it is (the self-test's session left it out for that reason).
+        out["caveat"] = ("a level in money terms grows with the economy, so its percentile "
+                         "mostly says how recent it is; rank its ratio to GDP or its growth "
+                         "instead, or say this beside the number.")
     return out
 
 

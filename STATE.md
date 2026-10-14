@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-12, end of session C.** Bedrok is a local MCP server and store of
+**Updated 2026-10-12, end of session D1.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -13,10 +13,9 @@ became sessions 8 (lining up the data), 9 (charts and answers), 10 (the data
 the questions needed) and 11 (tidying the catalog). Session 12 opened it:
 **Bedrok 0.2.0 is public**, at `github.com/KrustyKronk/bedrok` and on PyPI
 (`uvx --python 3.12 bedrok serve`), with the Desktop bundle on the release.
-**Next: session D, charts and tool friction** (the owner, 2026-10-12;
-sessions A, correct answers, B, the Fed Board watch, and C, breakdown
-questions, are done): item 1, item 17, and outside rows in `chart_series`
-(decided below).
+**Next: session D2, discovery and catalog** (the owner, 2026-10-12;
+sessions A, correct answers, B, the Fed Board watch, C, breakdown questions,
+and D1, chart and tool mechanics, are done): item 1, every bullet decided.
 
 Session 13 (revisions and the release calendar) stays deferred. The fixes
 since 0.2.0 are on `main` but not released: the Desktop bundle and PyPI still
@@ -25,6 +24,28 @@ serve 0.2.0 until a version bump.
 **Owner-side items** — the ones that need the owner's accounts or describe one
 machine — live in `profile/STATE-private.md`, which is gitignored. This file
 holds only what any reader may see.
+
+**Session D1 in one paragraph.** The chart and tool mechanics the self-test
+found wanting, each verified on the self-test's own chart against the real
+store. Units share a scale by kind (`units.dimension`: every percentage-like
+unit is one, each index base its own), so Spain's two growth rates and a
+breakdown's parts and total sit on one scale. A transform per series
+(`transforms`) puts a price index charted as a rate beside a published rate
+in one recipe. Outside data is drawn beside Bedrok's (`extra`: label, units,
+publisher), named "fetched by Claude, not via Bedrok" on the source line and
+in a footnote, never in a contribution stack. A daily calendar (the days the
+series have, no weekend slot) is chosen by itself for daily data over three
+years or less: a month of the VIX is twenty points, not four. A rate dated
+at its decisions runs to the end of the chart with its last change in a
+footnote. A week that ended on partial data says "holds data to Tue 6 Oct
+only". Titles say the transform ("US CPI, annual rate"); `at` a date gives a
+bar per series with a footnote naming values older than the date; a money
+level's percentile carries a caveat and the instructions say to rank its
+ratio or growth. Parts in one call (`with_related`): a yield with its real
+yield, breakeven and term premium, `describe_series` saying which related
+series are parts. House style updated. Not done here, by the owner's choice:
+D2 (item 1). **Still to do from C:** the cold-session acceptance test needs a
+server running this code.
 
 **Session C in one paragraph.** The breakdown questions both feedback logs
 took to Eurostat are answered from the store. Eurostat families:
@@ -185,7 +206,7 @@ Two findings that are not Bedrok faults but are said in the catalog:
   what the server returns and says reaches every host (Claude on the web
   included), which is why the house style is served from the server.
 
-One ask from the same log is still open: item 17 below.
+The ask from the same log, a series with its parts in one call, was built in session D1.
 
 ## From the cold-session self-test (2026-10-12)
 
@@ -352,45 +373,38 @@ None holds a secret.
 Completed items are removed rather than ticked — git history is the record.
 Owner-side items are in `profile/STATE-private.md`.
 
-1. **Friction from the self-test, smaller each, worth a pass together:**
-   - **`chart_series` accepts outside rows** (decided 2026-10-12, reversing
-     session C's first plan): rows Claude fetched elsewhere, each with a
-     label and its source, drawn in the house style, with the source line
-     naming the outside part ("World Bank (fetched by Claude, not via
-     Bedrok)"). Today a mixed chart falls back to hand styling and labels
-     nothing.
-   - FX pairs live only in `fx_rates`, so EURUSD needs SQL: no recipe, no
-     percentile. A catalog row per pair (or an alias layer) fixes it.
-   - Search ranks the seasonally adjusted `us_cpi` above `us_cpi_nsa`, whose
-     yoy is the published headline; there is no US CPI rate series.
-   - `transform` applies to every series in a call, so published rates and
-     index levels cannot share one recipe.
-   - Units are compared as exact strings: "percent" and "percent change on
-     previous quarter" get two scales.
-   - `chart_series` has no daily calendar: a month of daily data is four
-     weekly points.
-   - Event-dated rates (the ECB's) stop at their last change on a chart,
-     although the rate is in force.
-   - A weekly point built from part of a week (EIA's lag, the Fed Board's
-     one-day lag) is not flagged. Session C counts the observations in a period
-     not yet over, but a week that has ended on partial data is not one.
-   - `uk_breakeven_5y` does not say it is RPI-based and has no `related`;
-     no UK 10-year real yield or implied inflation; no Japanese GDP or
-     headline CPI (none of these is on the gaps page).
-   - Every "us …" search carries the same five BLS/CPI warnings, whatever it
-     is about.
-   - `refresh` "ok" does not say whether anything new arrived; refresh
-     timestamps carry no timezone.
-   - The suggested chart title ignores the transform; the `index_to` label
-     names a date on a resampled calendar; no bar form for many places at
-     one date.
-   - The "percentile with every level" instruction should exclude nominal
-     levels that grow with the economy (a trade deficit).
-   - When only a warning matches, search could say what is missing and who
-     publishes it.
-   - "central bank balance sheet" now finds series, but ranks the BIS policy
-     rates above `us_fed_balance_sheet` (the phrase "central bank" sits in
-     their names).
+1. **Session D2, discovery and catalog** (the owner, 2026-10-12; the second
+   half of the self-test's frictions, decided with D1):
+   - **FX pairs answer as series.** EURUSD and the other five live only in
+     `fx_rates`, so they need SQL: no recipe, no percentile. Not catalog rows
+     (sync_macro would fetch them twice): a branch in the server that reads
+     `fx_rates` for the six pair ids in search, list, describe, get, chart and
+     percentile, with units "USD per EUR" and the 14-day allowance `validate`
+     already uses.
+   - **Search ranking.** `us_cpi` (seasonally adjusted) outranks `us_cpi_nsa`,
+     whose yoy is the published headline, on an alphabetical tie: a headline
+     bonus. "central bank balance sheet" ranks the BIS policy rates above
+     `us_fed_balance_sheet` because the phrase sits in their names: rename the
+     row "US Federal Reserve balance sheet, total assets (H.4.1)".
+   - **Five US warnings on every "us …" search**, whatever it asks: require a
+     concept word to match when the place is one Bedrok covers.
+   - **Refresh results.** `ok` does not say whether anything new arrived
+     (count rows and the last date before and after); timestamps carry no
+     timezone (`astimezone()`); and a bug: refreshing one member of a bulk
+     family reports it failed when any other geography failed (filter the
+     stage report on the id asked).
+   - **Catalog rows, verified live on 2026-10-12:** `uk_real_10y` (BoE
+     `IUDMRZC`, from 1985) and `uk_breakeven_10y` (`IUDMIZC`; RPI-based, say
+     so, with the 2030 RPI–CPIH alignment caveat; the two add to `uk_gilt_10y`
+     exactly), `uk_real_5y` (`IUDSRZC`); `jp_cpi` (e-Stat
+     `0004052037?cdTab=1&cdCat01=0001&cdArea=00000`, index 2025=100, from
+     1970); `weo_gdp_growth_jp` (IMF `JPN.NGDP_RPCH.A`, annual with forecasts).
+     `uk_breakeven_5y`'s note gains the RPI basis and `related` to its
+     nominal. Quarterly Japanese GDP goes on the gaps page: the OECD is behind
+     its bot check, e-Stat's tables stop at 2018, and the Cabinet Office CSV
+     changes its name every release and states no licence.
+   - A place-only search that finds nothing could also say who publishes
+     what is missing (search's `nearest` covers the empty case now).
 
 2. **Publishers that refused on 2026-10-11, and what liveness says now.** The
    OECD and the CFTC answered every request with a Cloudflare bot check (403,
@@ -508,20 +522,14 @@ Owner-side items are in `profile/STATE-private.md`.
     that has refreshed once. Either load the bulk families' rows at catalog
     load, as session 11 did for Eurostat, or count them in `list_series`.
 
-17. **A series with its parts in one call.** The feedback log offered twice,
-    and never ran, `us_10y` together with its real yield, breakeven and term
-    premium. `describe_series` already lists `related` series; a `get_series`
-    or `chart_series` option that fetches them alongside would make the
-    decomposition one call instead of four.
-
-18. **`scripts/mcp_smoke.py` can pass for the wrong reason.** Started from the
+17. **`scripts/mcp_smoke.py` can pass for the wrong reason.** Started from the
     repo folder it finds `./profile` and answers from the developer's own
     store, not the empty home it was given (it happened in session 12). It
     should fail when the profile it reports is not under the `HOME` it was
     started with, unless told otherwise. CI is safe today only because a fresh
     checkout has no `profile/`.
 
-19. **The later sessions in `docs/rebuild-plan.md` are unplanned:** 13
+18. **The later sessions in `docs/rebuild-plan.md` are unplanned:** 13
     (revisions and the release calendar; deferred 2026-10-12) and 14 (the
     maintenance loop: triage source requests from the issue form, retire stale
     publishers, a second pass over the register for the next thirty).

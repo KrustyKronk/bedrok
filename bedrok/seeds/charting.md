@@ -20,10 +20,12 @@ assistant may write a better one.
 span: "Percent; weekly closes; Oct 2023 to Oct 2026". The vertical axis is
 labelled with the units too.
 
-**One scale when the units agree, two when they differ.** The first series
-asked for sets the left scale, drawn with solid lines. Series in other units go
-on the right scale, drawn dashed, so it is always clear which line reads
-against which axis. Where two lines cross on a two-scale chart means nothing;
+**One scale when the units agree, two when they differ.** Units agree when
+they are the same kind of thing: a percent, a percentage point and a percent
+change share a scale; two indices on different bases, or a price and a rate,
+do not. The first series asked for sets the left scale, drawn with solid
+lines. Series in other units go on the right scale, drawn dashed, so it is
+always clear which line reads against which axis. Where two lines cross on a two-scale chart means nothing;
 the scales set it. A third set of units is never given a third scale: draw two
 charts, or ask for every series as an index (`transform="index_to"`). The
 recipe marks a series it could not place `drawn: false`.
@@ -38,16 +40,25 @@ nothing already drawn moves.
 
 **The legend goes below the chart**, and clicking a series hides or shows it.
 
-**Dates along the bottom** follow the chart's calendar: "2 Oct 2026" for weeks,
-"Oct 26" for months, "Q4 26" for quarters, "2026" for years, with about ten
-labels shown however long the span.
+**Dates along the bottom** follow the chart's calendar: "8 Oct" for days,
+"2 Oct 2026" for weeks, "Oct 26" for months, "Q4 26" for quarters, "2026" for
+years, with about ten labels shown however long the span. Daily data over up
+to three years is drawn daily, one slot per trading day; over longer spans
+weekly, so the line is not noise.
 
 **Gaps stay gaps.** A month that was never published (US CPI in October 2025)
 is an empty slot in the data, and the line breaks there. Never join across it.
 
 **A series published less often than the chart's calendar is drawn as a
 step**: the monthly Fed rate beside weekly spreads holds each month's value
-until the next, and a footnote says so.
+until the next, and a footnote says so. **A rate dated at its decisions**
+(the ECB's) is in force until the next decision, so it runs to the end of
+the chart, and a footnote names its last change.
+
+**Data the assistant fetched elsewhere may be drawn beside Bedrok's**, passed
+as `extra` with a label, its units and its publisher; the source line names
+that publisher as "fetched by Claude, not via Bedrok" and a footnote repeats
+it, so the reader always knows which part did not come through Bedrok.
 
 **The source line names every publisher once**, with its condition when it
 has one ("personal use only", "fetched live, not stored").
@@ -56,11 +67,12 @@ has one ("personal use only", "fetched live, not stored").
 for the period shown, a period not over yet, a quarter missing a month, rows
 cut from a long span, a series drawn as a step.
 
-**Lines by default.** Bars only when every series has a single period, and
-stacked bars for contributions to a total (GDP growth by expenditure): the
-parts stacked from zero, positive up and negative down, with the total's
-growth rate as a dot or a line on the same scale, and a footnote saying
-whether the parts drawn add up to it.
+**Lines by default.** Bars when every series has a single period (ask for
+`at` a date: one bar per series, many places compared at once), and stacked
+bars for contributions to a total (GDP growth by expenditure): the parts
+stacked from zero, positive up and negative down, with the total's growth
+rate as a dot or a line on the same scale, and a footnote saying whether the
+parts drawn add up to it.
 A chart whenever there is more than one period; a table only when the reader
 asks for one, or to compare many places at a single date.
 

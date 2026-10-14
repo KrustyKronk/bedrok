@@ -493,3 +493,98 @@ def test_contributions_chart_as_stacked_bars_on_one_scale_with_their_total(srv):
     assert any("add up to the total within 0.05" in n for n in c["footnotes"])
     lines = _call("chart_series", {"series_ids": ["us_cpi"]}).structured_content["chart"]
     assert lines["form"] == "lines" and lines["total"] is None
+
+
+def test_a_transform_per_series_puts_a_rate_beside_an_index_in_one_recipe(srv):
+    """Session D1: the self-test merged two calls by hand because one transform
+    applied to every series. A published rate beside an index charted as a
+    rate is now one recipe, on one scale."""
+    c = _call("chart_series", {"series_ids": ["jp_policy_rate", "us_cpi"],
+                               "transforms": {"us_cpi": "yoy"}, "frequency": "monthly"}) \
+        .structured_content
+    by = {s["series_id"]: s for s in c["series"]}
+    assert by["us_cpi"]["transform"] == "yoy" and by["jp_policy_rate"]["transform"] == "level"
+    assert by["us_cpi"]["units"] == "percent change on a year earlier"
+    assert by["us_cpi"]["catalog_units"] == "index"
+    assert c["chart"]["axes"]["right"] is None
+    g = _call("get_series", {"series_ids": ["us_cpi"], "transform": "index_to",
+                             "index_date": "2025-02-15", "frequency": "quarterly"}).structured_content
+    assert g["series"][0]["units"] == "index 2025Q1=100"
+
+
+def test_outside_rows_are_drawn_in_house_style_and_named_as_outside(srv):
+    """Session D1: what Bedrok does not carry may be drawn beside what it
+    does, labelled. Before, a mixed chart fell back to hand styling and
+    labelled nothing (the self-test's Spain breakdown and Japan GDP)."""
+    extra = [{"label": "Japan real GDP growth", "units": "percent", "source": "World Bank",
+              "frequency": "annual",
+              "observations": [{"date": "2023-01-01", "value": 0.7}, {"date": "2024-01-01", "value": -0.2},
+                               {"date": "2025-01-01", "value": 1.2}]}]
+    r = _call("chart_series", {"series_ids": ["jp_policy_rate"], "extra": extra, "frequency": "annual"}) \
+        .structured_content
+    c = r["chart"]
+    jp = next(s for s in c["series"] if s["id"] == "extra:Japan real GDP growth")
+    assert jp["drawn"] and jp["colour"] == charting.colour(1) and jp["kind"] is None
+    assert "World Bank (fetched by Claude, not via Bedrok)" in c["source"]
+    assert any("supplied by the assistant" in n for n in c["footnotes"])
+    at = r["table"]["dates"].index("2025-01-01")
+    assert r["table"]["columns"]["extra:Japan real GDP growth"][at] == 1.2
+    too_many = _call("chart_series", {"series_ids": ["us_cpi"] * 5, "extra": extra * 3})
+    assert too_many.is_error and "seven" in too_many.content[0].text
+
+
+def test_a_chart_of_a_rate_says_so_in_its_title(srv):
+    c = _call("chart_series", {"series_ids": ["us_cpi"], "transform": "yoy"}).structured_content["chart"]
+    assert c["title"] == "US CPI, annual rate"
+
+
+def test_many_series_at_one_date_are_bars(srv):
+    """Session D1: the self-test's debt ranking had no recipe and was drawn
+    by hand; `at` gives a bar per series, the last value on or before it."""
+    at = TODAY.isoformat()
+    r = _call("chart_series", {"series_ids": ["us_cpi", "jp_policy_rate"], "at": at}).structured_content
+    assert r["chart"]["form"] == "bars" and r["table"]["at"] == at
+    rows = {x["id"]: x for x in r["table"]["rows"]}
+    assert rows["jp_policy_rate"]["value"] == 1.25                  # refetched, 20 days old
+    assert rows["jp_policy_rate"]["date"] == (TODAY - timedelta(days=20)).isoformat()
+    assert r["chart"]["x"]["labels"] == ["US CPI", "Japan central bank policy rate (BIS)"]
+    assert any("Older than the date asked" in n for n in r["chart"]["footnotes"])
+    assert r["chart"]["axes"]["right"]["series"] == ["jp_policy_rate"]    # index vs percent
+
+
+def test_parts_come_along_in_one_call(srv):
+    """Item 17: a yield with its real yield, breakeven and term premium was
+    four calls; with_related makes it one, and describe says which related
+    series are parts."""
+    con = duckdb.connect(str(config.DB_PATH))
+    store.upsert_macro_catalog(con, pd.DataFrame([
+        {"series_id": "us_10y", "source": "fedboard", "source_code": "X:10", "name": "US 10-year yield",
+         "frequency": "monthly", "units": "percent", "cache": "store",
+         "notes": "benchmark long rate. Its parts: us_10y_real (TIPS) and us_breakeven_10y; see also us_cpi"},
+        {"series_id": "us_10y_real", "source": "fedboard", "source_code": "X:10R", "name": "US 10-year real",
+         "frequency": "monthly", "units": "percent", "cache": "store"},
+        {"series_id": "us_breakeven_10y", "source": "fedboard", "source_code": "X:BE", "name": "US breakeven",
+         "frequency": "monthly", "units": "percent", "cache": "store"}]))
+    for sid in ("us_10y", "us_10y_real", "us_breakeven_10y"):
+        store.replace_macro_series(con, sid, _monthly(36, TODAY), f"fedboard:{sid}")
+    store.close_checkpointed(con)
+    d = _call("describe_series", {"series_id": "us_10y"}).structured_content
+    roles = {r["series_id"]: r["role"] for r in d["related"]}
+    assert roles["us_10y_real"] == "part" and roles["us_breakeven_10y"] == "part"
+    assert roles["us_cpi"] == "companion"
+    g = _call("get_series", {"series_ids": ["us_10y"], "with_related": True}).structured_content
+    assert [s["series_id"] for s in g["series"]] == ["us_10y", "us_10y_real", "us_breakeven_10y"]
+    assert g["expanded_from"] == {"us_10y": ["us_10y_real", "us_breakeven_10y"]} and g["dropped"] == []
+    c = _call("chart_series", {"series_ids": ["us_10y"], "with_related": True}).structured_content
+    assert len(c["chart"]["series"]) == 3 and c["expanded_from"]["us_10y"]
+
+
+def test_a_money_level_percentile_carries_its_caveat(srv):
+    con = duckdb.connect(str(config.DB_PATH))
+    store.upsert_macro_catalog(con, pd.DataFrame([
+        {"series_id": "us_m2", "source": "fedboard", "source_code": "X:M2", "name": "US M2",
+         "frequency": "monthly", "units": "billions USD", "cache": "store"}]))
+    store.replace_macro_series(con, "us_m2", _monthly(36, TODAY), "fedboard:X:M2")
+    store.close_checkpointed(con)
+    assert "grows with the economy" in _call("percentile", {"series_id": "us_m2"}).structured_content["caveat"]
+    assert "caveat" not in _call("percentile", {"series_id": "us_cpi"}).structured_content

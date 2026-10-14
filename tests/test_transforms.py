@@ -125,10 +125,30 @@ def test_a_slower_series_is_stepped_and_stops_after_its_last_period():
     assert None not in cols["oas"]
 
 
-def test_a_change_dated_rate_is_carried_forward():
+def test_a_change_dated_rate_is_carried_forward_to_today():
+    """A rate in force is the value until the next decision: it is held to
+    the period holding today, not only to its last change (session D1: the
+    self-test's ECB line stopped in September although 2.50% stood)."""
     ecb = pd.DataFrame({"date": [date(2024, 6, 12), date(2024, 9, 18)], "value": [3.75, 3.5]})
-    out, _ = transforms.to_frequency(ecb, "event", "monthly", today=date(2025, 1, 1))
-    assert out["value"].tolist() == [3.75, 3.75, 3.75, 3.5]   # Jun, Jul, Aug held; Sep changed
+    out, notes = transforms.to_frequency(ecb, "event", "monthly", today=date(2025, 1, 1))
+    assert out["value"].tolist() == [3.75, 3.75, 3.75, 3.5, 3.5, 3.5, 3.5, 3.5]   # to Jan 2025
+    assert str(out["date"].iloc[-1]) == "2025-01-01"
+    assert notes["carried"] == {"last_change": "2024-09-18", "value": 3.5}
+    assert notes["partial_last"] is False                        # in force, not partial
+
+
+def test_a_daily_calendar_is_the_days_the_series_have():
+    """Session D1: a month of daily data was four weekly points. Daily keeps
+    every trading day and no weekend slot, so lines never break on Saturdays."""
+    vix = _daily("2026-09-14", "2026-10-09")
+    out, notes = transforms.to_frequency(vix, "daily", "daily", today=date(2026, 10, 12))
+    assert len(out) == len(vix) and notes["how"] is None
+    ecb = pd.DataFrame({"date": [date(2026, 9, 16)], "value": [2.5]})
+    held, notes = transforms.to_frequency(ecb, "event", "daily", today=date(2026, 10, 12))
+    dates, cols = transforms.align({"vix": (out, "daily", False), "ecb": (held, "event", False)}, "daily")
+    assert date(2026, 9, 19) not in dates                        # a Saturday is no slot
+    assert cols["ecb"][dates.index(date(2026, 10, 9))] == 2.5    # in force on the last day
+    assert cols["ecb"][dates.index(date(2026, 9, 14))] is None   # before the first decision
 
 
 def test_resampling_comes_before_yoy():
@@ -150,3 +170,19 @@ def test_a_weekly_series_dated_on_tuesday_lands_on_the_friday():
     out, notes = transforms.to_frequency(cot, "weekly", "weekly")
     assert [str(d) for d in out["date"]] == ["2026-10-02", "2026-10-09"]
     assert notes["stepped"] is False
+
+
+def test_a_week_that_ended_on_partial_data_says_so():
+    """Session D1: the EIA publishes Tuesday's price on Friday's date and the
+    Fed Board's files run a day behind, so a Friday-dated point can hold a
+    Tuesday value; partial_last is false because the week has ended."""
+    brent = _daily("2026-09-28", "2026-10-06")            # ends Tue 6 Oct
+    out, notes = transforms.to_frequency(brent, "daily", "weekly", today=date(2026, 10, 12))
+    assert notes["partial_last"] is False
+    assert notes["ended_early"] == {"n": 2, "first": "2026-10-05", "last": "2026-10-06"}
+    full = _daily("2026-09-28", "2026-10-09")             # ends Fri 9 Oct
+    _, notes = transforms.to_frequency(full, "daily", "weekly", today=date(2026, 10, 12))
+    assert "ended_early" not in notes
+    thursday = _daily("2026-09-28", "2026-10-08")         # the Fed Board's one-day lag: fine
+    _, notes = transforms.to_frequency(thursday, "daily", "weekly", today=date(2026, 10, 12))
+    assert "ended_early" not in notes

@@ -18,6 +18,8 @@ from __future__ import annotations
 import math
 from datetime import date
 
+from bedrok.core import units as units_vocab
+
 # Okabe–Ito, without its yellow (unreadable on white): seven hues that stay
 # distinct for the common forms of colour blindness. Assigned in the order the
 # series were asked for, so a series keeps its colour across charts.
@@ -67,6 +69,7 @@ def adding_up(parts: list[list], total: list, dates: list) -> str | None:
             "a part is not drawn, or the publisher adjusts each part on its own.")
 
 _HOW_WORDS = {
+    ("daily", ""): "daily values", ("daily", "last"): "daily values",
     ("weekly", "last"): "weekly closes", ("weekly", "mean"): "weekly averages",
     ("weekly", "sum"): "weekly totals", ("weekly", "first"): "first value of each week",
     ("monthly", "mean"): "monthly averages", ("monthly", "last"): "month-end values",
@@ -77,6 +80,7 @@ _HOW_WORDS = {
     ("annual", "sum"): "annual totals", ("annual", "first"): "first value of each year",
 }
 _MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+_WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 MAX_TICKS = 10
 
 
@@ -84,35 +88,47 @@ def colour(i: int) -> str:
     return PALETTE[i % len(PALETTE)]
 
 
-def title_suggestion(names: list[str]) -> str:
-    """One series: its name. Two: both. More: the first and a count. The
-    assistant may always replace it; it never carries units."""
+_TRANSFORM_WORDS = {"yoy": ", annual rate", "mom3_ann": ", 3-month annualised rate",
+                    "index_to": ", rebased"}
+
+
+def title_suggestion(names: list[str], transform: str = "level") -> str:
+    """One series: its name. Two: both. More: the first and a count. A
+    transform is said ("US CPI all items, annual rate"): a chart of a rate
+    titled by the index it came from misled the self-test. The assistant may
+    always replace it; it never carries units."""
     if not names:
         return ""
+    suffix = _TRANSFORM_WORDS.get(transform, "")
     if len(names) == 1:
-        return names[0]
+        return names[0] + suffix
     if len(names) == 2:
-        return f"{names[0]} and {names[1]}"
-    return f"{names[0]} and {len(names) - 1} others"
+        return f"{names[0]} and {names[1]}" + suffix
+    return f"{names[0]} and {len(names) - 1} others" + suffix
 
 
 def axes(series: list[tuple[str, str]]) -> dict:
     """[(id, units)] → which series go on the left scale and which on the right.
 
-    One unit: one scale. Two: the first-listed series' units on the left, the
-    other on the right. Three or more cannot be read on two scales: the first
-    two groups are placed and `problem` says what to do instead."""
+    One dimension (percent, percentage points and the other rate-like units
+    are one): one scale, labelled with the first series' units. Two: the
+    first-listed series' dimension on the left, the other on the right. Three
+    or more cannot be read on two scales: the first two are placed and
+    `problem` says what to do instead."""
+    dims = [(i, units_vocab.dimension(u), u) for i, u in series]
     groups: list[str] = []
-    for _, u in series:
-        if u not in groups:
-            groups.append(u)
-    left = [i for i, u in series if u == groups[0]] if groups else []
-    right = [i for i, u in series if len(groups) > 1 and u == groups[1]]
-    out = {"left": {"units": groups[0] if groups else None, "series": left},
-           "right": {"units": groups[1], "series": right} if len(groups) > 1 else None,
+    label: dict[str, str] = {}
+    for _, d, u in dims:
+        if d not in groups:
+            groups.append(d)
+            label[d] = u
+    left = [i for i, d, _ in dims if d == groups[0]] if groups else []
+    right = [i for i, d, _ in dims if len(groups) > 1 and d == groups[1]]
+    out = {"left": {"units": label[groups[0]] if groups else None, "series": left},
+           "right": {"units": label[groups[1]], "series": right} if len(groups) > 1 else None,
            "problem": None}
     if len(groups) > 2:
-        dropped = [i for i, u in series if u in groups[2:]]
+        dropped = [i for i, d, _ in dims if d in groups[2:]]
         out["problem"] = (f"{len(groups)} different units cannot share two scales; "
                           f"{', '.join(dropped)} {'is' if len(dropped) == 1 else 'are'} "
                           "not placed and not drawn. Draw two charts, or ask for "
@@ -121,11 +137,29 @@ def axes(series: list[tuple[str, str]]) -> dict:
 
 
 def _span_label(d: date, frequency: str) -> str:
+    if frequency == "daily":
+        return f"{d.day} {_MONTHS[d.month - 1]} {d.year}"
     if frequency == "quarterly":
         return f"Q{(d.month - 1) // 3 + 1} {d.year}"
     if frequency == "annual":
         return str(d.year)
     return f"{_MONTHS[d.month - 1]} {d.year}"
+
+
+def index_base_label(when: date, frequency: str | None) -> str:
+    """The base period of a rebased series as the units name it, in the
+    vocabulary's "index <base>=100" form: the period actually used on the
+    chart's calendar, not the date typed ("index 2020Q1=100" when a quarterly
+    chart was rebased to 2020-02-15)."""
+    if frequency == "quarterly":
+        base = f"{when.year}Q{(when.month - 1) // 3 + 1}"
+    elif frequency == "annual":
+        base = str(when.year)
+    elif frequency == "monthly":
+        base = f"{_MONTHS[when.month - 1]}-{when.year}"
+    else:
+        base = when.isoformat()
+    return f"index {base}=100"
 
 
 def subtitle(placed: dict, frequency: str, how: str | None, first: date | None,
@@ -147,7 +181,11 @@ def subtitle(placed: dict, frequency: str, how: str | None, first: date | None,
 
 def x_labels(dates: list[date], frequency: str) -> dict:
     """Labels by frequency, and how many to skip so about ten show."""
+    years = {d.year for d in dates}
+
     def one(d: date) -> str:
+        if frequency == "daily":
+            return f"{d.day} {_MONTHS[d.month - 1]}" + (f" {d.year}" if len(years) > 1 else "")
         if frequency == "weekly":
             return f"{d.day} {_MONTHS[d.month - 1]} {d.year}"
         if frequency == "monthly":
@@ -160,15 +198,19 @@ def x_labels(dates: list[date], frequency: str) -> dict:
             "tick_every": max(1, math.ceil(n / MAX_TICKS))}
 
 
-def source_line(publishers: list[tuple[str, bool, bool]]) -> str:
-    """[(publisher name, personal use?, fetched live?)] → one line, each
-    publisher once, in order, with its condition when it has one."""
+def source_line(publishers: list[tuple]) -> str:
+    """[(publisher name, personal use?, fetched live?[, outside?])] → one line,
+    each publisher once, in order, with its condition when it has one. An
+    outside publisher is one the assistant fetched itself; the line says so,
+    because the reader must know which part did not come through Bedrok."""
     seen, parts = set(), []
-    for name, personal, live in publishers:
+    for name, personal, live, *rest in publishers:
+        outside = bool(rest and rest[0])
         if name in seen:
             continue
         seen.add(name)
-        cond = [c for c, on in (("personal use only", personal), ("fetched live, not stored", live)) if on]
+        cond = [c for c, on in (("personal use only", personal), ("fetched live, not stored", live),
+                                ("fetched by Claude, not via Bedrok", outside)) if on]
         parts.append(name + (f" ({', '.join(cond)})" if cond else ""))
     return "Source: " + "; ".join(parts) + "." if parts else ""
 
@@ -189,6 +231,15 @@ def footnotes(entries: list[dict], table: dict, frequency: str) -> list[str]:
             line = f"{names[e['series_id']]}, {period}: {(w.get('effect_on_data') or '').strip()}"
             if line not in notes:
                 notes.append(line)
+    for e in entries:
+        if e.get("outside"):
+            notes.append(f"{e.get('name', e['series_id'])}: supplied by the assistant, not from "
+                         f"Bedrok ({e.get('publisher') or 'source not given'}).")
+    for sid, held in (table.get("carried") or {}).items():
+        d = date.fromisoformat(held["last_change"])
+        notes.append(f"{names.get(sid, sid)} changes only at decisions; its last change "
+                     f"({d.day} {_MONTHS[d.month - 1]} {d.year}, {held['value']:g}) is held to "
+                     "the end of the chart.")
     for sid, stepped in (table.get("stepped") or {}).items():
         if stepped:
             notes.append(f"{names.get(sid, sid)} is published less often than {frequency}; "
@@ -208,6 +259,10 @@ def footnotes(entries: list[dict], table: dict, frequency: str) -> list[str]:
                 how_much = f" (it holds {held['n']} {obs}, {span})" if a != b else \
                     f" (it holds 1 observation, {b.day} {_MONTHS[b.month - 1]} {b.year})"
             notes.append(f"{names.get(sid, sid)}: the latest period is not over yet{how_much}.")
+    for sid, held in (table.get("ended_early") or {}).items():
+        d = date.fromisoformat(held["last"])
+        notes.append(f"{names.get(sid, sid)}: the latest week holds data to "
+                     f"{_WEEKDAYS[d.weekday()]} {d.day} {_MONTHS[d.month - 1]} only.")
     for sid, short in (table.get("incomplete") or {}).items():
         notes.append(f"{names.get(sid, sid)}: {', '.join(short)} hold only part of their period "
                      "(a month or quarter not published).")
