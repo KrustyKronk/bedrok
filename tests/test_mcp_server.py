@@ -650,6 +650,7 @@ def test_a_place_that_finds_nothing_says_why(srv, monkeypatch):
     assert r["matches"] == [] and "1 series for that place, none from ecb" in r["note"]
     from bedrok.core import warnings
     monkeypatch.setattr(warnings, "search", lambda text, limit=5: [
-        {"country": "Argentina", "source_name": "INDEC", "warning_id": "ar"}])
+        {"country": "Argentina", "official_series": "Consumer Price Index, INDEC",
+         "warning_id": "ar"}])
     r = _call("search_series", {"text": "argentina"}).structured_content
     assert "no series for Argentina" in r["note"] and "INDEC" in r["note"]

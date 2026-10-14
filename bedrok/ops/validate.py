@@ -225,29 +225,37 @@ def adding_up_check(con) -> int:
     return problems
 
 
-# Published identities: a yield is its parts, to the publisher's rounding. The
-# Bank of England's nominal zero-coupon yield is its real yield plus its
-# inflation breakeven (checked 2026-10-14: within 0.0001 on every day).
+# Published identities: a yield is its parts. The Bank of England's 10-year
+# nominal zero-coupon yield is its real yield plus its breakeven to 0.0001 on
+# every day from 1985 but two, where the Bank's own data are wrong for a day
+# and are kept as published (session D2, 2026-10-14): 1996-09-27, real and
+# breakeven both 0; 2022-11-28, the real curve ~1.4 points high. At 5 years
+# the Bank fits the curves apart and the parts miss by up to 0.07 points in
+# 2007-13 and 0.42 in 2003: reported, never a finding.
+# (total, parts, tolerance, a miss is a finding, days known to be wrong)
 IDENTITIES = [
-    ("uk_gilt_5y", ("uk_real_5y", "uk_breakeven_5y")),
-    ("uk_gilt_10y", ("uk_real_10y", "uk_breakeven_10y")),
+    ("uk_gilt_10y", ("uk_real_10y", "uk_breakeven_10y"), 0.01, True,
+     ("1996-09-27", "2022-11-28")),
+    ("uk_gilt_5y", ("uk_real_5y", "uk_breakeven_5y"), 0.1, False, ("1996-09-27", "2022-11-28")),
 ]
-_IDENTITY_TOLERANCE = 0.01
 
 
-def identities(con) -> list[tuple[str, int, float, str]]:
-    """(total, days compared, worst gap, its date) for each identity whose
-    total and parts are all stored."""
+def identities(con) -> list[tuple[str, int, int, float, str, bool, float]]:
+    """(total, days compared, days beyond tolerance, worst gap, its date,
+    loud, tolerance) for each identity whose total and parts are stored.
+    Known-bad days are left out of the count and the worst."""
     out = []
-    for total, parts in IDENTITIES:
+    for total, parts, tol, loud, known in IDENTITIES:
         joins = " ".join(f"JOIN macro_series p{i} ON p{i}.date = t.date "
                          f"AND p{i}.series_id = '{pid}'" for i, pid in enumerate(parts))
-        gap = " - ".join(["t.value"] + [f"p{i}.value" for i in range(len(parts))])
-        n, worst, at = con.execute(
-            f"SELECT count(*), max(abs({gap})), arg_max(t.date, abs({gap})) "
-            f"FROM macro_series t {joins} WHERE t.series_id = ?", [total]).fetchone()
+        gap = "abs(" + " - ".join(["t.value"] + [f"p{i}.value" for i in range(len(parts))]) + ")"
+        skip = "".join(f" AND t.date <> DATE '{d}'" for d in known)
+        n, off, worst, at = con.execute(
+            f"SELECT count(*), count(*) FILTER (WHERE {gap} > ?), max({gap}), "
+            f"arg_max(t.date, {gap}) FROM macro_series t {joins} "
+            f"WHERE t.series_id = ?{skip}", [tol, total]).fetchone()
         if n:
-            out.append((total, n, worst, str(at)))
+            out.append((total, n, off, worst, str(at), loud, tol))
     return out
 
 
@@ -257,10 +265,10 @@ def identities_check(con) -> int:
         return 0
     print("\n=== IDENTITIES (a yield against its parts) ===")
     problems = 0
-    for total, n, worst, at in rows:
-        bad = worst > _IDENTITY_TOLERANCE
+    for total, n, off, worst, at, loud, tol in rows:
+        bad = off > 0 and loud
         problems += bad
-        print(f"  {'WARN' if bad else 'ok':<4}  {total:<14} worst gap {worst:.4f} at {at} "
-              f"({n} days)")
+        tag = "WARN" if bad else ("info" if off else "ok")
+        print(f"  {tag:<4}  {total:<14} {off} of {n} days beyond {tol} points, "
+              f"worst {worst:.4f} at {at}")
     return problems
-

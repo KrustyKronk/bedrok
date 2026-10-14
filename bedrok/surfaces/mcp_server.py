@@ -516,11 +516,13 @@ def search_series(
                            "nothing matched every word; the nearest series by name are "
                            "listed in `nearest`")
     elif not places and found:
-        # Say who publishes what Bedrok lacks: the warnings cite the agency.
+        # Say who publishes what Bedrok lacks: each warning names the official
+        # series and its agency.
         where = ", ".join(dict.fromkeys(w["country"] for w in found if w.get("country")))
-        cite = ", ".join(dict.fromkeys(w["source_name"] for w in found if w.get("source_name")))
+        named = "; ".join(dict.fromkeys(w["official_series"] for w in found
+                                        if w.get("official_series")))
         out["note"] = (f"Bedrok carries no series for {where}; the warnings say where "
-                       "its official numbers stand" + (f" and cite {cite}" if cite else ""))
+                       "its official numbers stand" + (f": {named}" if named else ""))
     elif hits.empty and places:
         held = sum(geo.of_series(sid, src) in places
                    for sid, src in zip(unfiltered["series_id"], unfiltered["source"]))
