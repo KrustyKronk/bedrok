@@ -609,3 +609,36 @@ def test_the_headline_wins_a_tie_and_the_fed_balance_sheet_is_found_by_name(srv)
                 _call("search_series", {"text": text}).structured_content["matches"]]
     assert ids("us cpi")[:2] == ["us_cpi_nsa", "us_cpi"]
     assert ids("central bank balance sheet")[0] == "us_fed_balance_sheet"
+
+
+def test_a_refresh_says_whether_anything_arrived(srv):
+    r = _call("refresh", {"series_ids": ["jp_policy_rate"]}).structured_content["results"][0]
+    # the stub adds one observation dated 20 days ago to the two stored
+    assert (r["n_obs_before"], r["n_obs_after"], r["new_observations"]) == (2, 3, 1)
+    assert r["changed"] and r["last_date_before"] == "2020-02-01"
+    again = _call("refresh", {"series_ids": ["jp_policy_rate"]}).structured_content["results"][0]
+    assert again["status"] == "ok" and again["changed"] is False
+
+
+def test_another_members_failure_is_not_this_ones():
+    """The D1 self-test: refreshing one geography of a Eurostat family said
+    "failed" because another geography had."""
+    label = pipeline.EUROSTAT_BULK_SETS[0]["label"]
+    rows = [("gdp_annual_es", "ok", "40 rows"), ("gdp_annual_el", "FAIL", "boom"),
+            ("gdp_annual_mt", "skip", "dead/stale geo")]
+    assert mcp_server._report_for("gdp_annual_es", rows) == ("ok", [])
+    assert mcp_server._report_for("gdp_annual_es", rows + [(label, "FAIL", "down")]) \
+        == ("failed", ["down"])
+    assert mcp_server._report_for("gdp_annual_mt", rows)[0] == "skipped"
+    # a derived series answers for its inputs, not for the other derived series
+    derived_rows = [("us_10y", "FAIL", "h15 down"), ("us_recession", "FAIL", "x")]
+    assert mcp_server._report_for("us_breakeven_10y", derived_rows)[0] == "failed"
+    assert mcp_server._report_for("us_breakeven_10y", derived_rows[1:])[0] == "ok"
+    # an inverse pair answers for the rate it inverts
+    assert mcp_server._report_for("usdeur", [("EURUSD", "FAIL", "ecb")])[0] == "failed"
+
+
+def test_the_background_refresh_says_its_timezone(srv, monkeypatch):
+    monkeypatch.setattr(mcp_server, "_run_job", lambda: None)
+    started = _call("refresh").structured_content["started_at"]
+    assert started[-6] in "+-" and started[-3] == ":"

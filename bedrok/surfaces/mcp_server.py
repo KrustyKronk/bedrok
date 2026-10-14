@@ -267,10 +267,36 @@ def _ensure_fresh(series_id: str) -> str:
             stage, rows = pipeline.refresh_series(con, series_id)
     except ToolError:
         return "store (stale; the store was busy, so it was not refreshed)"
-    fails = [d for _, s, d in rows if s == "FAIL"]
-    if fails:
+    status, fails = _report_for(series_id, rows)
+    if status == "failed":
         return f"store (stale; refresh failed: {sources.redact(fails[0])[:120]})"
     return f"refreshed now from the publisher ({stage})"
+
+
+# The rows a bulk stage names after its whole family rather than a series: a
+# FAIL there means every member failed. Per-member rows carry the series id.
+_FAMILY_ROWS = {s["label"] for s in pipeline.EUROSTAT_BULK_SETS} | {
+    "hicp_europe_bulk", "hicp_europe", "worldbank_pink_sheet", "worldbank", "cftc_cot"}
+
+
+def _report_for(series_id: str, rows: list[tuple]) -> tuple[str, list[str]]:
+    """(status, failure details) of one series within its stage's report.
+
+    A stage reports every member of a family, and the derived stage every
+    derived series; another member's failure is not this one's (the D1
+    self-test: Spain reported failed because another geography had). Kept:
+    the series' own row, its inputs', and a family-wide FAIL."""
+    own = {series_id, *_derived_inputs(series_id)}
+    if series_id in pipeline.FX_IDS:
+        own.add(series_id[3:] + series_id[:3])          # an inverse's rate
+    kept = [(st, d) for name, st, d in rows
+            if str(name).lower() in own or (st == "FAIL" and name in _FAMILY_ROWS)]
+    fails = [d for st, d in kept if st == "FAIL"]
+    if fails:
+        return "failed", fails
+    if kept and all(st == "skip" for st, _ in kept):
+        return "skipped", [d for _, d in kept]
+    return "ok", []
 
 
 def _key_help(series_id: str, source: str) -> str:
@@ -1168,7 +1194,7 @@ def _run_job() -> None:
         _job.update(status="failed", current=None,
                     error=sources.redact(f"{type(e).__name__}: {e}")[:300])
     finally:
-        _job["finished_at"] = datetime.now().isoformat(timespec="seconds")
+        _job["finished_at"] = datetime.now().astimezone().isoformat(timespec="seconds")
 
 
 def _record(rows: list[tuple]) -> None:
@@ -1194,19 +1220,32 @@ def refresh(
     global _job_thread
     if series_ids:
         results = []
-        for sid in series_ids:
+        for asked in series_ids:
+            sid = aliases.canonical(asked)
             try:
                 with _store(write=True) as con:
+                    before = freshness.assess(con, sid) or {}
                     stage, rows = pipeline.refresh_series(con, sid)
-                fails = [sources.redact(d) for _, s, d in rows if s == "FAIL"]
-                results.append({"series_id": sid, "stage": stage,
-                                "status": "failed" if fails else "ok", "detail": fails[:3]})
+                    after = freshness.assess(con, sid) or {}
+                status, detail = _report_for(sid, rows)
+                n0, n1 = before.get("n_obs"), after.get("n_obs")
+                d0, d1 = before.get("last_date"), after.get("last_date")
+                results.append({
+                    "series_id": asked, **({"alias_of": sid} if sid != asked else {}),
+                    "stage": stage, "status": status,
+                    "detail": [sources.redact(d) for d in detail[:3]],
+                    # Whether anything arrived: "ok" alone said only that
+                    # nothing failed (the D1 self-test).
+                    "n_obs_before": n0, "n_obs_after": n1,
+                    "last_date_before": _iso(d0), "last_date_after": _iso(d1),
+                    "new_observations": (n1 - n0) if n0 is not None and n1 is not None else None,
+                    "changed": (n0, d0) != (n1, d1)})
             except KeyError:
-                results.append({"series_id": sid, "status": "unknown id"})
+                results.append({"series_id": asked, "status": "unknown id"})
             except ValueError as e:
-                results.append({"series_id": sid, "status": "not stored", "detail": [str(e)]})
+                results.append({"series_id": asked, "status": "not stored", "detail": [str(e)]})
             except ToolError as e:
-                results.append({"series_id": sid, "status": "busy", "detail": [str(e)]})
+                results.append({"series_id": asked, "status": "busy", "detail": [str(e)]})
         return {"mode": "series", "results": results}
     if _job_thread is not None and _job_thread.is_alive():
         return {"mode": "background", **_job}
@@ -1215,7 +1254,7 @@ def refresh(
         return {"mode": "background", "note": "last run finished; call again to start a new one",
                 **_job}
     _job.clear()
-    _job.update(status="running", started_at=datetime.now().isoformat(timespec="seconds"),
+    _job.update(status="running", started_at=datetime.now().astimezone().isoformat(timespec="seconds"),
                 done=0, total=None, updated=0, failures=[], current=None,
                 acknowledged=False)
     _job_thread = threading.Thread(target=_run_job, name="bedrok-refresh", daemon=True)
