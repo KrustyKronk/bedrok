@@ -47,6 +47,7 @@ def main() -> int:
     problems += license_check(con)
     problems += staleness_report(con)
     problems += adding_up_check(con)
+    problems += identities_check(con)
 
     con.close()
     print(f"\n{'ALL CHECKS PASSED' if problems == 0 else f'{problems} item(s) need a look'}\n")
@@ -222,3 +223,44 @@ def adding_up_check(con) -> int:
     ok = sum(1 for *_, worst, _ in rows if worst <= _TOLERANCE)
     print(f"  {ok} of {len(rows)} geography-and-basis pairs add up within {_TOLERANCE} points")
     return problems
+
+
+# Published identities: a yield is its parts, to the publisher's rounding. The
+# Bank of England's nominal zero-coupon yield is its real yield plus its
+# inflation breakeven (checked 2026-10-14: within 0.0001 on every day).
+IDENTITIES = [
+    ("uk_gilt_5y", ("uk_real_5y", "uk_breakeven_5y")),
+    ("uk_gilt_10y", ("uk_real_10y", "uk_breakeven_10y")),
+]
+_IDENTITY_TOLERANCE = 0.01
+
+
+def identities(con) -> list[tuple[str, int, float, str]]:
+    """(total, days compared, worst gap, its date) for each identity whose
+    total and parts are all stored."""
+    out = []
+    for total, parts in IDENTITIES:
+        joins = " ".join(f"JOIN macro_series p{i} ON p{i}.date = t.date "
+                         f"AND p{i}.series_id = '{pid}'" for i, pid in enumerate(parts))
+        gap = " - ".join(["t.value"] + [f"p{i}.value" for i in range(len(parts))])
+        n, worst, at = con.execute(
+            f"SELECT count(*), max(abs({gap})), arg_max(t.date, abs({gap})) "
+            f"FROM macro_series t {joins} WHERE t.series_id = ?", [total]).fetchone()
+        if n:
+            out.append((total, n, worst, str(at)))
+    return out
+
+
+def identities_check(con) -> int:
+    rows = identities(con)
+    if not rows:
+        return 0
+    print("\n=== IDENTITIES (a yield against its parts) ===")
+    problems = 0
+    for total, n, worst, at in rows:
+        bad = worst > _IDENTITY_TOLERANCE
+        problems += bad
+        print(f"  {'WARN' if bad else 'ok':<4}  {total:<14} worst gap {worst:.4f} at {at} "
+              f"({n} days)")
+    return problems
+

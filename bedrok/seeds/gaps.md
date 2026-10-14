@@ -46,6 +46,11 @@ data sources and not found; most are sold by data vendors.
   adjusted. Eurostat publishes them for every other country Bedrok covers,
   and for these two only quarter-on-quarter or unadjusted. Their annual
   contributions are carried (`gdp_contrib_<part>_de`, `_nl`).
+- Quarterly Japanese GDP. The Cabinet Office publishes it as a CSV whose
+  name changes with every release and which states no licence; e-Stat's
+  tables stop at 2018; the OECD's copy sits behind a bot check. Bedrok carries
+  Japan's annual growth from the IMF's World Economic Outlook
+  (`weo_gdp_growth_jp`).
 
 **Records that are not kept openly**
 

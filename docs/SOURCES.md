@@ -11,7 +11,7 @@ Bedrok is wired to 31 publishers. 25 need no key at all; the others take a free 
 | **Eurostat** (`eurostat`) | 10 curated + 31 families | none | reuse with attribution | yes | [terms](https://ec.europa.eu/eurostat/web/main/help/copyright-notice) |
 | **U.S. Energy Information Administration** (`eia`) | 8 curated | [`EIA_API_KEY`](https://www.eia.gov/opendata/register.php) | public domain | yes | [terms](https://www.eia.gov/about/copyrights_reuse.php) |
 | **Office for National Statistics** (`ons`) | 10 curated | none | reuse with attribution | yes | [terms](https://www.ons.gov.uk/help/termsandconditions) |
-| **Bank of England** (`boe`) | 6 curated | none | reuse with attribution | yes | [terms](https://www.bankofengland.co.uk/legal) |
+| **Bank of England** (`boe`) | 9 curated | none | reuse with attribution | yes | [terms](https://www.bankofengland.co.uk/legal) |
 | **OECD** (`oecd`) | 11 curated | none | reuse with attribution | yes | [terms](https://www.oecd.org/en/about/terms-conditions.html) |
 | **Federal Reserve Banks' research files and FHFA** (`fedfiles`) | 14 curated | none | reuse with attribution | yes | [terms](https://www.newyorkfed.org/privacy/termsofuse) |
 | **Board of Governors of the Federal Reserve System** (`fedboard`) | 22 curated | none | public domain | yes | [terms](https://www.federalreserve.gov/disclaimer.htm) |
@@ -23,7 +23,7 @@ Bedrok is wired to 31 publishers. 25 need no key at all; the others take a free 
 | **U.S. Commodity Futures Trading Commission — Commitments of Traders** (`cftc`) | 1 family | none | public domain | yes | [terms](https://www.cftc.gov/) |
 | **Bedrok (computed from stored series)** (`derived`) | 36 families | none | reuse with attribution | yes |  |
 | **Bank for International Settlements** (`bis`) | 17 curated | none | reuse with attribution | yes | [terms](https://data.bis.org/help/legal) |
-| **International Monetary Fund** (`imf`) | 6 curated | none | reuse with attribution | yes | [terms](https://www.imf.org/en/About/copyright-and-terms) |
+| **International Monetary Fund** (`imf`) | 7 curated | none | reuse with attribution | yes | [terms](https://www.imf.org/en/About/copyright-and-terms) |
 | **Istituto Nazionale di Statistica (Istat)** (`istat`) | 1 curated | none | reuse with attribution | yes | [terms](https://www.istat.it/note-legali/) |
 | **Institut national de la statistique et des études économiques (INSEE)** (`insee`) | 3 curated | none | reuse with attribution | yes | [terms](https://www.insee.fr/fr/information/2008466) |
 | **Australian Bureau of Statistics** (`abs`) | 2 curated | none | reuse with attribution | yes | [terms](https://www.abs.gov.au/website-privacy-copyright-and-disclaimer) |
@@ -35,7 +35,7 @@ Bedrok is wired to 31 publishers. 25 need no key at all; the others take a free 
 | **Statistics Finland** (`statfin`) | 2 curated | none | reuse with attribution | yes | [terms](https://stat.fi/en/about-us/get-to-know-statistics-finland/legislation/terms-of-use) |
 | **Statistics Denmark** (`dst`) | 2 curated | none | reuse with attribution | yes | [terms](https://www.dst.dk/en/presse/kildeangivelse) |
 | **Statistisches Bundesamt (Destatis)** (`destatis`) | 2 curated | [`DESTATIS_API_KEY`](https://www.destatis.de/EN/Service/OpenData/api-webservice.html) | reuse with attribution | yes | [terms](https://www.destatis.de/EN/Service/Legal-Notice/_node.html) |
-| **Statistics Bureau of Japan / e-Stat** (`estat`) | 3 curated | [`ESTAT_API_KEY`](https://www.e-stat.go.jp/api/en) | reuse with attribution | yes | [terms](https://www.e-stat.go.jp/en/terms-of-use) |
+| **Statistics Bureau of Japan / e-Stat** (`estat`) | 4 curated | [`ESTAT_API_KEY`](https://www.e-stat.go.jp/api/en) | reuse with attribution | yes | [terms](https://www.e-stat.go.jp/en/terms-of-use) |
 | **Ministry of Finance, Japan** (`mof_jp`) | 1 curated | none | reuse with attribution | yes | [terms](https://www.mof.go.jp/english/about_mof/notice/index.html) |
 
 ## What each publisher covers
@@ -152,6 +152,9 @@ Bedrok is wired to 31 publishers. 25 need no key at all; the others take a free 
 - `uk_gilt_10y` — UK 10-year nominal zero-coupon gilt yield
 - `uk_gilt_20y` — UK 20-year nominal zero-coupon gilt yield
 - `uk_breakeven_5y` — UK 5-year inflation zero-coupon (gilt-implied breakeven)
+- `uk_real_5y` — UK 5-year real zero-coupon gilt yield
+- `uk_real_10y` — UK 10-year real zero-coupon gilt yield
+- `uk_breakeven_10y` — UK 10-year inflation zero-coupon (gilt-implied breakeven)
 
 ### OECD
 
@@ -337,6 +340,7 @@ Bedrok is wired to 31 publishers. 25 need no key at all; the others take a free 
 - `cofer_eur_share` — Euro share of allocated FX reserves (IMF COFER)
 - `weo_gdp_growth_world` — World real GDP growth, IMF World Economic Outlook
 - `weo_gdp_growth_us` — US real GDP growth, IMF World Economic Outlook
+- `weo_gdp_growth_jp` — Japan real GDP growth, IMF World Economic Outlook
 - `weo_gdp_growth_ea` — Euro area real GDP growth, IMF World Economic Outlook
 - `weo_gdp_growth_cn` — China real GDP growth, IMF World Economic Outlook
 
@@ -402,6 +406,7 @@ Bedrok is wired to 31 publishers. 25 need no key at all; the others take a free 
 
 ### Statistics Bureau of Japan / e-Stat
 
+- `jp_cpi` — Japan CPI, all items (e-Stat)
 - `jp_cpi_core` — Japan CPI, all items less fresh food ("core", e-Stat)
 - `jp_cpi_core_core` — Japan CPI, all items less fresh food and energy (e-Stat)
 - `jp_unemployment` — Japan unemployment rate (Labour Force Survey)
