@@ -677,7 +677,7 @@ def sync_macro(con, incremental=False, only=None, prime=True) -> list[tuple]:
     cat = con.execute(
         f"SELECT series_id, source, source_code, filled_from, "
         f"coalesce(cache, 'store') AS cache FROM macro_catalog "
-        f"WHERE source NOT IN ({src_ph}){pfx_clause} ORDER BY series_id",
+        f"WHERE source NOT IN ({src_ph}){pfx_clause}{_NOT_FX} ORDER BY series_id",
         list(BULK_SOURCES) + [p + "%" for p in BULK_PREFIXES]
     ).fetch_df()
     if only is not None:
@@ -747,7 +747,7 @@ def static_catalog_rows() -> pd.DataFrame:
                 "notes": spec["notes"], "staleness_days": spec.get("staleness_days"),
                 "license": licensing.ATTRIBUTION, "cache": licensing.STORE,
             })
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows + fx_catalog_rows())
 
 
 # Bulk families whose series ids only a download names: asking for an unknown
@@ -767,7 +767,7 @@ def per_series_catalog(con, only=None) -> pd.DataFrame:
     pfx_clause = "".join(" AND series_id NOT LIKE ?" for _ in BULK_PREFIXES)
     cat = con.execute(
         f"SELECT series_id, source, source_code FROM macro_catalog "
-        f"WHERE source NOT IN ({src_ph}){pfx_clause} "
+        f"WHERE source NOT IN ({src_ph}){pfx_clause}{_NOT_FX} "
         f"AND coalesce(cache, 'store') = 'store' ORDER BY series_id",
         list(BULK_SOURCES) + [p + "%" for p in BULK_PREFIXES]).fetch_df()
     return cat if only is None else cat[cat["series_id"].isin(only)]
@@ -784,6 +784,59 @@ def clear_download_caches() -> None:
             fn = getattr(mod, attr, None)
             if fn is not None and hasattr(fn, "cache_clear"):
                 fn.cache_clear()
+
+
+# The six FX pairs answer as series (session D2, the owner, 2026-10-14):
+# fx_rates stays the table the engines and the CLI read, and sync_fx mirrors
+# each pair into macro_series under its lower-case id, with a catalog row, so
+# every series tool answers `eurusd` with no FX branch of its own. The macro
+# stage never fetches these rows (the _NOT_FX guard): sync_fx owns them.
+# An inverse is credited to the publisher of the rate it inverts. A pair XXXYYY
+# is YYY per 1 XXX (CLAUDE.md rule 5).
+_FX = [
+    # id, source, source_code, name, quote ccy per base, publisher's words
+    ("eurusd", "ecb", "EXR/D.USD.EUR.SP00.A", "Euro in US dollars, EURUSD (ECB reference rate)",
+     "USD per EUR", "the ECB's daily euro reference rate, set around 14:15 CET on TARGET days"),
+    ("eurgbp", "ecb", "EXR/D.GBP.EUR.SP00.A", "Euro in pounds sterling, EURGBP (ECB reference rate)",
+     "GBP per EUR", "the ECB's daily euro reference rate, set around 14:15 CET on TARGET days"),
+    ("gbpusd", "fedboard", "H10:RXI$US_N.B.UK",
+     "Pound sterling in US dollars, GBPUSD (Fed H.10 noon rate)",
+     "USD per GBP", "the Fed's H.10 noon buying rate in New York, published weekly"),
+    ("usdeur", "ecb", "1/EURUSD", "US dollar in euros, USDEUR (inverse of the ECB rate)",
+     "EUR per USD", "the inverse of eurusd"),
+    ("gbpeur", "ecb", "1/EURGBP", "Pound sterling in euros, GBPEUR (inverse of the ECB rate)",
+     "EUR per GBP", "the inverse of eurgbp"),
+    ("usdgbp", "fedboard", "1/GBPUSD",
+     "US dollar in pounds sterling, USDGBP (inverse of the Fed H.10 rate)",
+     "GBP per USD", "the inverse of gbpusd"),
+]
+FX_IDS = tuple(r[0] for r in _FX)
+FX_ALLOWANCE_DAYS = 14   # H.10 publishes weekly; see ops/validate.py
+_NOT_FX = " AND series_id NOT IN (" + ", ".join(f"'{i}'" for i in FX_IDS) + ")"
+
+
+def fx_catalog_rows() -> list[dict]:
+    """The six pairs' catalog rows, knowable without a download."""
+    rows = []
+    for sid, src, code, name, units, how in _FX:
+        rows.append({
+            "series_id": sid, "source": src, "source_code": code, "name": name,
+            "frequency": "daily", "units": units,
+            "notes": (f"{units}: {how}. "
+                      + ("" if code.startswith("1/") else f"Its inverse is {sid[3:]}{sid[:3]}. ")
+                      + f"Stored in fx_rates as {sid.upper()} and refreshed by the fx stage."),
+            "staleness_days": FX_ALLOWANCE_DAYS,
+            "license": licensing.SOURCE_DEFAULT_LICENSE[src], "cache": licensing.STORE,
+        })
+    return rows
+
+
+def _mirror_fx(con, pair: str) -> None:
+    """Copy a pair's whole fx_rates history into macro_series (a few thousand
+    rows: whole, so the two can never drift)."""
+    df = con.execute("SELECT date, rate AS value FROM fx_rates WHERE pair = ? "
+                     "ORDER BY date", [pair]).fetch_df()
+    store.upsert_macro_series(con, pair.lower(), df)
 
 
 def _derived_fx(con, expr: str) -> pd.DataFrame:
@@ -826,6 +879,7 @@ def sync_fx(con, incremental=False) -> list[tuple]:
                     raise ValueError(f"{src} returned no rows; old history kept")
                 con.execute("DELETE FROM fx_rates WHERE pair = ?", [pair])
             n = store.upsert_fx(con, pair, df, src)
+            _mirror_fx(con, pair)
             note = f" (replaced {', '.join(sorted(held))})" if repointed else ""
             report.append((pair, "ok", f"{n} rows ({src}){note}"))
         except Exception as e:  # noqa: BLE001
@@ -892,6 +946,8 @@ def refresh_series(con, series_id: str) -> tuple[str, list[tuple]]:
     if cache == licensing.SESSION:
         raise ValueError(f"{series_id} is session-only: it is fetched live, never stored")
     clear_download_caches()
+    if series_id in FX_IDS:
+        return "fx", sync_fx(con, incremental=True)
     if source == "worldbank":
         return "pinksheet", sync_pink_sheet(con, incremental=True)
     if source == "cftc":

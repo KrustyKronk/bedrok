@@ -119,3 +119,17 @@ def test_a_place_is_a_name_never_the_words_describing_the_case():
     assert "za_census_2022_undercount" in [w["warning_id"] for w in warnings.search("south africa census")]
     assert "opec_crude_direct_communication" in [w["warning_id"] for w in warnings.search("opec output")]
     assert "tr_cpi_item_prices_2022" in [w["warning_id"] for w in warnings.search("turkey inflation")]
+
+
+def test_a_place_bedrok_covers_also_needs_the_words_to_be_about_the_warning():
+    """The D2 self-test: every "us …" search carried the five BLS warnings,
+    a Treasury yield included. The real seed is used."""
+    def ids(text):
+        return {w["warning_id"] for w in warnings.search(text)}
+    assert ids("us 10 year yield") == set()
+    assert ids("us") == set()
+    assert ids("us cpi") == {"us_cpi_oct2025_gap", "us_cpi_sample_cuts_2025"}
+    assert {"us_cps_oct2025_gap", "us_cps_response_rates"} <= ids("us unemployment rate")
+    # where Bedrok carries nothing, the place alone still answers
+    assert "ar_indec_cpi_2007" in ids("argentina")
+    assert "ar_indec_cpi_2007" in ids("argentina inflation")

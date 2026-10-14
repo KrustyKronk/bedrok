@@ -267,10 +267,36 @@ def _ensure_fresh(series_id: str) -> str:
             stage, rows = pipeline.refresh_series(con, series_id)
     except ToolError:
         return "store (stale; the store was busy, so it was not refreshed)"
-    fails = [d for _, s, d in rows if s == "FAIL"]
-    if fails:
+    status, fails = _report_for(series_id, rows)
+    if status == "failed":
         return f"store (stale; refresh failed: {sources.redact(fails[0])[:120]})"
     return f"refreshed now from the publisher ({stage})"
+
+
+# The rows a bulk stage names after its whole family rather than a series: a
+# FAIL there means every member failed. Per-member rows carry the series id.
+_FAMILY_ROWS = {s["label"] for s in pipeline.EUROSTAT_BULK_SETS} | {
+    "hicp_europe_bulk", "hicp_europe", "worldbank_pink_sheet", "worldbank", "cftc_cot"}
+
+
+def _report_for(series_id: str, rows: list[tuple]) -> tuple[str, list[str]]:
+    """(status, failure details) of one series within its stage's report.
+
+    A stage reports every member of a family, and the derived stage every
+    derived series; another member's failure is not this one's (the D1
+    self-test: Spain reported failed because another geography had). Kept:
+    the series' own row, its inputs', and a family-wide FAIL."""
+    own = {series_id, *_derived_inputs(series_id)}
+    if series_id in pipeline.FX_IDS:
+        own.add(series_id[3:] + series_id[:3])          # an inverse's rate
+    kept = [(st, d) for name, st, d in rows
+            if str(name).lower() in own or (st == "FAIL" and name in _FAMILY_ROWS)]
+    fails = [d for st, d in kept if st == "FAIL"]
+    if fails:
+        return "failed", fails
+    if kept and all(st == "skip" for st, _ in kept):
+        return "skipped", [d for _, d in kept]
+    return "ok", []
 
 
 def _key_help(series_id: str, source: str) -> str:
@@ -390,6 +416,8 @@ def search_series(
     as a word. Ids follow a pattern: a geography prefix (us_, ea_, uk_, jp_,
     de_, …), then the measure — e.g. us_10y, ea_hicp_yoy, jp_policy_rate; the
     bulk families end with the geography instead (hicp_core_es, gdp_qoq_de).
+    Exchange rates are series too: eurusd, eurgbp, gbpusd and their inverses
+    (usdeur, gbpeur, usdgbp), each in quote currency per 1 unit of the base.
     Empty text lists everything (with source/frequency filters); to walk the
     whole catalog or get counts, use list_series. Returns the best matches with
     their frequency, units, whether they are stored or fetched live, and their
@@ -404,6 +432,7 @@ def search_series(
             "max(ms.date) FILTER (WHERE ms.date <= current_date) AS last_date "
             "FROM macro_catalog mc LEFT JOIN macro_series ms USING (series_id) "
             "GROUP BY ALL").fetch_df()
+    unfiltered = cat
     if source:
         cat = cat[cat["source"] == source]
     if frequency:
@@ -441,10 +470,17 @@ def search_series(
         # Adjacent words found together in the name ("high yield", "policy rate")
         # outrank the same words scattered across a different series.
         total += sum(3 for a, b in zip(words, words[1:]) if f"{a} {b}" in name)
-        return total + (10 if "_".join(words) == sid else 0)
+        total += 10 if "_".join(words) == sid else 0
+        # A headline breaks a tie with its near twin, never a real difference.
+        return total + (1 if total and sid in aliases.HEADLINES else 0)
 
     def ranked(frame):
-        frame = frame.assign(score=frame.apply(score, axis=1)) if not frame.empty else frame
+        if frame.empty:
+            # A place or filter that leaves nothing (session D2: this raised
+            # KeyError 'score', which reached the assistant as "Error
+            # executing tool").
+            return frame
+        frame = frame.assign(score=frame.apply(score, axis=1))
         out = frame[frame["score"] > 0].sort_values(["score", "series_id"], ascending=[False, True]) \
             if words else frame.sort_values("series_id")
         # Contributions to growth are 180 rows that would bury the headline in
@@ -479,6 +515,21 @@ def search_series(
                            "listed in `nearest`" if places else
                            "nothing matched every word; the nearest series by name are "
                            "listed in `nearest`")
+    elif not places and found:
+        # Say who publishes what Bedrok lacks: each warning names the official
+        # series and its agency.
+        where = ", ".join(dict.fromkeys(w["country"] for w in found if w.get("country")))
+        named = "; ".join(dict.fromkeys(w["official_series"] for w in found
+                                        if w.get("official_series")))
+        out["note"] = (f"Bedrok carries no series for {where}; the warnings say where "
+                       "its official numbers stand" + (f": {named}" if named else ""))
+    elif hits.empty and places:
+        held = sum(geo.of_series(sid, src) in places
+                   for sid, src in zip(unfiltered["series_id"], unfiltered["source"]))
+        asked = " and ".join(f for f in (source and f"from {source}",
+                                         frequency and f"at {frequency} frequency") if f)
+        out["note"] = (f"Bedrok carries {held} series for that place, none {asked}"
+                       if held and asked else "Bedrok carries no series for that place")
     return out
 
 
@@ -605,7 +656,9 @@ def _related(con, series_id: str, row: dict) -> list[dict]:
     it is a `part` of the series (what it is made of) or a `companion`."""
     parts = _parts(series_id, row)
     ids = parts + [d["series_id"] for d in derived.DERIVED if series_id in d["inputs"]]
-    ids += re.findall(r"\b[a-z][a-z0-9]*_[a-z0-9_]+\b", row.get("notes") or "")
+    notes = row.get("notes") or ""
+    ids += re.findall(r"\b[a-z][a-z0-9]*_[a-z0-9_]+\b", notes)
+    ids += [i for i in pipeline.FX_IDS if re.search(rf"\b{i}\b", notes)]  # no underscore
     ids = [i for i in dict.fromkeys(ids) if i != series_id]
     if not ids:
         return []
@@ -1108,7 +1161,8 @@ def query(
     anything the other tools do not cover. Tables: macro_catalog (series_id,
     source, source_code, name, frequency, units, notes, staleness_days, license,
     cache), macro_series (series_id, date, value), fx_rates (pair, date, rate,
-    source); view all_series (kind, series_id, date, value). One statement;
+    source); view all_series (kind, series_id, date, value), where a pair
+    shows twice: kind 'fx' as EURUSD, kind 'macro' as eurusd. One statement;
     files, URLs and extensions are disabled. Session-only series (cache =
     'session') are never in the store, so SQL cannot see them. DuckDB keeps
     `first` and `last` as function names: alias a column `AS first_d`, never
@@ -1156,7 +1210,7 @@ def _run_job() -> None:
         _job.update(status="failed", current=None,
                     error=sources.redact(f"{type(e).__name__}: {e}")[:300])
     finally:
-        _job["finished_at"] = datetime.now().isoformat(timespec="seconds")
+        _job["finished_at"] = datetime.now().astimezone().isoformat(timespec="seconds")
 
 
 def _record(rows: list[tuple]) -> None:
@@ -1182,19 +1236,32 @@ def refresh(
     global _job_thread
     if series_ids:
         results = []
-        for sid in series_ids:
+        for asked in series_ids:
+            sid = aliases.canonical(asked)
             try:
                 with _store(write=True) as con:
+                    before = freshness.assess(con, sid) or {}
                     stage, rows = pipeline.refresh_series(con, sid)
-                fails = [sources.redact(d) for _, s, d in rows if s == "FAIL"]
-                results.append({"series_id": sid, "stage": stage,
-                                "status": "failed" if fails else "ok", "detail": fails[:3]})
+                    after = freshness.assess(con, sid) or {}
+                status, detail = _report_for(sid, rows)
+                n0, n1 = before.get("n_obs"), after.get("n_obs")
+                d0, d1 = before.get("last_date"), after.get("last_date")
+                results.append({
+                    "series_id": asked, **({"alias_of": sid} if sid != asked else {}),
+                    "stage": stage, "status": status,
+                    "detail": [sources.redact(d) for d in detail[:3]],
+                    # Whether anything arrived: "ok" alone said only that
+                    # nothing failed (the D1 self-test).
+                    "n_obs_before": n0, "n_obs_after": n1,
+                    "last_date_before": _iso(d0), "last_date_after": _iso(d1),
+                    "new_observations": (n1 - n0) if n0 is not None and n1 is not None else None,
+                    "changed": (n0, d0) != (n1, d1)})
             except KeyError:
-                results.append({"series_id": sid, "status": "unknown id"})
+                results.append({"series_id": asked, "status": "unknown id"})
             except ValueError as e:
-                results.append({"series_id": sid, "status": "not stored", "detail": [str(e)]})
+                results.append({"series_id": asked, "status": "not stored", "detail": [str(e)]})
             except ToolError as e:
-                results.append({"series_id": sid, "status": "busy", "detail": [str(e)]})
+                results.append({"series_id": asked, "status": "busy", "detail": [str(e)]})
         return {"mode": "series", "results": results}
     if _job_thread is not None and _job_thread.is_alive():
         return {"mode": "background", **_job}
@@ -1203,7 +1270,7 @@ def refresh(
         return {"mode": "background", "note": "last run finished; call again to start a new one",
                 **_job}
     _job.clear()
-    _job.update(status="running", started_at=datetime.now().isoformat(timespec="seconds"),
+    _job.update(status="running", started_at=datetime.now().astimezone().isoformat(timespec="seconds"),
                 done=0, total=None, updated=0, failures=[], current=None,
                 acknowledged=False)
     _job_thread = threading.Thread(target=_run_job, name="bedrok-refresh", daemon=True)

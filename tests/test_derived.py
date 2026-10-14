@@ -197,3 +197,19 @@ def test_validate_finds_parts_that_do_not_add_up(con):
     rows = {r[1]: r for r in validate.adding_up(con)}
     assert rows["es"][3] == pytest.approx(0.01, abs=1e-9) and rows["fr"][3] == pytest.approx(0.41)
     assert validate.adding_up_check(con) == 1
+
+
+def test_validate_holds_a_yield_to_its_parts(con):
+    """Session D2: the Bank of England's nominal yield is its real yield plus
+    its breakeven; a day that misses is a finding."""
+    from bedrok.ops import validate
+    _seed(con, "uk_real_10y", [("2026-10-12", 2.016), ("2026-10-13", 2.0)])
+    _seed(con, "uk_breakeven_10y", [("2026-10-12", 3.412), ("2026-10-13", 3.4)])
+    _seed(con, "uk_gilt_10y", [("2026-10-12", 5.428), ("2026-10-13", 5.5)])   # misses by 0.1
+    _seed(con, "uk_real_10y", [("2022-11-28", 1.0633)])        # the Bank's bad day
+    _seed(con, "uk_breakeven_10y", [("2022-11-28", 3.3708)])
+    _seed(con, "uk_gilt_10y", [("2022-11-28", 3.1932)])
+    (total, n, off, worst, at, loud, _), = validate.identities(con)
+    assert (total, n, off, at, loud) == ("uk_gilt_10y", 2, 1, "2026-10-13", True)
+    assert worst == pytest.approx(0.1)
+    assert validate.identities_check(con) == 1

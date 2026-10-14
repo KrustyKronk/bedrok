@@ -588,3 +588,69 @@ def test_a_money_level_percentile_carries_its_caveat(srv):
     store.close_checkpointed(con)
     assert "grows with the economy" in _call("percentile", {"series_id": "us_m2"}).structured_content["caveat"]
     assert "caveat" not in _call("percentile", {"series_id": "us_cpi"}).structured_content
+
+
+def _seed_rows(*ids):
+    """Catalog rows exactly as the seed has them, for tests about wording."""
+    seed = pd.read_csv(pipeline.CATALOG_CSV, dtype=str).set_index("series_id")
+    con = duckdb.connect(str(config.DB_PATH))
+    store.upsert_macro_catalog(con, seed.loc[list(ids)].reset_index())
+    store.close_checkpointed(con)
+
+
+def test_the_headline_wins_a_tie_and_the_fed_balance_sheet_is_found_by_name(srv):
+    """Session D2: the adjusted CPI beat the headline on the alphabet, and the
+    BIS policy rates beat the Fed's balance sheet on the words in their names."""
+    _seed_rows("us_cpi", "us_cpi_nsa", "us_fed_balance_sheet", "au_policy_rate",
+               "ca_policy_rate")
+
+    def ids(text):
+        return [m["series_id"] for m in
+                _call("search_series", {"text": text}).structured_content["matches"]]
+    assert ids("us cpi")[:2] == ["us_cpi_nsa", "us_cpi"]
+    assert ids("central bank balance sheet")[0] == "us_fed_balance_sheet"
+
+
+def test_a_refresh_says_whether_anything_arrived(srv):
+    r = _call("refresh", {"series_ids": ["jp_policy_rate"]}).structured_content["results"][0]
+    # the stub adds one observation dated 20 days ago to the two stored
+    assert (r["n_obs_before"], r["n_obs_after"], r["new_observations"]) == (2, 3, 1)
+    assert r["changed"] and r["last_date_before"] == "2020-02-01"
+    again = _call("refresh", {"series_ids": ["jp_policy_rate"]}).structured_content["results"][0]
+    assert again["status"] == "ok" and again["changed"] is False
+
+
+def test_another_members_failure_is_not_this_ones():
+    """The D1 self-test: refreshing one geography of a Eurostat family said
+    "failed" because another geography had."""
+    label = pipeline.EUROSTAT_BULK_SETS[0]["label"]
+    rows = [("gdp_annual_es", "ok", "40 rows"), ("gdp_annual_el", "FAIL", "boom"),
+            ("gdp_annual_mt", "skip", "dead/stale geo")]
+    assert mcp_server._report_for("gdp_annual_es", rows) == ("ok", [])
+    assert mcp_server._report_for("gdp_annual_es", rows + [(label, "FAIL", "down")]) \
+        == ("failed", ["down"])
+    assert mcp_server._report_for("gdp_annual_mt", rows)[0] == "skipped"
+    # a derived series answers for its inputs, not for the other derived series
+    derived_rows = [("us_10y", "FAIL", "h15 down"), ("us_recession", "FAIL", "x")]
+    assert mcp_server._report_for("us_breakeven_10y", derived_rows)[0] == "failed"
+    assert mcp_server._report_for("us_breakeven_10y", derived_rows[1:])[0] == "ok"
+    # an inverse pair answers for the rate it inverts
+    assert mcp_server._report_for("usdeur", [("EURUSD", "FAIL", "ecb")])[0] == "failed"
+
+
+def test_the_background_refresh_says_its_timezone(srv, monkeypatch):
+    monkeypatch.setattr(mcp_server, "_run_job", lambda: None)
+    started = _call("refresh").structured_content["started_at"]
+    assert started[-6] in "+-" and started[-3] == ":"
+
+
+def test_a_place_that_finds_nothing_says_why(srv, monkeypatch):
+    """Session D2: an empty answer for a place read as "Bedrok has nothing"."""
+    r = _call("search_series", {"text": "japan", "source": "ecb"}).structured_content
+    assert r["matches"] == [] and "1 series for that place, none from ecb" in r["note"]
+    from bedrok.core import warnings
+    monkeypatch.setattr(warnings, "search", lambda text, limit=5: [
+        {"country": "Argentina", "official_series": "Consumer Price Index, INDEC",
+         "warning_id": "ar"}])
+    r = _call("search_series", {"text": "argentina"}).structured_content
+    assert "no series for Argentina" in r["note"] and "INDEC" in r["note"]
