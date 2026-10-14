@@ -138,6 +138,9 @@ def _place(country: str, iso2: str = "") -> set[str]:
 
 _NOT_PLACES = {"global"}
 
+# ISO codes of the places Bedrok carries series for.
+_COVERED = {iso for iso in geography.ISO2.values() if iso}
+
 
 def search(text: str, limit: int = 5) -> list[dict]:
     """Warnings whose country and concept match the words asked for. A place
@@ -151,6 +154,13 @@ def search(text: str, limit: int = 5) -> list[dict]:
         about = _tokens(r["concept"]) | _tokens(r["official_series"])
         hits_place = {n for n in _place(r["country"], r.get("iso2", "")) if f" {n} " in asked}
         if not hits_place:
+            continue
+        # Where Bedrok carries the place, its series answer and a warning must
+        # also be about what was asked: "us 10 year yield" drew all five BLS
+        # warnings (the D2 self-test). Where it does not, the warning is the
+        # whole answer and the place alone is enough.
+        if (r.get("iso2") or "") in _COVERED and \
+                not (words - set().union(*map(_tokens, hits_place))) & about:
             continue
         scored.append((3 * len(hits_place) + len(words & about), r["warning_id"], r))
     scored.sort(key=lambda t: (-t[0], t[1]))
