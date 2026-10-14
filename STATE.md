@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-14, end of session D2.** Bedrok is a local MCP server and store of
+**Updated 2026-10-14, after session D2 and the 0.3.0 release.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -11,12 +11,15 @@ wave of publishers) and 7b (warnings, the gaps note, the menu review) built
 it. The owner then used it as an analyst would (2026-10-11), and the feedback
 became sessions 8 (lining up the data), 9 (charts and answers), 10 (the data
 the questions needed) and 11 (tidying the catalog). Session 12 opened it:
-**Bedrok 0.2.0 is public**, at `github.com/KrustyKronk/bedrok` and on PyPI
+**Bedrok is public**, now at **0.3.0**,, at `github.com/KrustyKronk/bedrok` and on PyPI
 (`uvx --python 3.12 bedrok serve`), with the Desktop bundle on the release.
-**Next: a release** (item 1). Sessions A, correct answers, B, the Fed Board
-watch, C, breakdown questions, D1, chart and tool mechanics, and D2,
-discovery and catalog, are done, and none of them has reached a user: the
-Desktop bundle and PyPI still serve 0.2.0 until a version bump.
+**0.3.0 is released** (2026-10-14): sessions A, correct answers, B, the Fed
+Board watch, C, breakdown questions, D1, chart and tool mechanics, and D2,
+discovery and catalog, are on PyPI and in the Desktop bundle attached to the
+GitHub release. Proven from PyPI: an empty home with no keys answered all
+nine smoke calls in 56 seconds. **Next:** the owner installs the bundle in
+Claude Desktop and asks it a cold question (item 1); then item 1's smaller
+frictions.
 
 Session 13 (revisions and the release calendar) stays deferred.
 
@@ -402,12 +405,12 @@ None holds a secret.
 Completed items are removed rather than ticked — git history is the record.
 Owner-side items are in `profile/STATE-private.md`.
 
-1. **Release what A to D2 built.** Bump `version` in `pyproject.toml` and
-   `packaging/mcpb/manifest.json` together, merge, `gh release create`, then
-   build and attach the bundle (Releasing, above). The owner installs it in
-   Claude Desktop; a cold question there is the real test, since Desktop
-   still runs 0.2.0. Smaller, from the D2 acceptance test, worth a look
-   beside it:
+1. **Install 0.3.0 in Claude Desktop, then the acceptance test's smaller
+   frictions.** The release is done (PyPI by `publish.yml`, the bundle on the
+   v0.3.0 release; the manifest's author and name unchanged, so it should
+   upgrade 0.2.0 in place). The owner installs it and asks a cold question
+   there, the first time any of A to D2 runs outside this machine's
+   development server. Smaller, from the D2 acceptance test:
    - `get_series` takes five ids and `chart_series` seven; a breakdown's
      quarterly parts needed two calls.
    - A chart of five places is titled "Germany and 4 others".
