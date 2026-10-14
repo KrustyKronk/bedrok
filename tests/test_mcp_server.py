@@ -642,3 +642,14 @@ def test_the_background_refresh_says_its_timezone(srv, monkeypatch):
     monkeypatch.setattr(mcp_server, "_run_job", lambda: None)
     started = _call("refresh").structured_content["started_at"]
     assert started[-6] in "+-" and started[-3] == ":"
+
+
+def test_a_place_that_finds_nothing_says_why(srv, monkeypatch):
+    """Session D2: an empty answer for a place read as "Bedrok has nothing"."""
+    r = _call("search_series", {"text": "japan", "source": "ecb"}).structured_content
+    assert r["matches"] == [] and "1 series for that place, none from ecb" in r["note"]
+    from bedrok.core import warnings
+    monkeypatch.setattr(warnings, "search", lambda text, limit=5: [
+        {"country": "Argentina", "source_name": "INDEC", "warning_id": "ar"}])
+    r = _call("search_series", {"text": "argentina"}).structured_content
+    assert "no series for Argentina" in r["note"] and "INDEC" in r["note"]

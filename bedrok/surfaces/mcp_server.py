@@ -432,6 +432,7 @@ def search_series(
             "max(ms.date) FILTER (WHERE ms.date <= current_date) AS last_date "
             "FROM macro_catalog mc LEFT JOIN macro_series ms USING (series_id) "
             "GROUP BY ALL").fetch_df()
+    unfiltered = cat
     if source:
         cat = cat[cat["source"] == source]
     if frequency:
@@ -514,6 +515,19 @@ def search_series(
                            "listed in `nearest`" if places else
                            "nothing matched every word; the nearest series by name are "
                            "listed in `nearest`")
+    elif not places and found:
+        # Say who publishes what Bedrok lacks: the warnings cite the agency.
+        where = ", ".join(dict.fromkeys(w["country"] for w in found if w.get("country")))
+        cite = ", ".join(dict.fromkeys(w["source_name"] for w in found if w.get("source_name")))
+        out["note"] = (f"Bedrok carries no series for {where}; the warnings say where "
+                       "its official numbers stand" + (f" and cite {cite}" if cite else ""))
+    elif hits.empty and places:
+        held = sum(geo.of_series(sid, src) in places
+                   for sid, src in zip(unfiltered["series_id"], unfiltered["source"]))
+        asked = " and ".join(f for f in (source and f"from {source}",
+                                         frequency and f"at {frequency} frequency") if f)
+        out["note"] = (f"Bedrok carries {held} series for that place, none {asked}"
+                       if held and asked else "Bedrok carries no series for that place")
     return out
 
 
