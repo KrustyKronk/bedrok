@@ -21,6 +21,12 @@ after `lag_max` absorbs them.
 
 A series without a rule keeps the age rule exactly. Pure data and date
 arithmetic, in core: nothing here reads the clock or imports a layer above.
+
+Where a publisher states the date itself, a calendar entry replaces the
+rule's window (bedrok/seeds/release_calendar.csv names the feed and the
+release for each series; ingest/calendars.py fetches the dates into the
+store). The rule still bounds it: an entry far past the rule's window is
+ignored, so a renamed release cannot pin a series to a date a year out.
 """
 from __future__ import annotations
 
@@ -33,6 +39,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 RULES_CSV = Path(str(importlib.resources.files("bedrok") / "seeds" / "release_rules.csv"))
+CALENDAR_CSV = Path(str(importlib.resources.files("bedrok") / "seeds" / "release_calendar.csv"))
 
 COLUMNS = ["series_id", "prefix", "frequency", "lag_min", "lag_max", "weekday", "time",
            "tz", "note"]
@@ -75,6 +82,47 @@ def parse_row(raw: dict) -> dict:
 def load() -> tuple[dict, ...]:
     with open(RULES_CSV, newline="", encoding="utf-8") as f:
         return tuple(parse_row(r) for r in csv.DictReader(f))
+
+
+# The publishers' own dates. `fetched` feeds are downloaded on their own
+# (ingest/calendars.py); a `publisher` feed rides in the series' own response.
+CALENDAR_COLUMNS = ["series_id", "feed", "release_name"]
+FEEDS = {
+    "bea_json": {"publisher": "BEA", "tz": "America/New_York", "fetched": True,
+                 "label": "BEA's release schedule"},
+    "ons_next_release": {"publisher": "ONS", "tz": "Europe/London", "fetched": False,
+                         "label": "the ONS's next-release date"},
+}
+# An exact date has no window to wait through: the period is late a day after
+# it, which is long enough for a publisher's API to catch up with its website.
+CALENDAR_GRACE = timedelta(days=1)
+# How far past the rule's window a calendar entry may still be believed.
+CALENDAR_REACH = timedelta(days=60)
+
+
+@functools.lru_cache(maxsize=1)
+def load_calendar() -> dict[str, tuple[str, str]]:
+    """series_id → (feed, release name). A blank release name is the series'
+    own id: an ONS series carries its own next-release date."""
+    with open(CALENDAR_CSV, newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    out = {}
+    for r in rows:
+        if r["feed"] not in FEEDS:
+            raise ValueError(f"{r['series_id']}: unknown feed {r['feed']!r}")
+        out[r["series_id"]] = (r["feed"], r["release_name"].strip() or r["series_id"])
+    return out
+
+
+def calendar_key(series_id: str) -> tuple[str, str] | None:
+    return load_calendar().get(series_id)
+
+
+def calendar_window(feed: str, label: date, due_at: datetime) -> dict:
+    """The window of a period whose release date the publisher has stated."""
+    due = due_at.astimezone(ZoneInfo(FEEDS[feed]["tz"]))
+    return {"label": label, "due_at": due, "expected_by": due,
+            "late_after": due + CALENDAR_GRACE, "source": "calendar", "feed": feed}
 
 
 def rule_for(series_id: str) -> dict | None:
@@ -157,7 +205,8 @@ def window(rule: dict, label: date) -> dict:
         return datetime.combine(_roll(end + timedelta(days=lag), rule["weekday"]),
                                 rule["at"], tzinfo=tz)
     due, by = at(rule["lag_min"]), at(rule["lag_max"])
-    return {"label": label, "due_at": due, "expected_by": by, "late_after": by + GRACE}
+    return {"label": label, "due_at": due, "expected_by": by, "late_after": by + GRACE,
+            "source": "rule"}
 
 
 def _label_weekday(rule: dict) -> int:
@@ -219,10 +268,18 @@ def when(w: dict) -> str:
 
 
 def describe(w: dict, frequency: str, state: str, latest: date | None) -> dict:
-    """The JSON-safe `next_release` an answer carries, with the sentence to say."""
+    """The JSON-safe `next_release` an answer carries, with the sentence to say.
+    A rule's timing is the publisher's habit and says "usually"; a calendar
+    date is the publisher's own and says whose."""
     period = period_name(w["label"], frequency)
     held = f"{period_name(latest, frequency)} is the latest held" if latest else ""
-    if state == "due":
+    exact = w.get("source") == "calendar"
+    if exact:
+        at = f"{when(w)} ({FEEDS[w['feed']]['label']})"
+        message = {"due": f"{period} is scheduled for {at} and is not in the store yet; {held}.",
+                   "late": f"{period} was scheduled for {at} and has not reached Bedrok; {held}."
+                   }.get(state, f"Next: {period}, scheduled for {at}.")
+    elif state == "due":
         message = f"{period} is usually out {when(w)}, and is not in the store yet; {held}."
     elif state == "late":
         message = (f"{period} was expected by {_day(w['expected_by'])}, "
@@ -232,4 +289,6 @@ def describe(w: dict, frequency: str, state: str, latest: date | None) -> dict:
     return {"period": period, "due_at": w["due_at"].isoformat(),
             "expected_by": w["expected_by"].isoformat(),
             "late_after": w["late_after"].isoformat(),
-            "source": "rule", "approximate": True, "message": message}
+            "source": "calendar" if exact else "rule", "approximate": not exact,
+            **({"publisher": FEEDS[w["feed"]]["publisher"]} if exact else {}),
+            "message": message}

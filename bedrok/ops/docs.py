@@ -25,7 +25,7 @@ import pandas as pd
 
 import importlib.resources
 
-from bedrok.core import licensing, sources, warnings
+from bedrok.core import licensing, releases, sources, warnings
 from bedrok.core.aliases import ALIASES
 from bedrok.ingest import derived, pipeline
 
@@ -176,6 +176,53 @@ def warnings_md() -> str:
     return "".join(out)
 
 
+_WEEKDAY_NAMES = dict(zip(releases.WEEKDAYS, ("Monday", "Tuesday", "Wednesday", "Thursday",
+                                                 "Friday", "Saturday", "Sunday")))
+_AFTER = {"daily": "the day", "weekly": "the week", "monthly": "the month",
+          "quarterly": "the quarter", "annual": "the year"}
+
+
+def _timing(r: dict) -> str:
+    lo, hi = r["lag_min"], r["lag_max"]
+    days = f"{lo} days" if lo == hi else f"{lo} to {hi} days"
+    if lo < 0:
+        days = f"{-lo} days before to {hi} days after"
+        return f"{days} the end of {_AFTER[r['frequency']]}"
+    day = f", on a {_WEEKDAY_NAMES[r['weekday']]}" if r["weekday"] else ""
+    return f"{days} after {_AFTER[r['frequency']]}{day}"
+
+
+def releases_md() -> str:
+    rules, cal = releases.load(), releases.load_calendar()
+    out = [HEADER, "# When each series is next released\n\n",
+           "A series with a release rule knows when its next period is usually out, "
+           "so on a release morning Bedrok fetches it before answering, and says so "
+           "when it has not come. Rules are the publisher's habit, said with "
+           "\"usually\"; where the publisher states the date itself (an exact "
+           "calendar, below), that date is used and named. A series not listed here "
+           "is judged by the age of its newest observation alone.\n\n",
+           "Statuses: `fresh` (the next period is not due yet), `due` (inside its "
+           "window: fetched before an answer), `late` (past the window and two days' "
+           "grace, a day for an exact date), `stale` (older than the series allows, "
+           "whatever the rule says).\n\n",
+           "| Series | Usually out | Time | Exact calendar |\n|---|---|---|---|\n"]
+    for r in sorted(rules, key=lambda r: r["series_id"] or r["prefix"]):
+        name = f"`{r['series_id']}`" if r["series_id"] else f"`{r['prefix']}…` (family)"
+        feed = cal.get(r["series_id"])
+        exact = releases.FEEDS[feed[0]]["label"] if feed else ""
+        out.append(f"| {name} | {_timing(r)} | {r['time']} {r['tz']} | {exact} |\n")
+    out.append("\n## Exact calendars\n\n")
+    for feed, meta in releases.FEEDS.items():
+        n = sum(1 for f, _ in cal.values() if f == feed)
+        how = ("fetched at most once a day" if meta["fetched"]
+               else "read from the series' own response, no extra request")
+        label = meta["label"][0].upper() + meta["label"][1:]
+        out.append(f"- **{label}** (`{feed}`): {n} series; {how}.\n")
+    out.append("\nThe BLS publishes a calendar file, but its website refuses automated "
+               "retrieval, so BLS series stay on their rules.\n")
+    return "".join(out)
+
+
 def _seed_page(name: str) -> str:
     return HEADER + (importlib.resources.files("bedrok") / "seeds" / name).read_text(encoding="utf-8")
 
@@ -189,7 +236,8 @@ def charting_md() -> str:
 
 
 PAGES = {"SOURCES.md": sources_md, "LICENSES.md": licenses_md,
-         "WARNINGS.md": warnings_md, "GAPS.md": gaps_md, "CHARTING.md": charting_md}
+         "WARNINGS.md": warnings_md, "GAPS.md": gaps_md, "CHARTING.md": charting_md,
+         "RELEASES.md": releases_md}
 
 
 def main() -> int:

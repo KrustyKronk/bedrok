@@ -732,3 +732,32 @@ def test_a_late_release_reaches_the_chart_footnotes(due):
     notes = r["chart"]["footnotes"]
     assert any(n.startswith("Test CPI: ") and "has not reached Bedrok" in n for n in notes), notes
     assert r["series"][0]["freshness"]["status"] == "late"
+
+
+def test_the_publishers_calendar_is_read_once_and_used(srv, monkeypatch):
+    """A series with an exact calendar re-reads it when it is a day old, once,
+    and its freshness names the publisher's date instead of the rule's window."""
+    from bedrok.ingest import calendars
+    con = duckdb.connect(str(config.DB_PATH))
+    store.upsert_macro_catalog(con, pd.DataFrame([
+        {"series_id": "us_pce", "source": "bea", "source_code": "T20804:1:M", "name": "US PCE",
+         "frequency": "monthly", "units": "index", "notes": "", "staleness_days": 105,
+         "license": "public_domain", "cache": "store"}]))
+    store.replace_macro_series(con, "us_pce", _frame([_month(-3), _month(-2)], [1.0, 2.0]),
+                               "bea:T20804:1:M")
+    store.close_checkpointed(con)
+    reads = []
+    when = f"{_month(0) + timedelta(days=27)}T12:30:00+00:00"   # last month's release, this month
+
+    def fetch_bea():
+        reads.append(1)
+        return calendars.parse_bea({"Personal Income and Outlays": {"release_dates": [when]}})
+    monkeypatch.setitem(calendars.FETCHERS, "bea_json", fetch_bea)
+    monkeypatch.setitem(pipeline.MACRO_FETCHERS, "bea", lambda code, start: _frame(
+        [_month(-3), _month(-2)], [1.0, 2.0]))
+    monkeypatch.setenv("BEA_API_KEY", "test-key-123456")
+    for _ in range(2):
+        s = _call("get_series", {"series_ids": ["us_pce"]}).structured_content["series"][0]
+    assert reads == [1]
+    nr = s["freshness"]["next_release"]
+    assert nr["source"] == "calendar" and nr["publisher"] == "BEA"

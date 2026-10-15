@@ -11,6 +11,11 @@ rather than just the CDID.
 NOTE: the old api.ons.gov.uk service was decommissioned on 25/11/2024. Do not
 resurrect it; www.ons.gov.uk/<path>/data is the live route.
 
+The same JSON names the series' next release (`description.nextRelease`, "21
+October 2026"). `fetch` remembers it and `next_release` hands it to the
+pipeline, which records it in the release calendar (ingest/calendars.py): an
+exact date at no extra request.
+
 Licence: Open Government Licence v3.0 (see bedrok/licensing.py).
 """
 from __future__ import annotations
@@ -26,6 +31,12 @@ BASE = "https://www.ons.gov.uk"
 # annual roll-ups of itself, and storing the roll-up would silently coarsen it.
 _GRAINS = ("months", "quarters", "years")
 
+_FREQUENCY = {"months": "monthly", "quarters": "quarterly", "years": "annual"}
+
+# source_code → (nextRelease text, latest period label, frequency) from the
+# last fetch of that series in this process.
+_next: dict[str, tuple] = {}
+
 _MONTHS = {m: i for i, m in enumerate(
     ["january", "february", "march", "april", "may", "june", "july",
      "august", "september", "october", "november", "december"], start=1)}
@@ -35,11 +46,22 @@ def fetch(source_code: str, start: str | None = None) -> pd.DataFrame:
     url = f"{BASE}/{source_code.strip('/')}/data"
     r = requests.get(url, headers=BROWSER_UA, timeout=60)
     r.raise_for_status()
-    df = _parse(r.json())
+    js = r.json()
+    df = _parse(js)
+    grain = next((g for g in _GRAINS if js.get(g)), None)
+    if not df.empty and grain:
+        _next[source_code] = ((js.get("description") or {}).get("nextRelease"),
+                              df["date"].max(), _FREQUENCY[grain])
     if start and not df.empty:
         cutoff = pd.Timestamp(start).date()
         df = df[df["date"] >= cutoff].reset_index(drop=True)
     return df
+
+
+def next_release(source_code: str) -> tuple | None:
+    """(nextRelease text, latest period label, frequency) the last fetch of
+    this series read, or None."""
+    return _next.get(source_code)
 
 
 def _observation_date(o: dict):

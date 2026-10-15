@@ -1,0 +1,9 @@
+series_id,feed,release_name
+us_pce,bea_json,Personal Income and Outlays
+us_core_pce,bea_json,Personal Income and Outlays
+us_real_gdp,bea_json,Gross Domestic Product
+us_gdp_growth_saar,bea_json,Gross Domestic Product
+uk_cpi_yoy,ons_next_release,
+uk_cpih_yoy,ons_next_release,
+uk_gdp_monthly_index,ons_next_release,
+uk_unemployment_rate,ons_next_release,

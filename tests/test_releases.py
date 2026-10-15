@@ -161,9 +161,8 @@ def test_every_rule_names_a_series_or_family_bedrok_has():
 def test_no_rule_lets_the_age_backstop_fire_before_its_release_can_land():
     """Staleness overrides due and late, so a series' allowance must outlast
     the latest its next period can come: the label gap to that period's end,
-    the lag, a weekend or weekday roll, and the grace. Found on the way in:
-    the UK unemployment rate (LFS window dated by its first month) went stale
-    a month before each release."""
+    the lag, a weekend or weekday roll, and the grace. It raised eleven
+    allowances on the way in (PCE, M2, Japan's CPIs among them)."""
     cat = _catalog()
     for r in releases.load():
         if not r["series_id"]:

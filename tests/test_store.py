@@ -11,11 +11,11 @@ def _con():
     return con
 
 
-def test_schema_is_three_tables_and_one_view():
+def test_schema_is_four_tables_and_one_view():
     con = _con()
     tables = {r[0] for r in con.execute(
         "SELECT table_name FROM duckdb_tables() WHERE NOT internal").fetchall()}
-    assert tables == {"macro_catalog", "macro_series", "fx_rates"}
+    assert tables == {"macro_catalog", "macro_series", "fx_rates", "release_calendar"}
     views = {r[0] for r in con.execute(
         "SELECT view_name FROM duckdb_views() WHERE NOT internal").fetchall()}
     assert views == {"all_series"}

@@ -14,14 +14,20 @@ Two tests, the second only where a series has a release rule
      came out. Where a rule says when the next period is usually out, the
      status is `fresh` before that, `due` inside the window and `late` past
      it. Staleness still overrides both, so a wrong rule cannot hide a broken
-     feed; a seed test keeps every rule inside its series' allowance.
+     feed; a seed test keeps every rule inside its series' allowance. Where
+     the publisher has stated the date (the store's release_calendar, filled
+     by ingest/calendars.py), that date replaces the rule's window. Reading it
+     is offline: `assess` never fetches.
 
 Session series (never stored) have no stored age; `assess` reports them as
 such rather than as stale, with their next release when a rule names it.
 """
 from __future__ import annotations
 
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time, timedelta, timezone
+from zoneinfo import ZoneInfo
+
+import duckdb
 
 from bedrok.core import releases
 from bedrok.ingest import derived, pipeline
@@ -44,16 +50,46 @@ def allowance(frequency: str | None, staleness_days, series_id: str = "") -> int
     return STALENESS_ALLOWANCE.get((frequency or "monthly").lower(), DEFAULT_ALLOWANCE)
 
 
-def _window(series_id: str, last: date | None, now: datetime) -> tuple[dict, str] | None:
-    """(window of the next period, its frequency) from the series' own rule, or
-    for a derived series with none, the latest of its inputs': a spread is out
-    when both legs are."""
+def _calendar(con, series_id: str, rule: dict, w: dict) -> dict | None:
+    """The publisher's own date for the period `w` expects, or None. An entry
+    naming the period wins; otherwise the first date after the period is over
+    (BEA publishes August's PCE on 30 September, so "after September ends"
+    must start on 1 October). Bounded by the rule: an entry far past its
+    window is not believed."""
+    key = releases.calendar_key(series_id)
+    if not key:
+        return None
+    feed, name = key
+    tz = ZoneInfo(releases.FEEDS[feed]["tz"])
+    end = releases.period_end(w["label"], rule["frequency"])
+    after = datetime.combine(end + timedelta(days=1), time(0), tzinfo=tz)
+    reach = w["late_after"] + releases.CALENDAR_REACH
+    utc = lambda d: d.astimezone(timezone.utc).replace(tzinfo=None)  # noqa: E731
+    try:
+        row = con.execute(
+            "SELECT due_at FROM release_calendar WHERE feed = ? AND release_name = ? "
+            "AND due_at <= ? AND (period = ? OR (period IS NULL AND due_at >= ?)) "
+            "ORDER BY period IS NULL, due_at LIMIT 1",
+            [feed, name, utc(reach), w["label"], utc(after)]).fetchone()
+    except duckdb.CatalogException:          # a store from before the table
+        return None
+    if row is None:
+        return None
+    return releases.calendar_window(feed, w["label"], row[0].replace(tzinfo=timezone.utc))
+
+
+def _window(con, series_id: str, last: date | None, now: datetime) -> tuple[dict, str] | None:
+    """(window of the next period, its frequency) from the publisher's own
+    date or the series' rule, or for a derived series with neither, the latest
+    of its inputs': a spread is out when both legs are."""
     rule = releases.rule_for(series_id)
     if rule:
-        return releases.resolve(rule, last, now), rule["frequency"]
+        w = releases.resolve(rule, last, now)
+        if last is not None:
+            w = _calendar(con, series_id, rule, w) or w
+        return w, rule["frequency"]
     spec = next((d for d in derived.DERIVED if d["series_id"] == series_id), None)
-    found = [(releases.resolve(r, last, now), r["frequency"])
-             for r in map(releases.rule_for, (spec or {}).get("inputs", [])) if r]
+    found = [f for f in (_window(con, i, last, now) for i in (spec or {}).get("inputs", [])) if f]
     # Inputs at the series' own pace only: a monthly rate's rule says nothing
     # about a quarterly sum built from it.
     found = [f for f in found if f[1] == found[0][1]] if found else []
@@ -96,7 +132,7 @@ def assess(con, series_id: str, today: date | None = None, *,
            "n_obs": n, "age_days": None, "allowance_days": allow, "stale": False,
            "next_release": None}
     if cache == "session":
-        found = _window(series_id, None, now)
+        found = _window(con, series_id, None, now)
         if found:
             out["next_release"] = releases.describe(found[0], found[1], "fresh", None)
         return {**out, "status": "session"}
@@ -105,7 +141,7 @@ def assess(con, series_id: str, today: date | None = None, *,
     age = (today - hi).days
     stale = age > allow
     status = "stale" if stale else "fresh"
-    found = _window(series_id, hi, now)
+    found = _window(con, series_id, hi, now)
     if found:
         w, wfreq = found
         state = releases.status(w, now)
