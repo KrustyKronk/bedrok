@@ -13,10 +13,11 @@ Seven tools, each answering a question the model would otherwise guess at:
   refresh          bring stored series up to date (named ones now, or all in the background)
 
 How it behaves, and why:
-  * Fetch on demand. A stored series that is stale or empty is re-fetched from
-    its publisher before it is answered, so the store fills itself as it is
-    used. A failed attempt is not retried for six hours, so a publisher that is
-    simply late does not cost a download on every question.
+  * Fetch on demand. A stored series whose next period is due by its release
+    rule (core/releases.py), or that is stale or empty, is re-fetched from its
+    publisher before it is answered, so the store fills itself as it is used.
+    A due series is tried again after half an hour, a stale one after six, so
+    a publisher that is simply late does not cost a download on every question.
   * Session-only series (FRED's) are fetched live for the call and never
     written — the publisher's terms forbid keeping them.
   * Every answer carries its freshness, licence, attribution line and caveats,
@@ -89,6 +90,14 @@ its own history with percentile, unless the reader only asked for a chart; a
 level in money terms (a deficit in dollars, M2) grows with the economy, so rank
 its ratio to GDP or its growth instead, or say so beside its percentile.
 
+Freshness says when the next period is usually out (`next_release`). When its
+status is `due` (inside that window, and a fetch found nothing yet) or `late`
+(past it), say which period is the latest held and give
+`next_release.message`; never present the latest held period as the newest
+published one. Do not fill the gap with a number found elsewhere unless you
+say where it came from. Release times are the publisher's usual timing
+(`approximate`), not its calendar: say "usually".
+
 Rules: quote a percentile only with its sample (start, end, n). Bedrok
 measures and contextualises; it never gives investment advice or buy/sell
 timing signals. Currency and units are in the catalog, never inferred.
@@ -130,11 +139,13 @@ class Outside(BaseModel):
     observations: list[Obs] = Field(min_length=1, max_length=5000)
 LOCK_WAIT_S = 20
 RETRY_AFTER_S = 6 * 3600
+RETRY_DUE_S = 30 * 60
 BUSY = ("The Bedrok store is busy: another process (probably `bedrok refresh` in a "
         "terminal) is writing to it. Try again in a minute.")
 
 _lock = threading.Lock()
 _last_attempt: dict[str, float] = {}
+_last_outcome: dict[str, str] = {}
 _job: dict[str, Any] = {"status": "idle"}
 _job_thread: threading.Thread | None = None
 
@@ -253,24 +264,55 @@ def _terms_for(row: dict) -> dict:
         return _terms(row, con)
 
 
+def _why(f: dict) -> str:
+    """Why a series was worth a fetch, in the words the answer carries."""
+    if f["status"] in ("due", "late"):
+        return f"{f['status']}: {f['next_release']['message']}"
+    return f["status"]
+
+
 def _ensure_fresh(series_id: str) -> str:
-    """Re-fetch a stored series that is stale or empty. Returns what happened."""
+    """Re-fetch a stored series whose next period is due or late (its release
+    rule says it may be out), or that is stale or empty. Returns what happened,
+    and says "arrived" only when a newer period did.
+
+    A due series is tried again after half an hour; a stale one after six
+    hours, so a publisher that is simply late does not cost a download on
+    every question. An attempt from before the release time never holds the
+    release back: that was the 07:00 question that kept the 08:30 CPI out
+    until the afternoon."""
+    for sid in _derived_inputs(series_id):
+        _ensure_fresh(sid)                      # a derived series is as fresh as its inputs
     with _store() as con:
         f = freshness.assess(con, series_id)
-    if f is None or f["status"] not in ("stale", "empty"):
+    if f is None or f["status"] not in ("due", "late", "stale", "empty"):
         return "store"
-    if time.time() - _last_attempt.get(series_id, 0) < RETRY_AFTER_S:
-        return "store (stale; a refresh was tried recently and found nothing newer)"
+    wait = RETRY_DUE_S if f["status"] in ("due", "late") else RETRY_AFTER_S
+    due_at = datetime.fromisoformat(f["next_release"]["due_at"]).timestamp() \
+        if f.get("next_release") else 0
+    tried = _last_attempt.get(series_id, 0)
+    if tried > due_at and time.time() - tried < wait:
+        return f"store ({_why(f)}; {_last_outcome.get(series_id, 'a fetch was tried recently')})"
     _last_attempt[series_id] = time.time()
+    stamp = datetime.now().astimezone().strftime("%H:%M %Z")
     try:
         with _store(write=True) as con:
             stage, rows = pipeline.refresh_series(con, series_id)
+            after = freshness.assess(con, series_id) or {}
     except ToolError:
-        return "store (stale; the store was busy, so it was not refreshed)"
+        _last_outcome[series_id] = f"the store was busy at {stamp}, so it was not refreshed"
+        return f"store ({_why(f)}; {_last_outcome[series_id]})"
     status, fails = _report_for(series_id, rows)
     if status == "failed":
-        return f"store (stale; refresh failed: {sources.redact(fails[0])[:120]})"
-    return f"refreshed now from the publisher ({stage})"
+        outcome = f"a fetch at {stamp} failed: {sources.redact(fails[0])[:120]}"
+    elif after.get("last_date") is not None and (f["last_date"] is None
+                                                 or after["last_date"] > f["last_date"]):
+        _last_outcome.pop(series_id, None)
+        return f"refreshed now from the publisher ({stage}): data to {_iso(after['last_date'])} arrived"
+    else:
+        outcome = f"a fetch at {stamp} found nothing newer"
+    _last_outcome[series_id] = outcome
+    return f"store ({_why(after if after.get('status') else f)}; {outcome})"
 
 
 # The rows a bulk stage names after its whole family rather than a series: a
@@ -590,8 +632,9 @@ def describe_series(series_id: str) -> dict[str, Any]:
     """Everything about one series before you use it: name, publisher and the
     publisher's own code, units and frequency, the licence and the attribution
     line to carry, caveats (read them), first and last observation, whether it
-    is fresh, stale, empty, or session-only (fetched live, never stored), and
-    `related`: series computed from it, its own inputs, and series its caveats
+    is fresh, due, late, stale, empty, or session-only (fetched live, never
+    stored), when its next period is usually out (`next_release`; a due one is
+    fetched by get_series, not here), and `related`: series computed from it, its own inputs, and series its caveats
     name — the decompositions and companions worth checking next. `warnings`
     lists every documented case, of any severity, where the official number
     behind this series is in doubt for some period."""
@@ -767,8 +810,7 @@ def get_series(
             # Only the loud ones, and only if their period touches the rows sent.
             "warnings": warnings.for_series(row["series_id"], df["date"].min(), df["date"].max(),
                                             loud_only=True) if not df.empty else [],
-            "freshness": _freshness(row["series_id"]) if row.get("cache") != licensing.SESSION
-            else {"status": "session"},
+            "freshness": _freshness(row["series_id"]),
         })
     return {"series": out, **expanded}
 
@@ -828,8 +870,7 @@ def _get_aligned(series_ids, start, end, transform, index_date, max_rows,
             "units": units, "catalog_units": row["units"],
             "transform": t, "frequency": row["frequency"], "fetched": fetched,
             **_terms_for(row),
-            "freshness": _freshness(row["series_id"]) if row.get("cache") != licensing.SESSION
-            else {"status": "session"},
+            "freshness": _freshness(row["series_id"]),
         })
     for item in extra or []:
         # Outside data goes through the same calendar and transform as the
@@ -1041,6 +1082,7 @@ def _chart_at(series_ids, at, transform, index_date, per_id, title) -> dict[str,
         out.append({"series_id": sid, **_alias(row), "name": row["name"], "units": units,
                     "catalog_units": row["units"], "transform": t, "frequency": row["frequency"],
                     "fetched": fetched, **_terms_for(row),
+                    "freshness": _freshness(row["series_id"]),
                     "warnings": warnings.for_series(row["series_id"], last["date"], last["date"],
                                                     loud_only=True)})
         rows.append({"id": sid, "label": row["name"], "value": float(last["value"]),
@@ -1057,6 +1099,7 @@ def _chart_at(series_ids, at, transform, index_date, per_id, title) -> dict[str,
     if stale:
         footnotes.append("Older than the date asked: " + "; ".join(
             f"{r['label']} ({r['date']})" for r in stale) + ".")
+    footnotes += charting.late_notes(entries)
     return {"series": out,
             "table": {"at": _iso(when), "rows": rows},
             "chart": {"title": title or f"{charting.title_suggestion([e['name'] for e in entries])} at {_iso(when)}",
@@ -1128,6 +1171,7 @@ def percentile(
     out = {k: _iso(v) for k, v in r.items()}
     out.update({
         "series_id": series_id, "name": row["name"], "units": row["units"], "fetched": how,
+        "freshness": _freshness(row["series_id"]),
         "sample": {"start": _iso(r["d0"]), "end": _iso(r["d1"]), "n": r["n"],
                    "years": round(r["span_years"], 1)},
         "short_sample": r["span_years"] < 5,

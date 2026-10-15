@@ -1,5 +1,7 @@
-"""One staleness rule, shared by validate, doctor and the MCP server."""
-from datetime import date
+"""One freshness rule, shared by validate and the MCP server: age, and where a
+release rule exists, whether the next period is due."""
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
 import duckdb
 import pandas as pd
@@ -40,6 +42,56 @@ def test_catalog_override_and_bulk_family_allowances():
     assert freshness.allowance("weekly", None, "cot_gold_net_noncomm") == 30
     assert freshness.allowance(None, None) == 90          # unknown frequency → monthly
     assert freshness.allowance("annual", None) == 450
+
+
+def _cpi_store(staleness="90", source="bls", sid="us_cpi"):
+    return _store([{"series_id": sid, "source": source, "source_code": "x", "name": "US CPI",
+                    "frequency": "monthly", "staleness_days": staleness}],
+                  {sid: "2026-08-01"})
+
+
+def _et(*a):
+    return datetime(*a, tzinfo=ZoneInfo("America/New_York"))
+
+
+def test_the_morning_the_cpi_came_out_is_due_not_fresh():
+    """2026-10-15: August stored, 75 days old against 90. Age alone said fresh."""
+    con = _cpi_store()
+    before = freshness.assess(con, "us_cpi", now=_et(2026, 10, 11, 12))
+    assert before["status"] == "fresh" and before["age_days"] == 71
+    assert before["next_release"]["message"].startswith("Next: September 2026, usually out")
+    f = freshness.assess(con, "us_cpi", now=_et(2026, 10, 15, 9))
+    assert f["status"] == "due" and f["stale"] is False and f["age_days"] == 75
+    assert f["next_release"]["period"] == "September 2026"
+    assert "August 2026 is the latest held" in f["next_release"]["message"]
+    assert freshness.assess(con, "us_cpi", now=_et(2026, 10, 22, 12))["status"] == "late"
+
+
+def test_staleness_still_overrides_a_late_release():
+    con = _cpi_store(staleness="80")
+    f = freshness.assess(con, "us_cpi", now=_et(2026, 10, 22, 12))
+    assert f["status"] == "stale" and f["next_release"]["period"] == "September 2026"
+
+
+def test_a_series_without_a_rule_is_judged_by_age_alone():
+    con = _cpi_store(sid="no_rule_here", source="x")
+    f = freshness.assess(con, "no_rule_here", now=_et(2026, 10, 22, 12))
+    assert f["status"] == "fresh" and f["next_release"] is None
+
+
+def test_a_session_series_says_when_its_next_release_is():
+    con = _store([{"series_id": "us_initial_claims", "source": "fred", "source_code": "ICSA",
+                   "name": "claims", "frequency": "weekly", "cache": "session"}], {})
+    f = freshness.assess(con, "us_initial_claims", now=_et(2026, 10, 15, 9))
+    assert f["status"] == "session"
+    assert f["next_release"]["due_at"] == "2026-10-22T08:30:00-04:00"
+
+
+def test_a_derived_series_is_due_when_its_input_is():
+    """us_cpi_3m_annualized has no rule of its own; it moves with us_cpi."""
+    con = _cpi_store(sid="us_cpi_3m_annualized", source="derived")
+    f = freshness.assess(con, "us_cpi_3m_annualized", now=_et(2026, 10, 15, 9))
+    assert f["status"] == "due" and f["next_release"]["period"] == "September 2026"
 
 
 def test_a_forecast_never_makes_a_series_look_fresh():

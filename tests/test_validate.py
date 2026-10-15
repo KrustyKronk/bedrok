@@ -50,3 +50,22 @@ def test_fx_staleness_fires_at_twenty_days_not_at_two(capsys):
         {"date": [(pd.Timestamp.today() - pd.Timedelta(days=2)).date()],
          "value": [1.1]}), "ecb")
     assert validate.staleness_report(con2) == 0
+
+
+def test_a_due_release_is_news_not_a_problem(capsys, monkeypatch):
+    """A series whose next period is due prints a line and counts nothing: the
+    next question about it fetches it (ops/freshness.py)."""
+    from bedrok.core import releases
+    monkeypatch.setattr(releases, "load", lambda: (releases.parse_row(
+        {"series_id": "tst_cpi", "prefix": "", "frequency": "monthly", "lag_min": "5",
+         "lag_max": "200", "weekday": "", "time": "08:30", "tz": "America/New_York",
+         "note": "test"}),))
+    con = _store()
+    store.upsert_macro_catalog(con, pd.DataFrame([
+        {"series_id": "tst_cpi", "source": "bls", "source_code": "x", "name": "Test CPI",
+         "frequency": "monthly", "staleness_days": 400}]))
+    three_back = (pd.Timestamp.today().normalize().replace(day=1) - pd.DateOffset(months=3)).date()
+    store.upsert_macro_series(con, "tst_cpi", pd.DataFrame({"date": [three_back], "value": [1.0]}))
+    assert validate.staleness_report(con) == 0
+    out = capsys.readouterr().out
+    assert "due" in out and "tst_cpi" in out and "not in the store yet" in out

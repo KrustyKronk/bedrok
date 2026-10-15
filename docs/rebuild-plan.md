@@ -190,10 +190,15 @@ frozen one a warning rather than a silent gap. Version 0.2.0 on the Python
 package index by trusted publishing. The old repository archived with a
 pointer. A source-request issue form, taken early from 14.
 
-**Later, 13 — Revisions and the release calendar.** What a number was when first
-published, from the agencies' own archives, so the assistant can say "this was
-revised" rather than quietly using today's figure; and when the next release
-lands.
+**13a — The release calendar** (brought forward on 2026-10-15, when the
+September CPI came out and Bedrok served August as fresh). When each series'
+next period is due, so a due one is fetched before it is answered and a late
+one is said: release rules first, then the publishers' own calendars, then a
+tool for "when is the next CPI?". Where it stands is in `STATE.md`.
+
+**Later, 13b — Revisions.** What a number was when first published, from the
+agencies' own archives, so the assistant can say "this was revised" rather
+than quietly using today's figure.
 
 **Later, 14 — The maintenance loop.** Source requests triaged from the issue
 form (added in 12), stale publishers retired, and a second pass over the register for the
