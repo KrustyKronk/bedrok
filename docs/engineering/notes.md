@@ -383,6 +383,66 @@ FRED, EIA, BEA, Census and DOL take the key in the URL. `sources.redact()` strip
 every configured key from failure text, and `pipeline.error_detail` redacts
 BEFORE truncating — a key cut in half by `[:70]` would otherwise survive.
 
+**Age cannot see a release: the next period lands two periods after the last
+label.** A monthly point is dated the 1st, so August CPI is 08-01 and
+September's release (mid-October) finds it ~75 days old; a quarterly point is
+~210 days old at the next advance estimate. Any allowance short enough to fire
+on release day fires for days before it in `validate`, and still cannot say
+"due, not yet published". That is why 13a added release rules
+(`core/releases.py`) instead of tightening `staleness_days`. The seed test that
+holds each rule inside its allowance counts the gap from the last label to the
+end of the next period (61 days monthly, 183 quarterly, 7 weekly, 3 daily),
+then the lag, a roll and the grace.
+
+**A retry hold must not start before the release.** `_ensure_fresh` used to
+hold any series for six hours after an attempt, so a question at 07:00 ET that
+found nothing kept the 08:30 CPI out until 13:00. An attempt older than the
+series' `due_at` now never holds it back, and a due series is retried after
+half an hour, a stale one after six.
+
+**"Refreshed" said nothing about what arrived.** `pipeline.refresh_series`
+reports `ok, N rows` where N counts the overlap it re-wrote, so `_ensure_fresh`
+said "refreshed now from the publisher" whether or not a newer period came.
+It now compares `freshness.assess` before and after, as the `refresh` tool
+already did, and says "arrived" only when the last date moved.
+
+**Flash estimates come before their month ends, and some datasets carry them.**
+`ea_hicp_yoy` and `hicp_core_ea` (Eurostat `prc_hicp_minr`) and
+`de_cpi_destatis` held September on 15 October, so they carry the flash; the
+euro-area HICP index (`ea_hicp_index`) held only August, so it waits for the
+final around the 17th. A flash rule therefore has a negative `lag_min`
+(-2 for Eurostat's last-working-day flash, -4 for Destatis).
+
+**The ONS dates the LFS window by its first month.** `uk_unemployment_rate` held
+2026-06 on 15 October, the Jun-Aug window published on 13 October, so its next
+window (Jul-Sep) is out about 105 days after its label month ends. The 150-day
+allowance went stale a month before every release; it is 180 now.
+
+**Where release dates come from (researched 2026-10-15).** For the exact half of
+13a. A calendar a program can read: BLS iCal
+`https://www.bls.gov/schedule/news_release/bls.ics` (about two years ahead,
+`SUMMARY` is the release name, `DTSTART;TZID=US-Eastern`, which is not an IANA
+name; it answered 403 to curl even with a User-Agent, so test it through the
+adapter's session before relying on it); BEA JSON
+`https://apps.bea.gov/API/signup/release_dates.json` (release name → ISO UTC
+times, into 2027); Statistics Canada JSON
+`https://www150.statcan.gc.ca/n1/dai-quo/ssi/homepage/schedule-key_indicators-eng.json`
+(title plus the reference period; the time in `date` is a sort key, releases
+are 08:30 ET; curl works, some TLS clients fail its chain); INE iCal
+`https://www.ine.es/dynt3/Calendario/en/calendario.ics` (`TZID=Europe/Madrid`);
+Istat's press calendar is a public Google Calendar iCal. Inside a response
+Bedrok already fetches: the ONS series JSON carries `description.nextRelease`
+("21 October 2026"); StatCan WDS points carry `releaseTime`, e-Stat
+`TABLE_INF.OPEN_DATE` and JSON-stat (Eurostat, the PxWeb four) `updated`, but
+those say when the last release was, not the next. Cheap "anything new?"
+checks: the BLS API's `?latest=true`, and the ECB's SDMX `updatedAfter=`
+(404 means nothing new). HTML only: the Fed Board's monthly calendar pages
+(`/newsevents/2026-november.htm`), Census, BoE, INSEE, Destatis, e-Stat, ABS,
+the Nordic offices. Eurostat's documented `cache/RELEASE_CALENDAR/calendar_EN.ics`
+is 404; its euro-indicators page is a calendar widget with an iCal export
+behind it still to be found. The OECD's release-dates page sits behind the
+same bot check as its data.
+
 **The MCP SDK renamed its server in v2.** `mcp` 2.x (July 2026) calls it
 `MCPServer` (`from mcp.server import MCPServer`); `mcp.server.fastmcp` no longer
 exists, so most examples on the web fail on a fresh install. Tests run the

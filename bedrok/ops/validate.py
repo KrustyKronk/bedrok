@@ -14,7 +14,7 @@ import sys
 
 import pandas as pd
 
-from bedrok.core import config, licensing, store
+from bedrok.core import config, licensing, releases, store
 from bedrok.ingest import pipeline
 from bedrok.ops import freshness
 
@@ -138,6 +138,12 @@ def staleness_report(con) -> int:
         if age > allow:
             problems += 1
             print(f"  WARN  {sid:<24} last {hi} ({age}d old, allowance {allow}d)")
+        elif releases.rule_for(sid):
+            # A release that is due or late is news, not a fault: the next
+            # question about the series fetches it (ops/freshness.py).
+            f = freshness.assess(con, sid) or {}
+            if f.get("status") in ("due", "late"):
+                print(f"  {f['status']:<4}  {sid:<24} {f['next_release']['message']}")
     # Bulk families: per-geo members legitimately lag at different speeds
     # (candidate/EFTA countries publish late by design), so flag only when the
     # FRESHEST member has gone stale — that means the whole bulk ingest broke,

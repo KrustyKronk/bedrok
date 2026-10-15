@@ -268,4 +268,16 @@ def footnotes(entries: list[dict], table: dict, frequency: str) -> list[str]:
                      "(a month or quarter not published).")
     if table.get("cut"):
         notes.append(table["cut"])
-    return notes
+    return notes + late_notes(entries)
+
+
+def late_notes(entries: list[dict]) -> list[str]:
+    """A line for each series whose next period is past its usual release and
+    still missing: the chart ends a period early, and the reader must know it
+    is the publisher, not the chart (core/releases.py)."""
+    out = []
+    for e in entries:
+        f = e.get("freshness") or {}
+        if f.get("status") == "late" and f.get("next_release"):
+            out.append(f"{e.get('name', e['series_id'])}: {f['next_release']['message']}")
+    return out

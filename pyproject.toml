@@ -44,6 +44,9 @@ dependencies = [
     # 3.10 and the repo venv's shebang is macOS-only — so the package gets run
     # unpinned there. Without the backport, `import tomllib` kills every command.
     "tomli>=2.0; python_version < '3.11'",
+    # Release times are in the publisher's own zone (zoneinfo, stdlib);
+    # Windows ships no zone database of its own.
+    "tzdata; sys_platform == 'win32'",
 ]
 
 [project.urls]

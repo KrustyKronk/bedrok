@@ -1,0 +1,44 @@
+series_id,prefix,frequency,lag_min,lag_max,weekday,time,tz,note
+us_cpi,,monthly,10,18,,08:30,America/New_York,BLS CPI: 10th-18th of the next month. https://www.bls.gov/schedule/news_release/cpi.htm
+us_cpi_nsa,,monthly,10,18,,08:30,America/New_York,BLS CPI release
+us_core_cpi,,monthly,10,18,,08:30,America/New_York,BLS CPI release
+us_payrolls,,monthly,1,8,fri,08:30,America/New_York,Employment Situation: usually the first Friday after the month. https://www.bls.gov/schedule/news_release/empsit.htm
+us_unemployment,,monthly,1,8,fri,08:30,America/New_York,Employment Situation release
+us_pce,,monthly,26,36,,08:30,America/New_York,BEA Personal Income and Outlays: end of the next month or early the one after. https://www.bea.gov/news/schedule
+us_core_pce,,monthly,26,36,,08:30,America/New_York,BEA Personal Income and Outlays release
+us_real_gdp,,quarterly,26,32,,08:30,America/New_York,BEA GDP advance estimate: about four weeks after the quarter. https://www.bea.gov/news/schedule
+us_gdp_growth_saar,,quarterly,26,32,,08:30,America/New_York,BEA GDP advance estimate
+us_retail_sales,,monthly,13,17,,08:30,America/New_York,Census advance retail sales: mid next month. https://www.census.gov/retail/release_schedule.html
+us_indpro,,monthly,14,19,,09:15,America/New_York,Fed Board G.17: mid next month. https://www.federalreserve.gov/releases/g17/
+us_m2,,monthly,21,28,tue,13:00,America/New_York,Fed Board H.6: fourth Tuesday of the next month. https://www.federalreserve.gov/releases/h6/
+us_fed_balance_sheet,,weekly,1,1,thu,16:30,America/New_York,Fed Board H.4.1: Thursday for the week to Wednesday. https://www.federalreserve.gov/releases/h41/
+us_bank_reserves,,weekly,1,1,thu,16:30,America/New_York,Fed Board H.4.1
+us_tga,,weekly,1,1,thu,16:30,America/New_York,Fed Board H.4.1
+us_bank_credit,,weekly,9,9,fri,16:15,America/New_York,Fed Board H.8: the Friday after next for the week to Wednesday. https://www.federalreserve.gov/releases/h8/
+us_3m,,daily,1,1,,16:15,America/New_York,Fed Board H.15: the next business day
+us_2y,,daily,1,1,,16:15,America/New_York,Fed Board H.15
+us_5y,,daily,1,1,,16:15,America/New_York,Fed Board H.15
+us_10y,,daily,1,1,,16:15,America/New_York,Fed Board H.15
+us_30y,,daily,1,1,,16:15,America/New_York,Fed Board H.15
+us_5y_real,,daily,1,1,,16:15,America/New_York,Fed Board H.15
+us_10y_real,,daily,1,1,,16:15,America/New_York,Fed Board H.15
+us_initial_claims,,weekly,5,5,thu,08:30,America/New_York,DOL claims: Thursday for the week to Saturday (session-only via FRED)
+us_initial_claims_4wk,,weekly,5,5,thu,08:30,America/New_York,DOL claims (session-only via FRED)
+us_continued_claims,,weekly,12,12,thu,08:30,America/New_York,DOL claims: continued claims run a week behind initial (session-only via FRED)
+ea_hicp_yoy,,monthly,-2,3,,11:00,Europe/Brussels,Eurostat HICP flash: the last working day of the month or just after; this dataset carries the flash. https://ec.europa.eu/eurostat/news/euro-indicators/release-calendar
+hicp_core_ea,,monthly,-2,3,,11:00,Europe/Brussels,Eurostat HICP flash (core is in the flash)
+hicp_core_ea20,,monthly,-2,3,,11:00,Europe/Brussels,Eurostat HICP flash (core is in the flash)
+ea_hicp_index,,monthly,15,20,,11:00,Europe/Brussels,Eurostat HICP final: about the 17th of the next month (the index is not in the flash)
+eu_unemployment,,monthly,29,35,,11:00,Europe/Brussels,Eurostat unemployment: about a month after the month
+ea_gdp_qoq,,quarterly,29,47,,11:00,Europe/Brussels,Eurostat GDP: preliminary flash at t+30 or the flash at t+45
+uk_cpi_yoy,,monthly,14,22,,07:00,Europe/London,ONS CPI: a Wednesday mid next month. https://www.ons.gov.uk/releasecalendar
+uk_cpih_yoy,,monthly,14,22,,07:00,Europe/London,ONS CPI release
+uk_gdp_monthly_index,,monthly,38,48,,07:00,Europe/London,ONS monthly GDP: about six weeks after the month
+uk_unemployment_rate,,monthly,100,112,,07:00,Europe/London,ONS labour market: the LFS three-month window is dated by its FIRST month and published about six weeks after its last
+de_cpi_destatis,,monthly,-4,14,,08:00,Europe/Berlin,Destatis CPI: flash at the end of the month (in this table) and final by mid next month
+jp_cpi,,monthly,17,25,fri,08:30,Asia/Tokyo,Statistics Bureau national CPI: a Friday in the second half of the next month
+jp_cpi_core,,monthly,17,25,fri,08:30,Asia/Tokyo,Statistics Bureau national CPI
+jp_cpi_core_core,,monthly,17,25,fri,08:30,Asia/Tokyo,Statistics Bureau national CPI
+ca_cpi,,monthly,14,21,,08:30,America/Toronto,Statistics Canada CPI: the third week of the next month. https://www150.statcan.gc.ca/n1/dai-quo/cal2-eng.htm
+,cot_,weekly,3,3,fri,15:30,America/New_York,CFTC Commitments of Traders: Friday for Tuesday's positions
+,wb_,monthly,1,6,,12:00,America/New_York,World Bank Pink Sheet: the first business days of the next month

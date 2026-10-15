@@ -654,3 +654,81 @@ def test_a_place_that_finds_nothing_says_why(srv, monkeypatch):
          "warning_id": "ar"}])
     r = _call("search_series", {"text": "argentina"}).structured_content
     assert "no series for Argentina" in r["note"] and "INDEC" in r["note"]
+
+
+# ---- release rules: a due series is fetched, and says so ------------------------------
+
+def _month(n):
+    """The first day of the month n months from this one."""
+    m = TODAY.month - 1 + n
+    return date(TODAY.year + m // 12, m % 12 + 1, 1)
+
+
+@pytest.fixture
+def due(srv, monkeypatch):
+    """tst_cpi: monthly, stored to three months ago, its rule saying the month
+    after is out (lag 5..lag_max days after it ended). Its publisher stub serves
+    whatever `serve` holds; `hits` counts the requests."""
+    from bedrok.core import releases
+    con = duckdb.connect(str(config.DB_PATH))
+    store.upsert_macro_catalog(con, pd.DataFrame([
+        {"series_id": "tst_cpi", "source": "bis", "source_code": "TST", "name": "Test CPI",
+         "frequency": "monthly", "units": "index", "notes": "", "staleness_days": 400,
+         "license": "attribution", "cache": "store"}]))
+    store.replace_macro_series(con, "tst_cpi", _frame([_month(-4), _month(-3)], [1.0, 2.0]),
+                               "bis:TST")
+    store.close_checkpointed(con)
+    state = {"serve": _frame([_month(-4), _month(-3)], [1.0, 2.0]), "hits": 0}
+    old_bis = pipeline.MACRO_FETCHERS["bis"]
+
+    def fetch(code, start):
+        if code != "TST":
+            return old_bis(code, start)
+        state["hits"] += 1
+        return state["serve"]
+    monkeypatch.setitem(pipeline.MACRO_FETCHERS, "bis", fetch)
+
+    def rule(lag_max):
+        monkeypatch.setattr(releases, "load", lambda: (releases.parse_row(
+            {"series_id": "tst_cpi", "prefix": "", "frequency": "monthly", "lag_min": "5",
+             "lag_max": str(lag_max), "weekday": "", "time": "08:30",
+             "tz": "America/New_York", "note": "test"}),))
+    rule(200)
+    state["rule"] = rule
+    return state
+
+
+def test_a_due_series_is_fetched_and_says_what_arrived(due):
+    due["serve"] = _frame([_month(-4), _month(-3), _month(-2), _month(-1)], [1.0, 2.0, 3.0, 4.0])
+    s = _call("get_series", {"series_ids": ["tst_cpi"]}).structured_content["series"][0]
+    assert s["fetched"].startswith("refreshed now") and "arrived" in s["fetched"]
+    assert s["observations"][-1]["value"] == 4.0
+    assert s["freshness"]["status"] == "fresh"             # the next month is not out yet
+    assert s["freshness"]["next_release"]["message"].startswith("Next:")
+
+
+def test_a_due_release_not_out_yet_is_said_and_not_refetched_for_half_an_hour(due):
+    s = _call("get_series", {"series_ids": ["tst_cpi"]}).structured_content["series"][0]
+    assert due["hits"] == 1
+    assert "found nothing newer" in s["fetched"] and "not in the store yet" in s["fetched"]
+    assert s["freshness"]["status"] == "due"
+    again = _call("percentile", {"series_id": "tst_cpi"}).structured_content
+    assert due["hits"] == 1, "a due series was fetched twice within half an hour"
+    assert "found nothing newer" in again["fetched"]
+    assert again["freshness"]["status"] == "due"
+
+
+def test_an_attempt_from_before_the_release_does_not_hold_it_back(due):
+    """The 07:00 question must not keep the 08:30 CPI out until the afternoon."""
+    _call("get_series", {"series_ids": ["tst_cpi"]})
+    mcp_server._last_attempt["tst_cpi"] = 1.0              # long before the release time
+    _call("get_series", {"series_ids": ["tst_cpi"]})
+    assert due["hits"] == 2
+
+
+def test_a_late_release_reaches_the_chart_footnotes(due):
+    due["rule"](6)
+    r = _call("chart_series", {"series_ids": ["tst_cpi"]}).structured_content
+    notes = r["chart"]["footnotes"]
+    assert any(n.startswith("Test CPI: ") and "has not reached Bedrok" in n for n in notes), notes
+    assert r["series"][0]["freshness"]["status"] == "late"
