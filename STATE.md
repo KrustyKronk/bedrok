@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-15, after session 13a (release rules, the publishers' own dates, and the `release_calendar` tool).** Bedrok is a local MCP server and store of
+**Updated 2026-10-15: session 13a is in, and 0.3.1 is prepared, not yet published.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -11,15 +11,18 @@ wave of publishers) and 7b (warnings, the gaps note, the menu review) built
 it. The owner then used it as an analyst would (2026-10-11), and the feedback
 became sessions 8 (lining up the data), 9 (charts and answers), 10 (the data
 the questions needed) and 11 (tidying the catalog). Session 12 opened it:
-**Bedrok is public**, now at **0.3.0**,, at `github.com/KrustyKronk/bedrok` and on PyPI
+**Bedrok is public**, at `github.com/KrustyKronk/bedrok` and on PyPI
 (`uvx --python 3.12 bedrok serve`), with the Desktop bundle on the release.
 **0.3.0 is released** (2026-10-14): sessions A, correct answers, B, the Fed
 Board watch, C, breakdown questions, D1, chart and tool mechanics, and D2,
 discovery and catalog, are on PyPI and in the Desktop bundle attached to the
 GitHub release. Proven from PyPI: an empty home with no keys answered all
-nine smoke calls in 56 seconds. **Next:** the owner installs the bundle in
-Claude Desktop and asks it a cold question (item 1); a release first, so the
-bundle carries 13a (0.3.0 has none of it).
+nine smoke calls in 56 seconds. **0.3.1 is prepared** (2026-10-15): the
+version is bumped in `pyproject.toml` and the manifest, carrying session 13a
+(release rules, the publishers' own dates, `release_calendar`); it is not on
+PyPI or in a bundle until the owner publishes it (item 1). **Next:** publish
+0.3.1, install its bundle in Claude Desktop and ask it a cold question,
+ideally on a release morning (item 1).
 
 Session 13 is split: **13a, the release calendar**, is in (three parts,
 below; more feeds are item 2); **13b, revisions and vintages**, stays
@@ -101,7 +104,7 @@ CPI); and on a copy of the store with September CPI deleted, the server in
 process reported it due, fetched it from the BLS and turned fresh with the
 November window. The research behind the next part (which publishers publish
 a calendar a program can read) is in `docs/engineering/notes.md`. Not yet
-released: the Desktop bundle runs 0.3.0 until a release.
+released: the Desktop bundle runs 0.3.0 until 0.3.1 is published.
 
 **Session D2 in one paragraph.** The self-test's discovery frictions, each
 reproduced on the live server first. The six FX pairs answer as series in
@@ -487,12 +490,18 @@ None holds a secret.
 
 Completed items are removed rather than ticked — git history is the record.
 Owner-side items are in `profile/STATE-private.md`.
-1. **Install 0.3.0 in Claude Desktop, then the acceptance test's smaller
-   frictions.** The release is done (PyPI by `publish.yml`, the bundle on the
-   v0.3.0 release; the manifest's author and name unchanged, so it should
-   upgrade 0.2.0 in place). The owner installs it and asks a cold question
-   there, the first time any of A to D2 runs outside this machine's
-   development server. Smaller, from the D2 acceptance test:
+
+1. **Publish 0.3.1, install it in Claude Desktop, then the acceptance test's
+   smaller frictions.** The version is bumped on `main`; publishing is the
+   owner's step: `gh release create v0.3.1` (`publish.yml` refuses a tag that
+   disagrees with `pyproject.toml`, runs the empty-home check on the wheel and
+   uploads to PyPI by trusted publishing), then Mac-side
+   `scripts/build-mcpb.sh` and `gh release upload v0.3.1
+   dist/bedrok-0.3.1.mcpb`. The manifest's author and name are unchanged, so
+   the bundle upgrades 0.3.0 in place. The owner installs it and asks a cold
+   question there, the first time any of A to 13a runs outside this
+   machine's development server; on a release morning, "what is out today?"
+   is the test of 13a. Smaller, from the D2 acceptance test:
    - `get_series` takes five ids and `chart_series` seven; a breakdown's
      quarterly parts needed two calls.
    - A chart of five places is titled "Germany and 4 others".
