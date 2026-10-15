@@ -3,8 +3,8 @@
 Every writer is an UPSERT keyed on the table's primary key, so backfill and
 refresh can be re-run any number of times without duplicating rows.
 
-One file, three tables — macro_catalog, macro_series, fx_rates — plus the
-persisted `all_series` view over macro ∪ fx. Since session 2 of the rethink
+One file, four tables — macro_catalog, macro_series, fx_rates and
+release_calendar — plus the persisted `all_series` view over macro ∪ fx. Since session 2 of the rethink
 there is no market pack, no personal layer and no price data: every install
 fetches each series from its publisher into this one store.
 """
@@ -40,6 +40,20 @@ CREATE TABLE IF NOT EXISTS fx_rates (
     rate   DOUBLE,
     source TEXT,
     PRIMARY KEY (pair, date)
+);
+
+-- The publishers' own release dates (ingest/calendars.py). due_at is UTC
+-- without a zone (DuckDB's TIMESTAMPTZ arithmetic needs an extension); tz is
+-- the publisher's zone, for saying it back. period is the label of the period
+-- released, when the publisher names it (the ONS does; BEA's schedule does not).
+CREATE TABLE IF NOT EXISTS release_calendar (
+    feed         TEXT NOT NULL,
+    release_name TEXT NOT NULL,
+    due_at       TIMESTAMP NOT NULL,
+    tz           TEXT NOT NULL,
+    period       DATE,
+    fetched_at   TIMESTAMP NOT NULL,
+    PRIMARY KEY (feed, release_name, due_at)
 );
 """
 
@@ -91,7 +105,7 @@ def _all_series_view(con) -> None:
 
 
 def init_db(con: duckdb.DuckDBPyConnection) -> None:
-    """Create the three tables (idempotent), migrate the catalog, and (re)create
+    """Create the four tables (idempotent), migrate the catalog, and (re)create
     the all_series view."""
     con.execute(SCHEMA)
     _migrate_macro_catalog(con)
@@ -231,3 +245,24 @@ def table_range(con, table: str, date_col: str = "date"):
     return con.execute(
         f"SELECT count(*), min({date_col}), max({date_col}) FROM {table}"
     ).fetchone()
+
+
+def replace_release_calendar(con, feed: str, df: pd.DataFrame,
+                             release_names: list[str] | None = None) -> int:
+    """Swap a feed's dates (or only those of `release_names`) for df's, in one
+    transaction: a publisher that moves a date drops the old one, and a stale
+    date left behind would read as the next release."""
+    con.execute("BEGIN TRANSACTION")
+    try:
+        if release_names is None:
+            con.execute("DELETE FROM release_calendar WHERE feed = ?", [feed])
+        else:
+            ph = ", ".join("?" for _ in release_names)
+            con.execute(f"DELETE FROM release_calendar WHERE feed = ? AND release_name IN ({ph})",
+                        [feed, *release_names])
+        n = _upsert(con, "release_calendar", df, ["feed", "release_name", "due_at"])
+        con.execute("COMMIT")
+    except Exception:
+        con.execute("ROLLBACK")
+        raise
+    return n

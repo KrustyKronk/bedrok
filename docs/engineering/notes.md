@@ -413,10 +413,27 @@ euro-area HICP index (`ea_hicp_index`) held only August, so it waits for the
 final around the 17th. A flash rule therefore has a negative `lag_min`
 (-2 for Eurostat's last-working-day flash, -4 for Destatis).
 
-**The ONS dates the LFS window by its first month.** `uk_unemployment_rate` held
-2026-06 on 15 October, the Jun-Aug window published on 13 October, so its next
-window (Jul-Sep) is out about 105 days after its label month ends. The 150-day
-allowance went stale a month before every release; it is 180 now.
+**The ONS dates an LFS three-month window by its middle month.** The series
+JSON says so in each observation: `"date": "2026 JUN"` carries `"label": "2026
+MAY-JUL"`. Session 13a's first part assumed the first month (an older note in
+the owner's files said so) and set a rule of 100-112 days and an allowance of
+180 on the back of it; the ONS's own `nextRelease` (20 October for Jun-Aug,
+after 15 September for May-Jul) showed the gap is 77-81 days after the label
+month ends. The rule is 74-88 and the allowance 155. Read the observation's
+`label` before trusting any note about how a rolling window is dated.
+
+**The BLS website refuses programs by policy, so its calendar is off limits.**
+Every `www.bls.gov` page, the iCal file included, answers a program (any
+User-Agent, browser-shaped or honest) with 403 and an "Access Denied" page
+saying automated retrieval programs are not allowed. That is a stated policy,
+not a bot check to get past; the sanctioned route is the API (`api.bls.gov`),
+which has no release dates. BLS series stay on their rules.
+
+**BEA publishes the previous month on the last day of the next one.** August's
+PCE came out on 30 September, so the release for September is the first date
+on or after 1 October, never "the first after 30 September": that one is
+August's. `freshness._calendar` starts the search the day after the period
+ends.
 
 **Where release dates come from (researched 2026-10-15).** For the exact half of
 13a. A calendar a program can read: BLS iCal

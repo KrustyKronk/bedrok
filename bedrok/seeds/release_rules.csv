@@ -34,7 +34,7 @@ ea_gdp_qoq,,quarterly,29,47,,11:00,Europe/Brussels,Eurostat GDP: preliminary fla
 uk_cpi_yoy,,monthly,14,22,,07:00,Europe/London,ONS CPI: a Wednesday mid next month. https://www.ons.gov.uk/releasecalendar
 uk_cpih_yoy,,monthly,14,22,,07:00,Europe/London,ONS CPI release
 uk_gdp_monthly_index,,monthly,38,48,,07:00,Europe/London,ONS monthly GDP: about six weeks after the month
-uk_unemployment_rate,,monthly,100,112,,07:00,Europe/London,ONS labour market: the LFS three-month window is dated by its FIRST month and published about six weeks after its last
+uk_unemployment_rate,,monthly,74,88,,07:00,Europe/London,ONS labour market: the LFS three-month window is dated by its MIDDLE month (2026 JUN = May-Jul) and published about seven weeks after it ends
 de_cpi_destatis,,monthly,-4,14,,08:00,Europe/Berlin,Destatis CPI: flash at the end of the month (in this table) and final by mid next month
 jp_cpi,,monthly,17,25,fri,08:30,Asia/Tokyo,Statistics Bureau national CPI: a Friday in the second half of the next month
 jp_cpi_core,,monthly,17,25,fri,08:30,Asia/Tokyo,Statistics Bureau national CPI

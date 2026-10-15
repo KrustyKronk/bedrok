@@ -20,7 +20,8 @@ from bedrok.core import sources
 from bedrok.core import store
 from bedrok.core import units
 from bedrok.core.aliases import ALIASES
-from bedrok.ingest.adapters import cftc, eurostat, pxweb, sdmx, worldbank
+from bedrok.ingest import calendars
+from bedrok.ingest.adapters import cftc, eurostat, ons, pxweb, sdmx, worldbank
 
 # FX pairs come from the profile's base currency (config.fx_pairs()); pairs with
 # source 'derived' are computed from already-synced ECB EUR-reference rates
@@ -709,6 +710,7 @@ def sync_macro(con, incremental=False, only=None, prime=True) -> list[tuple]:
             else:
                 detail = f"{store.upsert_macro_series(con, sid, df)} rows"
             report.append((sid, "ok", detail))
+            _record_next_release(con, sid, row)
         except MissingKey as e:
             report.append((sid, "skip", str(e)))
             continue  # no network call happened — don't pace
@@ -716,6 +718,18 @@ def sync_macro(con, incremental=False, only=None, prime=True) -> list[tuple]:
             report.append((sid, "FAIL", error_detail(e, 200)))
         _pace(row["source"])
     return report
+
+
+def _record_next_release(con, sid: str, row) -> None:
+    """An ONS series names its own next release in the response just read;
+    keep it (ingest/calendars.py). Never fails the series."""
+    if row["source"] != "ons":
+        return
+    try:
+        calendars.record_publisher(con, sid, calendars.parse_ons_next(
+            *(ons.next_release(row["source_code"]) or (None, None, "monthly"))))
+    except Exception:  # noqa: BLE001 — a date we could not keep is not a failed series
+        pass
 
 
 # Names for the curated Eurostat geographies, so a series is findable before its
@@ -918,6 +932,7 @@ REFRESH_STAGES: list[tuple[str, str, callable]] = [
     ("cot", "CFTC positioning", sync_cot),
     ("derived", "Derived series", _derived_stage),
     ("fx", "FX", sync_fx),
+    ("calendar", "Release calendars", calendars.sync_calendars),
 ]
 
 

@@ -50,11 +50,11 @@ from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 from pydantic import BaseModel, Field
 
-from bedrok.core import aliases, charting, config, dates, licensing, sources, store, warnings
+from bedrok.core import aliases, charting, config, dates, licensing, releases, sources, store, warnings
 from bedrok.core import units as units_vocab
 from bedrok.core import geography as geo
 from bedrok.engines import pctile
-from bedrok.ingest import derived, live, pipeline
+from bedrok.ingest import calendars, derived, live, pipeline
 from bedrok.ingest import transforms as transforms_mod
 from bedrok.ops import docs, freshness
 
@@ -95,8 +95,9 @@ status is `due` (inside that window, and a fetch found nothing yet) or `late`
 (past it), say which period is the latest held and give
 `next_release.message`; never present the latest held period as the newest
 published one. Do not fill the gap with a number found elsewhere unless you
-say where it came from. Release times are the publisher's usual timing
-(`approximate`), not its calendar: say "usually".
+say where it came from. When `approximate` is true the time is the
+publisher's usual timing: say "usually". Otherwise it is the publisher's own
+date (`publisher` names whose).
 
 Rules: quote a percentile only with its sample (start, end, n). Bedrok
 measures and contextualises; it never gives investment advice or buy/sell
@@ -271,6 +272,30 @@ def _why(f: dict) -> str:
     return f["status"]
 
 
+def _ensure_calendar(series_id: str) -> None:
+    """Re-read the publisher's release schedule behind a series when it is
+    more than a day old (ingest/calendars.py), so a moved date shows before
+    the old one passes. Tried at most every six hours; a failure keeps the
+    stored dates and never fails the answer."""
+    key = releases.calendar_key(series_id)
+    if not key or key[0] not in calendars.FETCHERS:
+        return
+    feed = key[0]
+    if time.time() - _last_attempt.get(f"calendar:{feed}", 0) < RETRY_AFTER_S:
+        return
+    try:
+        with _store() as con:
+            if not calendars.needs_fetch(con, feed):
+                return
+        _last_attempt[f"calendar:{feed}"] = time.time()
+        with _store(write=True) as con:
+            name, status, detail = calendars.sync_feed(con, feed)
+        if status != "ok":
+            log.warning("release calendar %s: %s", name, detail)
+    except ToolError:
+        pass                                     # the store is busy; the stored dates stand
+
+
 def _ensure_fresh(series_id: str) -> str:
     """Re-fetch a stored series whose next period is due or late (its release
     rule says it may be out), or that is stale or empty. Returns what happened,
@@ -283,6 +308,7 @@ def _ensure_fresh(series_id: str) -> str:
     until the afternoon."""
     for sid in _derived_inputs(series_id):
         _ensure_fresh(sid)                      # a derived series is as fresh as its inputs
+    _ensure_calendar(series_id)
     with _store() as con:
         f = freshness.assess(con, series_id)
     if f is None or f["status"] not in ("due", "late", "stale", "empty"):
@@ -1335,6 +1361,13 @@ def sources_page() -> str:
                              "taken at face value, by country, with sources.")
 def warnings_page() -> str:
     return docs.warnings_md()
+
+
+@server.resource("bedrok://releases", name="releases", mime_type="text/markdown",
+                 description="When each series' next period is usually out, and which "
+                             "publishers' own release dates Bedrok reads.")
+def releases_page() -> str:
+    return docs.releases_md()
 
 
 @server.resource("bedrok://gaps", name="gaps", mime_type="text/markdown",

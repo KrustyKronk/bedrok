@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-15, after session 13a (release rules), on a branch after 0.3.0.** Bedrok is a local MCP server and store of
+**Updated 2026-10-15, after session 13a parts 1 and 2 (release rules, then the publishers' own dates).** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -18,16 +18,40 @@ Board watch, C, breakdown questions, D1, chart and tool mechanics, and D2,
 discovery and catalog, are on PyPI and in the Desktop bundle attached to the
 GitHub release. Proven from PyPI: an empty home with no keys answered all
 nine smoke calls in 56 seconds. **Next:** the owner installs the bundle in
-Claude Desktop and asks it a cold question (item 1); then the exact release
-calendars and the `release_calendar` tool (item 2), and a release so the
-Desktop bundle carries 13a.
+Claude Desktop and asks it a cold question (item 1); then the
+`release_calendar` tool (item 2), and a release so the Desktop bundle carries
+13a.
 
-Session 13 is split: **13a, the release calendar**, has its first part in
-(release rules, below); **13b, revisions and vintages**, stays deferred.
+Session 13 is split: **13a, the release calendar**, has two parts in
+(release rules, then the publishers' own dates, below); **13b, revisions and
+vintages**, stays deferred.
 
 **Owner-side items** — the ones that need the owner's accounts or describe one
 machine — live in `profile/STATE-private.md`, which is gitignored. This file
 holds only what any reader may see.
+
+**Session 13a, part 2, in one paragraph.** Where a publisher states the date,
+it replaces the rule's window: a `release_calendar` table (the store's
+fourth), `ingest/calendars.py`, and `bedrok/seeds/release_calendar.csv`
+naming the feed and release per series. BEA's schedule (one JSON of every
+release's dates into 2027) is read at most once a day, by the server before
+it judges a BEA series and by a new last `refresh` stage; the ONS's
+`nextRelease`, already inside the series JSON the adapter downloads, is
+recorded after every fetch at no extra request. PCE, GDP, UK CPI and CPIH,
+UK monthly GDP and the UK unemployment rate now say "scheduled for 29 Oct
+2026, 08:30 EDT (BEA's release schedule)", not "usually". The next date is
+the first after the period is over, which matters: BEA publishes August's PCE
+on 30 September. A date far past the rule's window is not believed, a failed
+fetch keeps the stored dates, and an exact date is late a day after it, not
+two. The ONS dates also caught a wrong rule from part 1: an LFS window is
+dated by its middle month, not its first (the notes have it). **The BLS is not in it:** its website answers any program with an
+"Access Denied" page on automated retrieval, so its iCal file is off limits
+and BLS series stay on their rules. `docs/RELEASES.md` (and
+`bedrok://releases`) lists every rule and feed. Proven: 437 tests; a full
+`bedrok refresh` against the real store with no failures, its calendar stage
+storing 194 BEA dates and the ONS series ten next-release dates, after which
+PCE and GDP read "scheduled for 29 Oct 2026, 08:30 EDT" and UK CPI "21 Oct
+2026, 07:00 BST" from the live store.
 
 **Session 13a in one paragraph.** On 2026-10-15 the September US CPI came
 out at 08:30 ET and Bedrok served August as fresh: freshness was age alone,
@@ -52,8 +76,9 @@ give the message and never present the latest held period as the newest.
 A seed test holds every rule inside its series' allowance, which raised
 eleven: PCE 105, M2 100, H.8 credit 28, euro-area unemployment 100, euro-area
 GDP 240, UK monthly GDP 115, Japan's CPIs 95, and the UK unemployment rate
-150 → 180, which was going stale a month before every release (its LFS
-window is dated by its first month). Rules are per series or per uniform
+155. (Part 1 first assumed the LFS window is dated by its first month and
+set 180; part 2's ONS dates showed it is the middle month, so the rule and
+allowance were corrected.) Rules are per series or per uniform
 family (`cot_`, `wb_`) only: a BLS-wide default would call JOLTS late every
 week. Eurostat's and Destatis's flashes come before the month ends, so a lag
 may be negative. Proven: 422 tests; on the live store `validate` showed
@@ -467,22 +492,16 @@ Owner-side items are in `profile/STATE-private.md`.
      "who publishes what is missing" map was not built (the warnings carry
      it where it matters).
 
-2. **Release calendars: the exact half, then the tool** (session 13a, plan
-   in the 2026-10-15 session; research in `docs/engineering/notes.md`,
-   "Where release dates come from").
-   - **Exact calendars** (`ingest/calendars.py`, a `release_calendar` store
-     table, a `calendar` refresh stage): BLS's iCal, BEA's JSON, and the ONS
-     `nextRelease` that the series JSON Bedrok already fetches carries. A
-     calendar entry overrides the rule's window, and `next_release.source`
-     says `calendar` or `publisher`. While a release is late the calendar is
-     re-read daily, so a rescheduled date (as after the 2025 shutdown) shows.
+2. **Release calendars: the tool, then more feeds** (session 13a; research
+   in `docs/engineering/notes.md`, "Where release dates come from").
    - **A `release_calendar` tool** for "when is the next CPI?" and "what is
      out this week?": the tenth tool (`test_nine_tools…`, the manifest, the
      README and this file say nine).
-   - **Later:** StatCan's JSON, the Fed Board's monthly calendar pages, INE's
-     and Istat's iCal, the live Eurostat iCal (its documented URL is 404), the
-     ECB's calendar; BLS `latest=true` and ECB `updatedAfter` as cheap "is
-     anything new?" checks before a full fetch.
+   - **More exact feeds:** StatCan's JSON (Canada's CPI), the Fed Board's
+     monthly calendar pages, INE's and Istat's iCal, the live Eurostat iCal
+     (its documented URL is 404), the ECB's calendar; BLS `latest=true` and
+     ECB `updatedAfter` as cheap "is anything new?" checks before a full
+     fetch. Never the BLS website: it refuses programs by policy.
    - **Rules not yet written:** families stay on age (the broad HICP set has
      candidate countries that publish later), as do JOLTS, PPI, the regional
      Feds, the OECD, the IMF and the World Bank's annual data.
