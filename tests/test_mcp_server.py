@@ -86,13 +86,14 @@ def _rows(con_path, sid):
         con.close()
 
 
-def test_nine_tools_and_only_refresh_writes():
+def test_ten_tools_and_only_refresh_writes():
     async def go():
         async with Client(mcp_server.server) as c:
             return (await c.list_tools()).tools
     tools = {t.name: t for t in anyio.run(go)}
     assert set(tools) == {"list_sources", "search_series", "list_series", "describe_series",
-                          "get_series", "chart_series", "percentile", "query", "refresh"}
+                          "get_series", "chart_series", "percentile", "release_calendar",
+                          "query", "refresh"}
     assert [n for n, t in tools.items() if not t.annotations.read_only_hint] == ["refresh"]
 
 
@@ -761,3 +762,39 @@ def test_the_publishers_calendar_is_read_once_and_used(srv, monkeypatch):
     assert reads == [1]
     nr = s["freshness"]["next_release"]
     assert nr["source"] == "calendar" and nr["publisher"] == "BEA"
+
+
+def test_when_is_the_next_one_and_what_is_out_this_week(due, monkeypatch):
+    """The two questions release_calendar answers. tst_cpi is due (its rule
+    says the month after its last is out); us_cpi in the fixture is not."""
+    from bedrok.core import releases
+    from bedrok.ingest import calendars
+    monkeypatch.setattr(calendars, "FETCHERS", {})          # no network in a list
+    r = _call("release_calendar", {"series_ids": ["tst_cpi", "us_cpi", "nope"]}).structured_content
+    one, plain, missing = r["series"]
+    assert one["status"] == "due" and one["approximate"] is True
+    assert "not in the store yet" in one["message"] and one["local"]
+    assert "no release rule" in plain["note"]                 # the fixture's us_cpi is a test row
+    assert "error" in missing
+    week = _call("release_calendar", {"days": 7}).structured_content
+    assert [g["series"] for g in week["releases"] if g["status"] == "due"] == [["tst_cpi"]]
+    assert all(g["status"] in ("late", "due", "upcoming") for g in week["releases"])
+    assert "bedrok://releases" in week["not_listed"]
+
+
+def test_series_released_together_share_one_line(due, monkeypatch):
+    from bedrok.core import releases
+    from bedrok.ingest import calendars
+    monkeypatch.setattr(calendars, "FETCHERS", {})
+    con = duckdb.connect(str(config.DB_PATH))
+    store.upsert_macro_catalog(con, pd.DataFrame([
+        {"series_id": "tst_core", "source": "bis", "source_code": "TST2", "name": "Test core",
+         "frequency": "monthly", "units": "index", "notes": "", "staleness_days": 400,
+         "license": "attribution", "cache": "store"}]))
+    store.replace_macro_series(con, "tst_core", _frame([_month(-4), _month(-3)], [1.0, 2.0]),
+                               "bis:TST2")
+    store.close_checkpointed(con)
+    rule = dict(releases.rule_for("tst_cpi"))
+    monkeypatch.setattr(releases, "load", lambda: (rule, {**rule, "series_id": "tst_core"}))
+    week = _call("release_calendar", {}).structured_content
+    assert [g["series"] for g in week["releases"]] == [["tst_cpi", "tst_core"]]

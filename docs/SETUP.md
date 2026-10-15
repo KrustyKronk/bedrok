@@ -117,10 +117,11 @@ bedrok refresh         # incremental: re-fetches a short overlap window per seri
 
 ## Use it from Claude
 
-`bedrok serve` is a local MCP server over stdio: seven tools (`list_sources`,
-`search_series`, `describe_series`, `get_series`, `percentile`, `query`,
-`refresh`) over your store. It fetches a stale series from its publisher
-before answering, fetches session-only series live without storing them, and
+`bedrok serve` is a local MCP server over stdio: ten tools (`list_sources`,
+`search_series`, `list_series`, `describe_series`, `get_series`,
+`chart_series`, `percentile`, `release_calendar`, `query`, `refresh`) over
+your store. It fetches a series from its publisher before answering when the
+series' next release is due or it is stale, fetches session-only series live without storing them, and
 runs a full refresh in the background when asked.
 
 **Claude Code** (all projects):

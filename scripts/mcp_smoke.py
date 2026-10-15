@@ -4,9 +4,9 @@
 
 e.g.  python scripts/mcp_smoke.py -- uvx --from dist/bedrok-0.1.8-py3-none-any.whl bedrok serve
 
-Sends initialize, tools/list and eight keyless questions (euro-area inflation,
+Sends initialize, tools/list and nine keyless questions (euro-area inflation,
 the US 10-year, the 10-year breakeven, the German 10-year, Sweden's CPIF, and
-a daily and a monthly series lined up weekly, the same as a chart recipe, and a summary of the catalog), prints what came
+a daily and a monthly series lined up weekly, the same as a chart recipe, a summary of the catalog, and the week's releases), prints what came
 back and how long each step took, and exits 1 if any step failed. Standard
 library only, so it runs under any Python — a clean machine, or CI.
 """
@@ -18,7 +18,7 @@ import sys
 import time
 
 TOOLS = ["list_sources", "search_series", "list_series", "describe_series", "get_series",
-         "chart_series", "percentile", "query", "refresh"]
+         "chart_series", "percentile", "release_calendar", "query", "refresh"]
 
 CALLS = [
     ("percentile", {"series_id": "ea_hicp_yoy"}),
@@ -36,6 +36,8 @@ CALLS = [
     ("chart_series", {"series_ids": ["us_10y", "ea_hicp_index"], "start": "2026-01-01"}),
     # the catalog in one call (session 11)
     ("list_series", {"summary": True}),
+    # what is out this week (13a): reads BEA's schedule from a clean machine
+    ("release_calendar", {"days": 7}),
 ]
 
 

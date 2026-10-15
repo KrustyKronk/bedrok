@@ -74,6 +74,23 @@ def test_the_bundle_manifest_matches_the_package():
     assert keyed <= set(env), "every API key needs a field in the bundle"
 
 
+def test_the_bundle_lists_every_tool_the_server_has():
+    """Claude Desktop shows the manifest's list before the server starts; a
+    tool missing from it is a tool nobody is told about."""
+    import json
+
+    import anyio
+    from mcp import Client
+
+    from bedrok.surfaces import mcp_server
+    manifest = json.loads((REPO / "packaging" / "mcpb" / "manifest.json").read_text())
+
+    async def go():
+        async with Client(mcp_server.server) as c:
+            return {t.name for t in (await c.list_tools()).tools}
+    assert {t["name"] for t in manifest["tools"]} == anyio.run(go)
+
+
 def test_a_fresh_store_already_knows_derived_and_eurostat_series():
     """The first question on a new install may name a computed series or a
     Eurostat country series; neither waits for a full refresh any more."""
