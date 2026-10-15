@@ -30,10 +30,11 @@
     {"name": "list_sources", "description": "Every publisher Bedrok is wired to, whether its key is set, and its terms"},
     {"name": "search_series", "description": "Find a series in the curated catalog"},
     {"name": "list_series", "description": "Walk the whole catalog, or count it by publisher, place and frequency"},
-    {"name": "describe_series", "description": "Units, publisher, licence, caveats, freshness and related series"},
+    {"name": "describe_series", "description": "Units, publisher, licence, caveats, freshness, next release and related series"},
     {"name": "get_series", "description": "Observations, optionally as year-on-year, 3-month annualised or rebased"},
     {"name": "chart_series", "description": "Series on one calendar with a chart recipe: title, units, scales, source line, footnotes"},
     {"name": "percentile", "description": "Where a value sits in its own history, always with the sample"},
+    {"name": "release_calendar", "description": "When official numbers come out: a series' next release, or the week's"},
     {"name": "query", "description": "Read-only SQL over the local store"},
     {"name": "refresh", "description": "Bring stored series up to date from their publishers"}
   ],

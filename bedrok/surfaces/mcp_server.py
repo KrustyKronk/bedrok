@@ -2,15 +2,19 @@
 
   bedrok serve            stdio MCP server (Claude Desktop, Claude Code, any MCP host)
 
-Seven tools, each answering a question the model would otherwise guess at:
+Ten tools, each answering a question the model would otherwise guess at:
 
-  list_sources     which publishers are wired, whether their keys are set, their terms
-  search_series    find a series id in the curated catalog
-  describe_series  everything about one series: units, publisher, licence, caveats, freshness
-  get_series       observations, optionally transformed (yoy, 3m annualised, rebased)
-  percentile       where a value sits in its own history — with the sample, always
-  query            read-only SQL over the store
-  refresh          bring stored series up to date (named ones now, or all in the background)
+  list_sources      which publishers are wired, whether their keys are set, their terms
+  search_series     find a series id in the curated catalog
+  list_series       walk or count the whole catalog
+  describe_series   everything about one series: units, publisher, licence, caveats,
+                    freshness and when its next period is out
+  get_series        observations, optionally transformed (yoy, 3m annualised, rebased)
+  chart_series      the same data with a chart recipe in the house style
+  percentile        where a value sits in its own history — with the sample, always
+  release_calendar  when official numbers come out: one series' next, or the week's
+  query             read-only SQL over the store
+  refresh           bring stored series up to date (named ones now, or all in the background)
 
 How it behaves, and why:
   * Fetch on demand. A stored series whose next period is due by its release
@@ -40,7 +44,7 @@ import sys
 import threading
 import time
 from contextlib import contextmanager
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 from typing import Annotated, Any, Literal
 
 import duckdb
@@ -90,7 +94,8 @@ its own history with percentile, unless the reader only asked for a chart; a
 level in money terms (a deficit in dollars, M2) grows with the economy, so rank
 its ratio to GDP or its growth instead, or say so beside its percentile.
 
-Freshness says when the next period is usually out (`next_release`). When its
+Freshness says when the next period is usually out (`next_release`); for
+"when is the next CPI?" or "what is out this week?", use release_calendar. When its
 status is `due` (inside that window, and a fetch found nothing yet) or `late`
 (past it), say which period is the latest held and give
 `next_release.message`; never present the latest held period as the newest
@@ -278,9 +283,11 @@ def _ensure_calendar(series_id: str) -> None:
     the old one passes. Tried at most every six hours; a failure keeps the
     stored dates and never fails the answer."""
     key = releases.calendar_key(series_id)
-    if not key or key[0] not in calendars.FETCHERS:
-        return
-    feed = key[0]
+    if key and key[0] in calendars.FETCHERS:
+        _ensure_feed(key[0])
+
+
+def _ensure_feed(feed: str) -> None:
     if time.time() - _last_attempt.get(f"calendar:{feed}", 0) < RETRY_AFTER_S:
         return
     try:
@@ -1217,6 +1224,114 @@ def percentile(
                          "mostly says how recent it is; rank its ratio to GDP or its growth "
                          "instead, or say this beside the number.")
     return out
+
+
+def _local(iso: str) -> str:
+    """A publisher's time on the reader's own clock (this machine's zone)."""
+    return datetime.fromisoformat(iso).astimezone().isoformat(timespec="minutes")
+
+
+def _when_state(nr: dict, now: datetime) -> str:
+    """upcoming, due or late, by the clock alone: a list reads, it never fetches."""
+    if now < datetime.fromisoformat(nr["due_at"]):
+        return "upcoming"
+    return "due" if now <= datetime.fromisoformat(nr["late_after"]) else "late"
+
+
+@server.tool(annotations=READ_FETCHING)
+def release_calendar(
+    days: Annotated[int, Field(ge=1, le=62, description="how far ahead to look, in days")] = 7,
+    series_ids: Annotated[list[str] | None,
+                          Field(max_length=20, description="instead: when each of these is next out")] = None,
+) -> dict[str, Any]:
+    """When official numbers come out. With series_ids, each one's next release
+    ("when is the next CPI?"); without, every release Bedrok knows of from now
+    to `days` ahead ("what is out this week?"), earliest first, series that
+    come out together on one line, and any already overdue first of all.
+
+    `status`: upcoming, due (inside its usual window and not in the store) or
+    late (past it). A time with `approximate: true` is the publisher's usual
+    timing: say "usually" and give the window (`when` to `by`). Otherwise it is
+    the publisher's own date, named in `calendar`. `local` is the same moment
+    on the reader's clock. Listing never fetches a series; asking for one with
+    get_series fetches it when it is due. Only series with a release rule are
+    known here (bedrok://releases lists them); the rest are judged by age."""
+    for feed in calendars.FETCHERS:
+        _ensure_feed(feed)
+    now = datetime.now(timezone.utc)
+    pubs = sources.load()
+    if series_ids:
+        out = []
+        for asked in series_ids:
+            try:
+                with _store() as con:
+                    row = _catalog_row(con, asked)
+                    f = freshness.assess(con, row["series_id"], now=now) or {}
+            except ToolError as e:
+                out.append({"series_id": asked, "error": str(e)})
+                continue
+            nr = f.get("next_release")
+            item = {"series_id": asked, **_alias(row), "name": row["name"],
+                    "publisher": pubs.get(row["source"], {}).get("name", row["source"]),
+                    "last_date": _iso(f.get("last_date"))}
+            if nr:
+                item.update(status=_when_state(nr, now), period=nr["period"], when=nr["due_at"],
+                            by=nr["expected_by"], local=_local(nr["due_at"]),
+                            approximate=nr["approximate"], message=nr["message"],
+                            calendar=nr.get("calendar"))
+            else:
+                item["note"] = ("no release rule: Bedrok judges this series by the age of its "
+                                "newest observation only (bedrok://releases lists the rules).")
+            out.append(item)
+        return {"now": now.astimezone().isoformat(timespec="minutes"), "series": out}
+
+    start = now.astimezone().replace(hour=0, minute=0, second=0, microsecond=0)
+    end = now + timedelta(days=days)
+    fam_label = {p: label for label, p, _ in pipeline.bulk_summary_specs()}
+    fam_label.update({pipeline.WB_PREFIX: "World Bank commodity prices",
+                      pipeline.COT_PREFIX: "CFTC positioning"})
+    groups: dict[tuple, dict] = {}
+    with _store() as con:
+        picks = []                                   # (series id, label, members)
+        for r in releases.load():
+            if r["series_id"]:
+                picks.append((r["series_id"], None, None))
+                continue
+            got = con.execute(
+                "SELECT series_id, count(*) OVER () FROM macro_series WHERE series_id LIKE ? "
+                "GROUP BY series_id ORDER BY max(date) DESC LIMIT 1", [r["prefix"] + "%"]).fetchone()
+            if got:                                  # the freshest member speaks for the family
+                picks.append((got[0], fam_label.get(r["prefix"], r["prefix"] + "…"),
+                              f"{r['prefix']}… ({got[1]} series)"))
+        for sid, label, members in picks:
+            try:
+                row = _catalog_row(con, sid)
+            except ToolError:
+                continue
+            f = freshness.assess(con, sid, now=now) or {}
+            nr = f.get("next_release")
+            if not nr:
+                continue
+            state = _when_state(nr, now)
+            due, by = datetime.fromisoformat(nr["due_at"]), datetime.fromisoformat(nr["expected_by"])
+            if state == "upcoming" and (due > end or by < start):
+                continue
+            key = (state, nr["period"], nr["due_at"], nr["expected_by"], row["source"])
+            g = groups.setdefault(key, {
+                "status": state, "period": nr["period"], "when": nr["due_at"],
+                "by": nr["expected_by"], "local": _local(nr["due_at"]),
+                "approximate": nr["approximate"],
+                "calendar": nr.get("calendar"),
+                "publisher": pubs.get(row["source"], {}).get("name", row["source"]),
+                "name": label or row["name"], "series": [], "message": nr["message"]})
+            g["series"].append(members or sid)
+    order = {"late": 0, "due": 1, "upcoming": 2}
+    rows = sorted(groups.values(), key=lambda g: (order[g["status"]], g["when"], g["name"]))
+    return {"now": now.astimezone().isoformat(timespec="minutes"),
+            "to": end.astimezone().isoformat(timespec="minutes"),
+            "releases": rows,
+            "not_listed": "Series without a release rule (JOLTS, PPI, the OECD, the IMF and "
+                          "others) are judged by age alone; bedrok://releases lists the rules."}
 
 
 _SQL_START = ("select", "with", "describe", "show", "summarize", "pragma show", "from")

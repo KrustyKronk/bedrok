@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-15, after session 13a parts 1 and 2 (release rules, then the publishers' own dates).** Bedrok is a local MCP server and store of
+**Updated 2026-10-15, after session 13a (release rules, the publishers' own dates, and the `release_calendar` tool).** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -18,17 +18,30 @@ Board watch, C, breakdown questions, D1, chart and tool mechanics, and D2,
 discovery and catalog, are on PyPI and in the Desktop bundle attached to the
 GitHub release. Proven from PyPI: an empty home with no keys answered all
 nine smoke calls in 56 seconds. **Next:** the owner installs the bundle in
-Claude Desktop and asks it a cold question (item 1); then the
-`release_calendar` tool (item 2), and a release so the Desktop bundle carries
-13a.
+Claude Desktop and asks it a cold question (item 1); a release first, so the
+bundle carries 13a (0.3.0 has none of it).
 
-Session 13 is split: **13a, the release calendar**, has two parts in
-(release rules, then the publishers' own dates, below); **13b, revisions and
-vintages**, stays deferred.
+Session 13 is split: **13a, the release calendar**, is in (three parts,
+below; more feeds are item 2); **13b, revisions and vintages**, stays
+deferred.
 
 **Owner-side items** — the ones that need the owner's accounts or describe one
 machine — live in `profile/STATE-private.md`, which is gitignored. This file
 holds only what any reader may see.
+
+**Session 13a, part 3, in one paragraph.** A tenth tool, `release_calendar`,
+answers the two questions the calendar was for. With ids, each series' next
+release ("when is the next CPI?"); without, every release Bedrok knows of
+from now to `days` ahead ("what is out this week?"), overdue ones first,
+series that come out together on one line (the seven Treasury yields, the
+three H.4.1 series), a family as one line spoken for by its freshest member,
+each time in the publisher's zone and on the reader's clock, `approximate`
+when it is a rule. A list never fetches a series; asking for one does. A new
+test fails when the bundle manifest and the server's tools differ (nothing
+checked it before). Proven: 440 tests; on the live store the week's list
+showed five releases due that nobody had asked for and the ONS's exact UK
+dates; `scripts/mcp_smoke.py` from an empty home passed with ten tools in
+14 seconds.
 
 **Session 13a, part 2, in one paragraph.** Where a publisher states the date,
 it replaces the rule's window: a `release_calendar` table (the store's
@@ -352,11 +365,11 @@ manifest's `author` or `name`:** Claude Desktop files an extension as
 no settings instead of upgrading (it happened at 0.2.0; `docs/engineering/notes.md`).
 
 **Bedrok is an MCP server.** `bedrok serve` (`bedrok/surfaces/mcp_server.py`,
-official `mcp` SDK v2) exposes nine tools: `list_sources`, `search_series`,
+official `mcp` SDK v2) exposes ten tools: `list_sources`, `search_series`,
 `list_series`, `describe_series`, `get_series` (yoy / 3-month annualised /
 rebased / aligned to one calendar), `chart_series`, `percentile` (always with
-its sample), `query` (one read-only statement, no file or network access) and
-`refresh`. A stored series whose next period is due by its release rule, or
+its sample), `release_calendar` (a series' next release, or the week's),
+`query` (one read-only statement, no file or network access) and `refresh`. A stored series whose next period is due by its release rule, or
 that is stale or empty, is re-fetched from its publisher before it is
 answered; session-only series are fetched live and never written;
 a full refresh runs as a background job (Claude Desktop allows a tool call
@@ -411,7 +424,7 @@ FX pairs and five rows).
 `refresh`, `validate`, `query`, `tieout [--only ids]`, `doctor`, `schema`,
 `pctile`, `rates`, `serve`, `docs [--check]`.
 
-**Tests:** 422, network-free, green on 2026-10-15, including the MCP
+**Tests:** 440, network-free, green on 2026-10-15, including the MCP
 server in memory, the layering rule and the publication gate. **Workflows:**
 `tests` (push and PR), `package` (PR: the empty-home install and the gate on
 the wheel), `publish` (a published release), `liveness` (Tuesdays, keyless).
@@ -492,11 +505,8 @@ Owner-side items are in `profile/STATE-private.md`.
      "who publishes what is missing" map was not built (the warnings carry
      it where it matters).
 
-2. **Release calendars: the tool, then more feeds** (session 13a; research
-   in `docs/engineering/notes.md`, "Where release dates come from").
-   - **A `release_calendar` tool** for "when is the next CPI?" and "what is
-     out this week?": the tenth tool (`test_nine_tools…`, the manifest, the
-     README and this file say nine).
+2. **More release calendars** (session 13a's tail; research in
+   `docs/engineering/notes.md`, "Where release dates come from").
    - **More exact feeds:** StatCan's JSON (Canada's CPI), the Fed Board's
      monthly calendar pages, INE's and Istat's iCal, the live Eurostat iCal
      (its documented URL is 404), the ECB's calendar; BLS `latest=true` and

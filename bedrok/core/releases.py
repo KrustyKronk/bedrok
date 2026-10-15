@@ -290,5 +290,6 @@ def describe(w: dict, frequency: str, state: str, latest: date | None) -> dict:
             "expected_by": w["expected_by"].isoformat(),
             "late_after": w["late_after"].isoformat(),
             "source": "calendar" if exact else "rule", "approximate": not exact,
-            **({"publisher": FEEDS[w["feed"]]["publisher"]} if exact else {}),
+            **({"publisher": FEEDS[w["feed"]]["publisher"],
+                "calendar": FEEDS[w["feed"]]["label"]} if exact else {}),
             "message": message}
