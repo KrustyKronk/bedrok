@@ -190,6 +190,12 @@ so `bundle` carries `!cancelled()` and allows a skipped `publish` only on
 `workflow_dispatch`. Its `contents: write` is the only write permission in
 the repo's workflows, and it runs only from a release or a manual dispatch.
 
+**Smoke-testing a release from PyPI can race PyPI's index.** Run a minute
+or two after `publish.yml` finished, `uvx … bedrok@0.3.3 serve` exited before
+the server started ("server closed the stream during initialize", 0.3 s). The
+same command a few minutes later passed. A failure that fast is not Bedrok's
+code: run `uvx … bedrok@<version> --help` to see uv's error, then try again.
+
 **A cold test on the owner's store cannot see what a fresh install lacks.**
 Until session G, "gold" and "turkey inflation" found nothing on a new install
 (the rows came only with their bulk download), and every cold session had run

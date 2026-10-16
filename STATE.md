@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-16: session H is in (four more release calendars) and goes out as 0.3.3.** Bedrok is a local MCP server and store of
+**Updated 2026-10-16: 0.3.3 is released (session H, four more release calendars).** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -32,7 +32,10 @@ build, publish and bundle jobs all passed, the wheel and sdist are on PyPI
 and `bedrok-0.3.2.mcpb` is on the GitHub release. Proven from PyPI: an empty
 folder and an empty home answered all ten smoke calls in 32 seconds, the
 home check passing. **Session H** (four more publishers' own release dates)
-is on `main` and goes out as **0.3.3**. **Next:** the owner installs the
+is **released as 0.3.3** (2026-10-16). `publish.yml`'s build, publish and
+bundle jobs all passed, and `bedrok-0.3.3.mcpb` is on the release. Proven from
+PyPI: an empty folder and an empty home answered all ten smoke calls in 36
+seconds. **Next:** the owner installs the
 latest release in Claude Desktop and asks a cold question (item 1).
 
 Session 13 is split: **13a, the release calendar**, is in (three parts,
