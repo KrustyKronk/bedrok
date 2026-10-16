@@ -22,9 +22,10 @@ nine smoke calls in 56 seconds. **0.3.1 is released** (2026-10-16): session
 by `publish.yml` and in the Desktop bundle attached to the v0.3.1 GitHub
 release, which was scanned against the owner's terms before upload (only the
 author credit matched). Proven from PyPI: an empty home with no keys answered
-all nine smoke calls, ten tools, in 30 seconds. **Next:** the owner installs
-the 0.3.1 bundle in Claude Desktop and asks it a cold question, ideally on a
-release morning (item 1).
+all nine smoke calls, ten tools, in 30 seconds. **The owner installed it in
+Claude Desktop on 2026-10-16 and `release_calendar` worked there.** **Next:**
+the acceptance test's smaller frictions (item 1), then more release
+calendars (item 2).
 
 Session 13 is split: **13a, the release calendar**, is in (three parts,
 below; more feeds are item 2); **13b, revisions and vintages**, stays
@@ -493,13 +494,12 @@ None holds a secret.
 Completed items are removed rather than ticked — git history is the record.
 Owner-side items are in `profile/STATE-private.md`.
 
-1. **Install 0.3.1 in Claude Desktop, then the acceptance test's smaller
-   frictions.** The release is done (PyPI by `publish.yml`, the bundle on the
-   v0.3.1 release; the manifest's author and name unchanged, so it upgrades
-   0.3.0 in place: open the `.mcpb`, then quit Desktop with Cmd-Q and reopen).
-   The owner asks it a cold question there, the first time 13a runs outside
-   this machine's development server; on a release morning, "what is out
-   today?" is the test of 13a. Smaller, from the D2 acceptance test:
+1. **The acceptance test's smaller frictions.** 0.3.1 is installed in Claude
+   Desktop (2026-10-16, upgraded in place) and `release_calendar` answered
+   there. Still worth a cold question on a release morning: "what is out
+   today?" followed by asking for the figure is the full test of 13a (the
+   fetch on a due series has run only in process and from the smoke script).
+   Smaller, from the D2 acceptance test:
    - `get_series` takes five ids and `chart_series` seven; a breakdown's
      quarterly parts needed two calls.
    - A chart of five places is titled "Germany and 4 others".
