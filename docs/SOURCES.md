@@ -2,7 +2,7 @@
 
 # Sources
 
-Bedrok is wired to 31 publishers. 25 need no key at all; the others take a free key, entered in Bedrok's settings or its home folder's `.env` (see [INSTALL](INSTALL.md)). Every series is fetched from its publisher by your own copy of Bedrok; nothing is redistributed. Licence classes and what they ask of you are in [LICENSES](LICENSES.md).
+Bedrok is wired to 32 publishers. 26 need no key at all; the others take a free key, entered in Bedrok's settings or its home folder's `.env` (see [INSTALL](INSTALL.md)). Every series is fetched from its publisher by your own copy of Bedrok; nothing is redistributed. Licence classes and what they ask of you are in [LICENSES](LICENSES.md).
 
 | Publisher | Series | Key | Licence | Stored | Terms |
 |---|---|---|---|---|---|
@@ -27,6 +27,7 @@ Bedrok is wired to 31 publishers. 25 need no key at all; the others take a free 
 | **Istituto Nazionale di Statistica (Istat)** (`istat`) | 1 curated | none | reuse with attribution | yes | [terms](https://www.istat.it/note-legali/) |
 | **Institut national de la statistique et des études économiques (INSEE)** (`insee`) | 3 curated | none | reuse with attribution | yes | [terms](https://www.insee.fr/fr/information/2008466) |
 | **Australian Bureau of Statistics** (`abs`) | 2 curated | none | reuse with attribution | yes | [terms](https://www.abs.gov.au/website-privacy-copyright-and-disclaimer) |
+| **Deutsche Bundesbank** (`bundesbank`) | 1 curated | none | reuse with attribution | yes | [terms](https://www.bundesbank.de/en/homepage/user-information/terms-of-use-642972?index=6) |
 | **Bank of Canada** (`boc`) | 4 curated | none | reuse with attribution | yes | [terms](https://www.bankofcanada.ca/terms/) |
 | **Statistics Canada** (`statcan`) | 3 curated | none | reuse with attribution | yes | [terms](https://www.statcan.gc.ca/en/reference/licence) |
 | **Instituto Nacional de Estadística (INE)** (`ine`) | 4 curated | none | reuse with attribution | yes | [terms](https://www.ine.es/aviso_legal) |
@@ -358,6 +359,10 @@ Bedrok is wired to 31 publishers. 25 need no key at all; the others take a free 
 
 - `au_cpi` — Australia consumer price index, all groups (ABS)
 - `au_unemployment` — Australia unemployment rate (ABS)
+
+### Deutsche Bundesbank
+
+- `de_10y_yield` — Germany 10-year Bund yield (Bundesbank)
 
 ### Bank of Canada
 

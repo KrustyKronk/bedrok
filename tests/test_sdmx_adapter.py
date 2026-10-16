@@ -70,6 +70,18 @@ def test_semicolons_and_a_byte_order_mark_are_read():
     assert sdmx.parse_csv(csv).values.tolist() == [[D("2026-10-01"), 3.62]]
 
 
+def test_bundesbank_weekends_and_per_row_columns_after_the_period():
+    """The live BBSIS answer (2026-10-16): a weekend is '.' with status K, and
+    BBK_DIFF_A changes every row. Only columns before TIME_PERIOD name the
+    series, so the varying tail is not an unpinned key."""
+    head = "﻿DATAFLOW;BBK_STD_FREQ;BBK_SEIS_MATURITY;TIME_PERIOD;OBS_VALUE;BBK_DIFF_A;OBS_STATUS\n"
+    csv = head + ("BBK:BBSIS(1.0);D;R10XX;2026-10-02;3.46;-0.16;\n"
+                  "BBK:BBSIS(1.0);D;R10XX;2026-10-03;.;;K\n"
+                  "BBK:BBSIS(1.0);D;R10XX;2026-10-05;3.47;0.01;\n")
+    assert sdmx.parse_csv(csv).values.tolist() == [[D("2026-10-02"), 3.46],
+                                                   [D("2026-10-05"), 3.47]]
+
+
 def test_sdmx_csv_2_with_imf_month_periods():
     csv = ("STRUCTURE,STRUCTURE_ID,ACTION,COUNTRY,INDICATOR,FREQUENCY,TIME_PERIOD,OBS_VALUE\n"
            "dataflow,IMF.STA:CPI(5.0.0),I,USA,CPI,M,2026-M06,149.13\n"
@@ -136,6 +148,21 @@ def test_request_shape_by_format(monkeypatch):
     sdmx.fetch({**ROW, "format": "csvdata", "user_agent": "browser"}, "EXR/D.USD")
     assert seen["params"] == {"format": "csvdata"} and "Accept" not in seen["headers"]
     assert "Mozilla" in seen["headers"]["User-Agent"]
+
+
+def test_a_day_start_period_sends_the_whole_date(monkeypatch):
+    """The Bundesbank answers startPeriod=2026-10 with 400, which an incremental
+    fetch reads as "nothing new": the series would freeze with no error."""
+    seen = {}
+
+    def fake_get(url, params, headers, timeout):
+        seen.update(params=params)
+        return _Resp(200, "")
+    monkeypatch.setattr(sdmx.requests, "get", fake_get)
+    sdmx.fetch({**ROW, "start_period": "day"}, "BBSIS/D.X", start="2026-10-09")
+    assert seen["params"] == {"startPeriod": "2026-10-09"}
+    sdmx.fetch(ROW, "BBSIS/D.X", start="2026-10-09")
+    assert seen["params"] == {"startPeriod": "2026-10"}
 
 
 def test_no_data_since_the_start_is_empty_but_a_bad_code_fails(monkeypatch):

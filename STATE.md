@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-16: session E is in, after 13a was released as 0.3.1.** Bedrok is a local MCP server and store of
+**Updated 2026-10-16: session F is in, after session E; 0.3.1 is the release.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -23,11 +23,10 @@ by `publish.yml` and in the Desktop bundle attached to the v0.3.1 GitHub
 release, which was scanned against the owner's terms before upload (only the
 author credit matched). Proven from PyPI: an empty home with no keys answered
 all nine smoke calls, ten tools, in 30 seconds. **The owner installed it in
-Claude Desktop on 2026-10-16 and `release_calendar` worked there.** **Session
-E** (the acceptance test's smaller frictions and three small items) is on
-`main`, not yet released. **Next:** the probe-and-repoint pass (items 3, 4, 5
-and 10 below), then release plumbing (items 13 and 15) and 0.3.2, then more
-release calendars (item 2).
+Claude Desktop on 2026-10-16 and `release_calendar` worked there.** **Sessions
+E** (the acceptance test's smaller frictions and three small items) **and F**
+(the probe-and-repoint pass) are on `main`, not yet released. **Next:** release
+plumbing (items 13 and 15) and 0.3.2, then more release calendars (item 2).
 
 Session 13 is split: **13a, the release calendar**, is in (three parts,
 below; more feeds are item 2); **13b, revisions and vintages**, stays
@@ -36,6 +35,32 @@ deferred.
 **Owner-side items** — the ones that need the owner's accounts or describe one
 machine — live in `profile/STATE-private.md`, which is gitignored. This file
 holds only what any reader may see.
+
+**Session F in one paragraph.** Every publisher that refused on 2026-10-11
+was asked again on 2026-10-16. The Bundesbank answered, so it is the 31st
+publisher (`bundesbank`, the SDMX client, ESCB reuse terms: free, cite the
+source, do not modify) with one series, `de_10y_yield`, the daily 10-year Bund
+from 1997-08: a yield read off the Bundesbank's fitted curve, about 0.08 point
+above Eurostat's monthly `ltgov_yield_de` (correlation 0.9996 over 350
+months), which stays the German leg of the monthly spreads. The probe found
+the trap before the store did: the Bundesbank refuses a month-form
+`startPeriod` with 400, which the client reads on an incremental fetch as
+"nothing new", so the series would have frozen after its first pull with no
+error anywhere. `sources.csv` gains a `start_period` column (`day` for the
+Bundesbank) and the client sends the whole date for it. BEA answered (NIPA to
+2026-08). The Labor Department's claims API still ends four weeks behind
+FRED (2026-09-12 against 2026-10-10), so claims stay on FRED. Eurostat's
+government debt release had not moved (2026-Q1 out on 2026-07-21, 112 days
+after the quarter): the 260-day allowance was too short for a quarter dated
+at its start, so it is 310 and the family has a release rule (108 to 118
+days, 11:00 Brussels) that will call 2026-Q2 due around 22 October. Proven:
+448 tests (3 skipped; the owner's term list passed when pointed at it); the
+incremental fetch live through the client; two full `bedrok refresh` runs of
+the real store from this branch, no failures in either (the first pulled the
+Bund's 7,410 days, the second fetched it incrementally with the fix, 6 rows
+to 2026-10-15); `validate` with no findings at all, the Eurostat debt lag
+gone (Canada's CPI and US industrial production printed as due, not
+counted).
 
 **Session E in one paragraph.** The D2 acceptance test's smaller frictions,
 each checked on the real store, plus three small items. `get_series` takes
@@ -446,19 +471,19 @@ Claude may merge Bedrok pull requests once GitHub's checks pass.
 
 ## What is live
 
-**30 publishers, plus `derived`**, from the Fed Board, the ECB, the BLS, the
+**31 publishers, plus `derived`**, from the Fed Board, the ECB, the BLS, the
 BIS, the regional Feds, the OECD, Eurostat, the EIA, Census, the IMF, the ONS,
 the Bank of England, the Bank of Canada, the New York Fed, INSEE, the BEA,
 Statistics Canada, Japan's e-Stat and Ministry of Finance, the ABS, INE, the
-four Nordic offices, Destatis and Istat, with FRED for the nine session-only
-series. 731 catalog rows (session C added 191 for GDP breakdowns; D2 the six
-FX pairs and five rows; E retired shrimp).
+four Nordic offices, Destatis, Istat and the Bundesbank, with FRED for the nine session-only
+series. 732 catalog rows (session C added 191 for GDP breakdowns; D2 the six
+FX pairs and five rows; E retired shrimp; F added the daily Bund).
 
 **Twelve commands:** `smoke [--keyless]`, `backfill [--only ids --stage S]`,
 `refresh`, `validate`, `query`, `tieout [--only ids]`, `doctor`, `schema`,
 `pctile`, `rates`, `serve`, `docs [--check]`.
 
-**Tests:** 446 (3 skip without a wheel or the owner's term list), network-free, green on 2026-10-16, including the MCP
+**Tests:** 448 (3 skip without a wheel or the owner's term list), network-free, green on 2026-10-16, including the MCP
 server in memory, the layering rule and the publication gate. **Workflows:**
 `tests` (push and PR), `package` (PR: the empty-home install and the gate on
 the wheel), `publish` (a published release), `liveness` (Tuesdays, keyless).
@@ -538,36 +563,27 @@ Owner-side items are in `profile/STATE-private.md`.
    - **Rules not yet written:** families stay on age (the broad HICP set has
      candidate countries that publish later), as do JOLTS, PPI, the regional
      Feds, the OECD, the IMF and the World Bank's annual data.
-3. **Publishers that refused on 2026-10-11, and what liveness says now.** The
-   OECD and the CFTC answered every request with a Cloudflare bot check (403,
-   "Just a moment…"); never try to get past a bot check. On 2026-10-12 the
-   CFTC answered again; the OECD still refused a home connection in the
-   morning but passed from GitHub's runner an hour later, in the first
-   liveness run (25 of 25, no stale data). Bot checks come and go: read a
-   single red liveness run as "look", and a publisher red for weeks as
-   session 14's "retire or re-point". The Bundesbank dropped the TLS handshake
-   on its data service, so session 10's daily Bund series waits (it is
-   `BBSIS/D.I.ZAR.ZI.EUR.S1311.B.A604.R10XX.R.A.A._Z._Z.A` on the SDMX client,
-   with a `bundesbank` source row to add). BEA answered 503 through 2026-10-11;
-   it is keyed, so liveness does not see it. **Destatis** stopped serving its
-   CPI tables on 2026-10-12 (GENESIS code 7000, "no data cube", for every
-   start year) while industrial production answered; `de_cpi_destatis` holds
-   to 2026-08. **On 2026-10-14 both were back:** a full refresh from home had
-   no failures, the OECD answered every series and `de_cpi_destatis` reached
-   2026-09. Keep the item until the Bundesbank and BEA are checked too.
+3. **Closed 2026-10-16 (session F):** every publisher that refused on
+   2026-10-11 answered again (the OECD, CFTC and Destatis by 2026-10-14; the
+   Bundesbank and BEA on 2026-10-16). Bot checks come and go: read a single
+   red liveness run as "look", and a publisher red for weeks as session 14's
+   "retire or re-point"; never try to get past a bot check. This line stays
+   only so today's item numbers hold for sessions G and H; the next rewrite
+   removes it.
 
 4. **Jobless claims: revisit the Labor Department's API** when convenient. It
-   matched FRED exactly but ended four weeks behind on 2026-10-10. If it
-   catches up to the Thursday release, move the three claims rows to it (the
-   fields are in `docs/engineering/notes.md`).
+   matches FRED exactly but runs a steady four weeks behind: on 2026-10-16,
+   the day after a Thursday release, its newest filled week was 2026-09-12
+   while FRED's initial claims had 2026-10-10 (on 2026-10-10 it was
+   2026-09-05 against 2026-10-03). If it catches up, move the three claims
+   rows to it (the fields are in `docs/engineering/notes.md`).
 
 5. **Catalog gaps a real question exposed** ("how have 10-year government
    bonds done over two years" for the US, Germany, France, the UK, China and
-   Japan). Japan's 10-year is in (session 10). Still open:
-   - **Daily German yields:** the Bundesbank's BBSIS flow through the existing
-     SDMX client, waiting on item 3. Without it Germany and France are only
-     Eurostat's monthly averages, about six weeks behind.
-   - **France daily:** Banque de France (Webstat) — not yet checked.
+   Japan). Japan's 10-year is in (session 10), Germany's daily 10-year from
+   the Bundesbank (`de_10y_yield`, session F). Still open:
+   - **France daily:** without it France is only Eurostat's monthly average,
+     about six weeks behind. Source: Banque de France (Webstat) — not yet checked.
    - **China's 10-year:** probably no openly licensed source (ChinaBond is
      commercial). A candidate for `bedrok/seeds/gaps.md`, not the catalog.
 
@@ -613,12 +629,15 @@ Owner-side items are in `profile/STATE-private.md`.
 9. **Starter-set gaps from session 4:** Italy's NIC CPI (rebased in 2026, its
    history sits in a differently shaped flow — Eurostat's HICP covers Italy),
    Istat's headline confidence indices, the ABS monthly CPI (only from 2024;
-   the quarterly index from 1948 is carried). The ILO and the Bundesbank were
-   left for later.
+   the quarterly index from 1948 is carried). The ILO was left for later; the
+   Bundesbank is wired (session F) with one series, and its other flows
+   (the rest of the Bund curve, the German banking statistics) are a row each.
 
-10. **Eurostat's government debt/GDP family is late:** freshest 2026-01-01,
-    past its 260-day allowance. The only `validate` finding. Data, not a fault;
-    check whether the release moved before widening the allowance.
+10. **Closed 2026-10-16 (session F):** Eurostat's debt release had not
+    moved; the allowance was too short and is 310 days, with a release rule.
+    Eurostat now also publishes EA21 for this dataset (88.9 against EA20's
+    89.4 for 2026-Q1); the family still reads EA20, which is current. This
+    line stays only so today's item numbers hold; the next rewrite removes it.
 
 11. **Two 7a series are not what one might assume.** Japan's unemployment rate
     is not seasonally adjusted: the seasonally adjusted series are not in

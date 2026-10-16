@@ -15,6 +15,7 @@ Statuses: `fresh` (the next period is not due yet), `due` (inside its window: fe
 | `ea_hicp_index` | 15 to 20 days after the month | 11:00 Europe/Brussels |  |
 | `ea_hicp_yoy` | 2 days before to 3 days after the end of the month | 11:00 Europe/Brussels |  |
 | `eu_unemployment` | 29 to 35 days after the month | 11:00 Europe/Brussels |  |
+| `govdebt_gdp_…` (family) | 108 to 118 days after the quarter | 11:00 Europe/Brussels |  |
 | `hicp_core_ea` | 2 days before to 3 days after the end of the month | 11:00 Europe/Brussels |  |
 | `hicp_core_ea20` | 2 days before to 3 days after the end of the month | 11:00 Europe/Brussels |  |
 | `jp_cpi` | 17 to 25 days after the month, on a Friday | 08:30 Asia/Tokyo |  |

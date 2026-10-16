@@ -8,7 +8,7 @@ publisher that speaks SDMX is a row here plus catalog rows; a publisher with
 its own format is a row plus an adapter module named in `adapter`.
 
   protocol  sdmx     the generic client in ingest/adapters/sdmx.py, configured
-                     by base_url, format and user_agent
+                     by base_url, format, user_agent and start_period
             pxweb    the generic client in ingest/adapters/pxweb.py for the
                      Nordic offices' table APIs, configured the same way
             adapter  a bespoke module, ingest/adapters/<adapter>.py

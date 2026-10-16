@@ -42,3 +42,4 @@ jp_cpi_core_core,,monthly,17,25,fri,08:30,Asia/Tokyo,Statistics Bureau national 
 ca_cpi,,monthly,14,21,,08:30,America/Toronto,Statistics Canada CPI: the third week of the next month. https://www150.statcan.gc.ca/n1/dai-quo/cal2-eng.htm
 ,cot_,weekly,3,3,fri,15:30,America/New_York,CFTC Commitments of Traders: Friday for Tuesday's positions
 ,wb_,monthly,1,6,,12:00,America/New_York,World Bank Pink Sheet: the first business days of the next month
+,govdebt_gdp_,quarterly,108,118,,11:00,Europe/Brussels,Eurostat quarterly government debt: about 16 weeks after the quarter (2026-Q1 on 21 Jul 2026). https://ec.europa.eu/eurostat/news/euro-indicators/release-calendar

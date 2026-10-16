@@ -353,7 +353,11 @@ parameter, not a header; fields `c5` SA initial, `c8` its 4-week average, `c7`
 SA continued) both matched FRED exactly back to 1967, and both ended at the
 week of 2026-09-05 on 2026-10-10 while FRED had 2026-10-03. They also list
 future weeks carrying only seasonal factors. Claims are therefore session-only
-from FRED; revisit if the API catches up.
+from FRED; revisit if the API catches up. Rechecked 2026-10-16, the day after a
+Thursday release: the API's newest filled week was 2026-09-12, FRED's initial
+claims 2026-10-10, so the gap is a steady four weeks, not a backlog clearing.
+Sort with `sort=desc&sort_by=rptdate` and skip rows whose `c5` is null; the
+first rows are next year's seasonal factors.
 
 **Every SDMX publisher has a dialect, and the dialect is data.** One client
 (`adapters/sdmx.py`) serves the ECB, OECD, BIS, IMF, Istat, INSEE and ABS; what
@@ -662,6 +666,28 @@ conventions, each chosen so nothing is invented:
 - empty periods stay null, `incomplete` names a period missing a part (a
   quarter without one of its months), `partial_last` a period not yet over;
 - resampling comes before a transform: quarterly average, then yoy.
+
+**The Bundesbank's 10-year is a curve, not a bond (session F, 2026-10-16).**
+`BBSIS/D.I.ZAR.ZI.EUR.S1311.B.A604.R10XX.R.A.A._Z._Z.A` is the yield on Federal
+securities with annual coupons and ten years residual maturity, read off the
+Bundesbank's fitted term structure ("aus der Zinsstruktur abgeleitet"). Its
+monthly averages run about 0.08 point above Eurostat's `ltgov_yield_de` (a
+benchmark-bond yield), 0.35 at most (2009-03), correlation 0.9996 over 350
+months: the same rate measured two ways, so the two are never spliced and
+the monthly spreads keep Eurostat's German leg. The service answers SDMX-CSV
+with `;` and a BOM, carries weekends and holidays as `.` with OBS_STATUS K,
+and adds per-row columns after TIME_PERIOD (`BBK_DIFF_A`), none of which the
+client counts as a dimension. **It refuses a month-form `startPeriod`**
+(`2026-10`, and `2026`) with 400 and takes only `2026-10-01`. The client sent
+YYYY-MM to every publisher, and on an incremental fetch a 400 means "nothing
+since then", so the series would have frozen after its first full pull with
+no error, no failure count and a green refresh; only `validate`'s ten-day
+staleness would have shown it. The row's `start_period = day` sends the
+date. Probe the incremental request, not only the full one. Reuse is
+the ESCB statistics policy (free, commercial included, cite the source, do
+not modify), on the "Terms of use" page under User information, not the
+imprint. The TLS handshake that failed on 2026-10-11 was the service's; on
+2026-10-16 it answered in a quarter of a second.
 
 **OECD and CFTC behind Cloudflare (2026-10-11).** Both answered 403 with a
 Cloudflare challenge page ("Just a moment…", "Attention Required") to every
