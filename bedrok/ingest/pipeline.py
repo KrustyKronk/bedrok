@@ -366,7 +366,9 @@ EUROSTAT_BULK_SETS = [
     {"prefix": "govdebt_gdp_", "ea_codes": ["EA20"],
      "code": "gov_10q_ggdebt?na_item=GD&sector=S13&unit=PC_GDP",
      "label": "Government debt/GDP", "frequency": "quarterly", "units": "percent of GDP",
-     "staleness_days": 260,
+     # Out about 112 days after the quarter (2026-Q1 on 2026-07-21), so a
+     # quarter dated at its start is ~295 days old when the next one lands.
+     "staleness_days": 310,
      "name_tmpl": "General government gross debt — {geo}", "notes": "consolidated"},
     {"prefix": "hicp_core_", "code": "prc_hicp_minr?unit=RCH_A&coicop18=TOT_X_NRG_FOOD",
      "label": "HICP core annual rate", "frequency": "monthly", "units": "percent",

@@ -3,7 +3,8 @@
   {base_url}/data/{flow}/{key}?startPeriod=…
 
 Which publisher, and how it likes to be asked, comes from its row in the source
-list (bedrok/seeds/sources.csv): `base_url`, `format` and `user_agent`. A
+list (bedrok/seeds/sources.csv): `base_url`, `format`, `user_agent` and
+`start_period` (blank: startPeriod as YYYY-MM; `day`: YYYY-MM-DD). A
 catalog `source_code` is the path after /data/ exactly as the publisher spells
 it — "EXR/D.USD.EUR.SP00.A" (ECB), "OECD.SDD.STES,DSD_STES@DF_CLI,4.1/USA.M…"
 (OECD, agency,flow,version), "WS_CBPOL/M.JP" (BIS).
@@ -22,6 +23,8 @@ averaged, overwritten or silently stored.
 Quirks confirmed live on 2026-10-10:
   * CSV may be ',' or ';' separated and may start with a byte-order mark
     (Bundesbank, Norges Bank); columns are found by name, never by position.
+  * The Bundesbank refuses a month-form startPeriod with 400 and takes only
+    YYYY-MM-DD (2026-10-16): its row says start_period = day.
   * SDMX-CSV 2.0 (IMF's 3.0 path) leads with STRUCTURE, STRUCTURE_ID, ACTION
     where 1.0 leads with DATAFLOW; the ECB's own CSV leads with KEY.
   * OECD and INSEE return the newest observation first.
@@ -126,9 +129,12 @@ def fetch(spec: dict, code: str, start: str | None = None) -> pd.DataFrame:
     elif fmt == "csvdata":
         params["format"] = "csvdata"
     if start:
-        # YYYY-MM is understood by every publisher in the list for daily,
-        # monthly and quarterly flows; the client-side filter below trims it.
-        params["startPeriod"] = str(start)[:7]
+        # YYYY-MM is understood by most publishers for daily, monthly and
+        # quarterly flows; the client-side filter below trims it. A row with
+        # start_period = day sends the date: the Bundesbank answers YYYY-MM
+        # with 400, which on an incremental request reads as "nothing new".
+        day = spec.get("start_period") == "day"
+        params["startPeriod"] = str(start)[:10] if day else str(start)[:7]
     r = requests.get(f"{spec['base_url'].rstrip('/')}/data/{code}",
                      params=params, headers=headers, timeout=120)
     # With a start date, 404/400 means "nothing since then" (ABS, Eurostat).

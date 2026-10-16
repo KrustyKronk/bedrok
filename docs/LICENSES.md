@@ -157,6 +157,12 @@ Source: Australian Bureau of Statistics. Reused under the Creative Commons Attri
 
 Terms: <https://www.abs.gov.au/website-privacy-copyright-and-disclaimer>
 
+### Deutsche Bundesbank
+
+Source: Deutsche Bundesbank. Reused free of charge under the ESCB terms for the reuse of statistics, which require the source to be cited and the data not to be modified; any Bedrok-computed transformation is stated as such.
+
+Terms: <https://www.bundesbank.de/en/homepage/user-information/terms-of-use-642972?index=6>
+
 ### Bank of Canada
 
 Source: Bank of Canada (Valet API), reused under its terms of use; changes are Bedrok's and are stated. Not endorsed by the Bank of Canada.

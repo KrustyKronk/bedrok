@@ -29,6 +29,7 @@ def test_every_row_says_how_to_reach_it(rows):
         if r["protocol"] == "sdmx":
             assert r["base_url"].startswith("https://"), s
             assert r["format"] in {"accept", "csvdata", "xml"}, s
+            assert r["start_period"] in {"", "day"}, s
         if r["protocol"] == "pxweb":
             assert r["base_url"].startswith("https://"), s
             assert r["format"] in {"v1", "v2", "statbank"}, s
