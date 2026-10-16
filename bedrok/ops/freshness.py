@@ -100,8 +100,8 @@ def assess(con, series_id: str, today: date | None = None, *,
            now: datetime | None = None) -> dict | None:
     """Freshness of one catalog series, or None when the id is not in the catalog.
 
-    {series_id, cache, first_date, last_date, future_to, n_obs, age_days,
-     allowance_days, stale, status, next_release} where status is 'fresh',
+    {series_id, cache, first_date, last_date, latest_period, future_to, n_obs,
+     age_days, allowance_days, stale, status, next_release} where status is 'fresh',
     'due', 'late', 'stale', 'empty' (a stored series with nothing stored yet)
     or 'session' (never stored by design), and next_release is None for a
     series without a release rule, else what core/releases.describe returns.
@@ -110,6 +110,11 @@ def assess(con, series_id: str, today: date | None = None, *,
     also carries observations dated later (IMF WEO forecasts to 2031, ECB SPF
     horizons) reports how far they run as `future_to`, and its age is measured
     from `last_date`: a forecast must never make a series look fresh.
+
+    `latest_period` names the period `last_date` stands for ("2025", "Q2
+    2026", "August 2026"). Age runs from a period's first day, which is the
+    rule, but "651 days" for 2025's annual value in October 2026 read as
+    neglect in the D2 acceptance test; the period's name says what is held.
 
     `today` alone (tests, a past date) puts `now` at its noon UTC; `now` alone
     sets `today` from it."""
@@ -128,6 +133,7 @@ def assess(con, series_id: str, today: date | None = None, *,
         "SELECT min(date), max(date) FILTER (WHERE date <= ?), max(date), count(*) "
         "FROM macro_series WHERE series_id = ?", [today, series_id]).fetchone()
     out = {"series_id": series_id, "cache": cache, "first_date": lo, "last_date": hi,
+           "latest_period": releases.period_name(hi, (freq or "").lower()) if hi else None,
            "future_to": top if top is not None and hi is not None and top > hi else None,
            "n_obs": n, "age_days": None, "allowance_days": allow, "stale": False,
            "next_release": None}

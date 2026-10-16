@@ -31,8 +31,9 @@ def test_fresh_stale_empty_and_session():
     assert freshness.assess(con, "a", today)["status"] == "fresh"       # 70d < 90d
     b = freshness.assess(con, "b", today)
     assert b["status"] == "stale" and b["age_days"] == 282 and b["allowance_days"] == 90
-    assert freshness.assess(con, "c", today)["status"] == "empty"
-    assert freshness.assess(con, "d", today)["status"] == "session"
+    c, d = freshness.assess(con, "c", today), freshness.assess(con, "d", today)
+    assert c["status"] == "empty" and c["latest_period"] is None
+    assert d["status"] == "session" and d["latest_period"] is None
     assert freshness.assess(con, "nope", today) is None
 
 
@@ -77,6 +78,8 @@ def test_a_series_without_a_rule_is_judged_by_age_alone():
     con = _cpi_store(sid="no_rule_here", source="x")
     f = freshness.assess(con, "no_rule_here", now=_et(2026, 10, 22, 12))
     assert f["status"] == "fresh" and f["next_release"] is None
+    # with no rule there is no message to name the period, so the field does
+    assert f["latest_period"] == "August 2026"
 
 
 def test_a_session_series_says_when_its_next_release_is():
@@ -107,4 +110,5 @@ def test_a_forecast_never_makes_a_series_look_fresh():
     f = freshness.assess(con, "weo", date(2026, 10, 10))
     assert f["last_date"] == date(2025, 1, 1) and f["future_to"] == date(2031, 1, 1)
     assert f["age_days"] == (date(2026, 10, 10) - date(2025, 1, 1)).days
+    assert f["latest_period"] == "2025"      # D2: the age alone read as neglect
     assert f["status"] == "stale"            # 647 days > 450: no forecast hides it

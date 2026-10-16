@@ -19,7 +19,9 @@ python3 -m venv .venv && ./.venv/bin/pip install -e .   # Python ≥3.11
 Packaging: `uv build --wheel` builds the wheel (the seeds in `bedrok/seeds/`
 ship inside it), `scripts/build-mcpb.sh` builds the Claude Desktop bundle, and
 `python3 scripts/mcp_smoke.py -- <server command>` drives any build over stdio
-the way a host does. `.github/workflows/package.yml` runs the wheel through
+the way a host does. Run it from an empty folder: from the repo folder the
+server finds `./profile`, and the script fails rather than pass against your
+own store (`--any-home` turns that check off). `.github/workflows/package.yml` runs the wheel through
 that on clean macOS and Linux runners. After editing a seed, run
 `bedrok docs` to regenerate `docs/SOURCES.md` and `docs/LICENSES.md` (a test
 fails if you forget).

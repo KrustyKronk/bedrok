@@ -97,6 +97,17 @@ survives a module moving between layers. `.parent.parent` silently became
 missing at once — eleven tests, one cause, and the error (`FileNotFoundError` on
 a seed CSV) pointed nowhere near it.
 
+**A worktree borrows the main checkout's `.venv`, and its package with it
+unless the worktree is the current folder.** Claude Code sessions run in
+`.claude/worktrees/<name>/`, which has no `.venv` of its own; the main
+checkout's has an editable install of the main checkout. `python -m bedrok`
+and `python -c` put the current folder first on `sys.path`, ahead of
+`PYTHONPATH`, so started from the main checkout they run its code, and a
+script file puts its own folder first. Run from the worktree folder, set
+`BEDROK_PROFILE` to the real `profile/` for the real store, and print
+`bedrok.__file__` first. Session E ran a full refresh of the wrong code for
+several minutes before the printed path gave it away.
+
 **Untracked scripts under `profile/` break silently and there is no history to
 recover them from.** Two have bitten now: `build_artifact.py` crashed on every
 run for an unknown stretch because only a skill invoked it, and

@@ -67,7 +67,9 @@ has one ("personal use only", "fetched live, not stored").
 
 **Footnotes say what the chart cannot**: a warning about the official numbers
 for the period shown, a period not over yet, a quarter missing a month, rows
-cut from a long span, a series drawn as a step.
+cut from a long span, a series drawn as a step, and how a faster series was
+made one value per period ("quarterly averages of daily values; `how: last`
+gives quarter-end values").
 
 **Lines by default.** Bars when every series has a single period (ask for
 `at` a date: one bar per series, many places compared at once), and stacked

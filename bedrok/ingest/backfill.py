@@ -67,7 +67,9 @@ def main() -> int:
         store.close_checkpointed(con)
 
     print(f"\nBackfill complete. {fails} failed item(s).")
-    return 1 if fails else 0
+    # 3, as `refresh` returns, not 1: exit 1 is `validate`'s "findings", the
+    # normal state of a live store; this is a store not fully updated.
+    return 3 if fails else 0
 
 
 if __name__ == "__main__":
