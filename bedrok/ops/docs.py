@@ -185,10 +185,13 @@ _AFTER = {"daily": "the day", "weekly": "the week", "monthly": "the month",
 def _timing(r: dict) -> str:
     lo, hi = r["lag_min"], r["lag_max"]
     days = f"{lo} days" if lo == hi else f"{lo} to {hi} days"
+    day = f", on a {_WEEKDAY_NAMES[r['weekday']]}" if r["weekday"] else ""
+    if hi < 0:
+        # A survey dated by its own quarter and published inside it (SLOOS).
+        return f"{-hi} to {-lo} days before the end of {_AFTER[r['frequency']]}{day}"
     if lo < 0:
         days = f"{-lo} days before to {hi} days after"
         return f"{days} the end of {_AFTER[r['frequency']]}"
-    day = f", on a {_WEEKDAY_NAMES[r['weekday']]}" if r["weekday"] else ""
     return f"{days} after {_AFTER[r['frequency']]}{day}"
 
 

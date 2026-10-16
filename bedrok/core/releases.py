@@ -54,6 +54,28 @@ SPAN_DAYS = {"daily": 3, "weekly": 7, "monthly": 61, "quarterly": 183, "annual":
 
 _MONTHS = ("January", "February", "March", "April", "May", "June", "July", "August",
            "September", "October", "November", "December")
+_ORDINALS = ("first", "second", "third", "fourth")
+
+
+def parse_period(text: str | None) -> date | None:
+    """A calendar's reference period as the label Bedrok dates it by (the
+    period's first day): "October 2026", "Aug-2026", "third quarter 2026",
+    "Quarter 3/2026". Anything else is None: the date is still kept, with no
+    period, and matched by its window instead."""
+    t = " ".join(str(text or "").split()).lower()
+    months = [m.lower() for m in _MONTHS]
+    m = re.fullmatch(r"([a-z]+)[ -](\d{4})", t)
+    if m:
+        word, year = m.group(1), int(m.group(2))
+        hit = [i for i, name in enumerate(months) if name == word or name[:3] == word]
+        if hit:
+            return date(year, hit[0] + 1, 1)
+    m = re.fullmatch(r"(first|second|third|fourth) quarter (\d{4})", t) \
+        or re.fullmatch(r"quarter ([1-4])/(\d{4})", t)
+    if m:
+        q = _ORDINALS.index(m.group(1)) + 1 if m.group(1) in _ORDINALS else int(m.group(1))
+        return date(int(m.group(2)), 3 * q - 2, 1)
+    return None
 
 
 def parse_row(raw: dict) -> dict:
@@ -70,8 +92,10 @@ def parse_row(raw: dict) -> dict:
         raise ValueError(f"{key}: time {r['time']!r} is not HH:MM")
     lo, hi = int(r["lag_min"]), int(r["lag_max"])
     # A flash can come before its month is over (Eurostat's HICP on the last
-    # working day, Destatis's CPI around the 28th): a small negative lag.
-    if not -10 <= lo <= hi:
+    # working day, Destatis's CPI around the 28th): a small negative lag. A
+    # quarterly survey dated to its own quarter is published inside it (the
+    # Fed's SLOOS, the ECB's bank lending survey): up to a quarter before.
+    if not -90 <= lo <= hi:
         raise ValueError(f"{key}: lags {lo}..{hi}")
     ZoneInfo(r["tz"])                                   # raises on an unknown zone
     hh, mm = map(int, r["time"].split(":"))
@@ -92,6 +116,14 @@ FEEDS = {
                  "label": "BEA's release schedule"},
     "ons_next_release": {"publisher": "ONS", "tz": "Europe/London", "fetched": False,
                          "label": "the ONS's next-release date"},
+    "statcan_json": {"publisher": "Statistics Canada", "tz": "America/Toronto",
+                     "fetched": True, "label": "Statistics Canada's release schedule"},
+    "ine_ics": {"publisher": "INE", "tz": "Europe/Madrid", "fetched": True,
+                "label": "INE's release calendar"},
+    "ecb_statscal": {"publisher": "ECB", "tz": "Europe/Berlin", "fetched": True,
+                     "label": "the ECB's statistical calendar"},
+    "fedboard_pages": {"publisher": "Federal Reserve Board", "tz": "America/New_York",
+                       "fetched": True, "label": "the Fed Board's release calendar"},
 }
 # An exact date has no window to wait through: the period is late a day after
 # it, which is long enough for a publisher's API to catch up with its website.

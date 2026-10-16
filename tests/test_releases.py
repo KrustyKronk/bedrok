@@ -112,9 +112,27 @@ def test_what_an_answer_says():
 
 def test_a_bad_row_is_refused():
     for bad in ({"frequency": "fortnightly"}, {"time": "8:30"}, {"lag_min": 20, "lag_max": 10},
-                {"weekday": "friday"}, {"tz": "Mars/Olympus"}, {"prefix": "us_"}):
+                {"weekday": "friday"}, {"tz": "Mars/Olympus"}, {"prefix": "us_"},
+                {"frequency": "quarterly", "lag_min": -91, "lag_max": -50}):
         with pytest.raises(Exception):
             _rule(**bad)
+
+
+def test_a_survey_published_inside_its_own_quarter_has_a_rule():
+    """Session H: the SLOOS and the ECB's bank lending survey are dated by
+    their own quarter and come out two months before it ends."""
+    r = _rule(frequency="quarterly", lag_min=-61, lag_max=-52, weekday="mon", time="14:00")
+    w = releases.window(r, date(2026, 10, 1))
+    assert w["due_at"] == _et(2026, 11, 2, 14) and w["expected_by"] == _et(2026, 11, 9, 14)
+
+
+def test_a_calendar_names_its_reference_period_in_several_ways():
+    for text, label in (("October 2026", date(2026, 10, 1)), ("Aug-2026", date(2026, 8, 1)),
+                        ("third quarter 2026", date(2026, 7, 1)),
+                        ("Quarter 3/2026", date(2026, 7, 1)), ("Sep-2026", date(2026, 9, 1))):
+        assert releases.parse_period(text) == label, text
+    for text in ("2026", "Includes press release", "", None, "Smarch 2026"):
+        assert releases.parse_period(text) is None
 
 
 def test_the_most_specific_rule_wins(monkeypatch):
