@@ -7,3 +7,28 @@ uk_cpi_yoy,ons_next_release,
 uk_cpih_yoy,ons_next_release,
 uk_gdp_monthly_index,ons_next_release,
 uk_unemployment_rate,ons_next_release,
+ca_cpi,statcan_json,Consumer Price Index
+ca_unemployment,statcan_json,Labour Force Survey
+ca_real_gdp_monthly,statcan_json,Gross domestic product by industry
+es_cpi_ine,ine_ics,Consumer Price Index
+es_cpi_yoy_ine,ine_ics,Consumer Price Index
+es_cpi_core_ine,ine_ics,Consumer Price Index
+es_unemployment_epa,ine_ics,Economically Active Population Survey
+ea_m3_growth,ecb_statscal,BSI
+ea_m1_growth,ecb_statscal,BSI
+ea_loans_hh_growth,ecb_statscal,BSI
+ea_loans_nfc_growth,ecb_statscal,BSI
+ea_cob_nfc,ecb_statscal,MIR
+ea_cob_hh_house,ecb_statscal,MIR
+ea_bls_cs_enterprises,ecb_statscal,BLS
+ea_bls_cs_households_house,ecb_statscal,BLS
+us_indpro,fedboard_pages,G.17
+us_m2,fedboard_pages,H.6
+us_fed_balance_sheet,fedboard_pages,H.4.1
+us_bank_reserves,fedboard_pages,H.4.1
+us_tga,fedboard_pages,H.4.1
+us_bank_credit,fedboard_pages,H.8
+us_sloos_cni_tightening,fedboard_pages,SLOOS
+us_sloos_cni_demand,fedboard_pages,SLOOS
+us_sloos_cni_small,fedboard_pages,SLOOS
+us_sloos_cc_tightening,fedboard_pages,SLOOS

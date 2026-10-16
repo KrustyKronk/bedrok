@@ -25,7 +25,6 @@ such rather than as stale, with their next release when a rule names it.
 from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta, timezone
-from zoneinfo import ZoneInfo
 
 import duckdb
 
@@ -52,17 +51,17 @@ def allowance(frequency: str | None, staleness_days, series_id: str = "") -> int
 
 def _calendar(con, series_id: str, rule: dict, w: dict) -> dict | None:
     """The publisher's own date for the period `w` expects, or None. An entry
-    naming the period wins; otherwise the first date after the period is over
-    (BEA publishes August's PCE on 30 September, so "after September ends"
-    must start on 1 October). Bounded by the rule: an entry far past its
-    window is not believed."""
+    naming the period wins; otherwise the first date from three days before
+    the rule's earliest. Not "after the period ends": BEA publishes August's
+    PCE on 30 September, which that excluded rightly, but the Fed's H.8 comes
+    nine days after its week, so the first release after the week ends is the
+    previous week's, and the SLOOS comes inside its own quarter (session H).
+    Bounded by the rule: an entry far past its window is not believed."""
     key = releases.calendar_key(series_id)
     if not key:
         return None
     feed, name = key
-    tz = ZoneInfo(releases.FEEDS[feed]["tz"])
-    end = releases.period_end(w["label"], rule["frequency"])
-    after = datetime.combine(end + timedelta(days=1), time(0), tzinfo=tz)
+    after = w["due_at"] - timedelta(days=3)
     reach = w["late_after"] + releases.CALENDAR_REACH
     utc = lambda d: d.astimezone(timezone.utc).replace(tzinfo=None)  # noqa: E731
     try:

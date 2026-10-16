@@ -488,6 +488,36 @@ is 404; its euro-indicators page is a calendar widget with an iCal export
 behind it still to be found. The OECD's release-dates page sits behind the
 same bot check as its data.
 
+**What session H found when it built four of them (2026-10-16).**
+- **StatCan's JSON** runs from 2012 to about five months ahead, about 2,900
+  entries; `description` is the reference period ("third quarter 2026").
+- **INE's iCal** is about 1.6 MB but runs only about ten weeks ahead. Finals
+  are titled in English ("Consumer Price Index. October 2026"); the flashes
+  are in Spanish ("Avance. Octubre 2026") and carry the headline rate only.
+  INE serves LF line endings, not the standard's CRLF; the parser accepts
+  both.
+- **The ECB's statistical calendar** is plain HTML on the index page
+  (`<dt>date</dt><dd>name (Dataset: X) Reference period: …</dd>`, about ten
+  months ahead). The topic sub-pages (`statscal/mfm/…`) come back empty
+  without JavaScript. The ECB's bank lending survey has its own reference
+  quarter, which differs from the quarter Bedrok dates the series by, so its
+  dates are kept without a period.
+- **The Fed Board's monthly pages** exist for this month, the next and the
+  one after, which goes up late in the month (`2027-january.htm` was 404 on
+  16 Oct). Rows with no time (holidays, G.20) are not releases at a moment.
+- **Eurostat and Istat**: nothing machine-readable on 2026-10-16. Eurostat's
+  `news/release-calendar` is a Liferay portlet with no export, and every
+  known Istat calendar path is 404 or 500.
+
+**A calendar without reference periods must be matched from the rule's own
+window, not from the period's end.** Taking "the first date after the period
+ends" picked the previous week's H.8 every week, because the H.8 comes nine
+days after its week. It also found nothing for a survey published inside its
+own quarter (SLOOS, the ECB's BLS). `freshness._calendar` now starts three
+days before the rule's earliest date. BEA's August PCE on 30 September is
+still excluded for September, because the rule's earliest for September is
+26 October.
+
 **The MCP SDK renamed its server in v2.** `mcp` 2.x (July 2026) calls it
 `MCPServer` (`from mcp.server import MCPServer`); `mcp.server.fastmcp` no longer
 exists, so most examples on the web fail on a fresh install. Tests run the

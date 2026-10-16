@@ -43,3 +43,21 @@ ca_cpi,,monthly,14,21,,08:30,America/Toronto,Statistics Canada CPI: the third we
 ,cot_,weekly,3,3,fri,15:30,America/New_York,CFTC Commitments of Traders: Friday for Tuesday's positions
 ,wb_,monthly,1,6,,12:00,America/New_York,World Bank Pink Sheet: the first business days of the next month
 ,govdebt_gdp_,quarterly,108,118,,11:00,Europe/Brussels,Eurostat quarterly government debt: about 16 weeks after the quarter (2026-Q1 on 21 Jul 2026). https://ec.europa.eu/eurostat/news/euro-indicators/release-calendar
+ca_unemployment,,monthly,1,10,fri,08:30,America/Toronto,Statistics Canada Labour Force Survey: usually the first Friday after the month (exact dates from its schedule)
+ca_real_gdp_monthly,,monthly,50,63,,08:30,America/Toronto,Statistics Canada GDP by industry: about two months after the month
+es_cpi_ine,,monthly,11,16,,09:00,Europe/Madrid,INE CPI final: mid next month; the flash (Avance) at the month's end carries the headline rate only. https://www.ine.es/en/calendario
+es_cpi_yoy_ine,,monthly,11,16,,09:00,Europe/Madrid,INE CPI final
+es_cpi_core_ine,,monthly,11,16,,09:00,Europe/Madrid,INE CPI final (core is not in the flash)
+es_unemployment_epa,,quarterly,22,31,,09:00,Europe/Madrid,INE Economically Active Population Survey: about four weeks after the quarter
+ea_m3_growth,,monthly,24,30,,10:00,Europe/Berlin,ECB Monetary developments in the euro area (BSI): the last week of the next month. https://www.ecb.europa.eu/press/calendars/statscal/html/index.en.html
+ea_m1_growth,,monthly,24,30,,10:00,Europe/Berlin,ECB Monetary developments in the euro area (BSI)
+ea_loans_hh_growth,,monthly,24,30,,10:00,Europe/Berlin,ECB Monetary developments in the euro area (BSI)
+ea_loans_nfc_growth,,monthly,24,30,,10:00,Europe/Berlin,ECB Monetary developments in the euro area (BSI)
+ea_cob_nfc,,monthly,30,36,,10:00,Europe/Berlin,ECB bank interest rate statistics (MIR): the first days of the month after next
+ea_cob_hh_house,,monthly,30,36,,10:00,Europe/Berlin,ECB bank interest rate statistics (MIR)
+ea_bls_cs_enterprises,,quarterly,-75,-58,,10:00,Europe/Berlin,ECB Bank Lending Survey: dated by its own quarter and published inside it (Jan/Apr/Jul/Oct)
+ea_bls_cs_households_house,,quarterly,-75,-58,,10:00,Europe/Berlin,ECB Bank Lending Survey
+us_sloos_cni_tightening,,quarterly,-61,-52,mon,14:00,America/New_York,Fed Board SLOOS: dated by its own quarter; usually the first Monday of Feb/May/Aug/Nov. https://www.federalreserve.gov/data/sloos.htm
+us_sloos_cni_demand,,quarterly,-61,-52,mon,14:00,America/New_York,Fed Board SLOOS
+us_sloos_cni_small,,quarterly,-61,-52,mon,14:00,America/New_York,Fed Board SLOOS
+us_sloos_cc_tightening,,quarterly,-61,-52,mon,14:00,America/New_York,Fed Board SLOOS

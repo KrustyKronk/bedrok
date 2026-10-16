@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-16: 0.3.2 is released (sessions E, F and G).** Bedrok is a local MCP server and store of
+**Updated 2026-10-16: session H is in (four more release calendars) and goes out as 0.3.3.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -31,17 +31,59 @@ first release whose bundle `publish.yml` built and attached: the run's
 build, publish and bundle jobs all passed, the wheel and sdist are on PyPI
 and `bedrok-0.3.2.mcpb` is on the GitHub release. Proven from PyPI: an empty
 folder and an empty home answered all ten smoke calls in 32 seconds, the
-home check passing. **Next:** the
-owner installs 0.3.2 in Claude Desktop and asks a cold question (item 1),
-then more release calendars (item 2).
+home check passing. **Session H** (four more publishers' own release dates)
+is on `main` and goes out as **0.3.3**. **Next:** the owner installs the
+latest release in Claude Desktop and asks a cold question (item 1).
 
 Session 13 is split: **13a, the release calendar**, is in (three parts,
-below; more feeds are item 2); **13b, revisions and vintages**, stays
-deferred.
+below, and session H's four more feeds; what is left is item 2); **13b,
+revisions and vintages**, stays deferred.
 
 **Owner-side items** — the ones that need the owner's accounts or describe one
 machine — live in `profile/STATE-private.md`, which is gitignored. This file
 holds only what any reader may see.
+
+**Session H in one paragraph.** Four more publishers give Bedrok their
+own release dates, so 25 more series say "scheduled for" with the publisher
+named rather than "usually":
+- **Statistics Canada**: CPI, the Labour Force Survey and monthly GDP, from
+  its key-indicator JSON.
+- **INE**: the final CPI and the EPA, from its iCal file. The Spanish-titled
+  flashes are left out.
+- **The ECB**: monetary developments, bank interest rates and the bank
+  lending survey, from its statistical calendar page.
+- **The Fed Board**: G.17, H.6, H.4.1, H.8 and the SLOOS, from its monthly
+  calendar pages.
+
+Fourteen of these series had no rule at all and now have one. A rule may sit
+up to a quarter inside its period, because the SLOOS and the ECB's survey
+come out inside the quarter they are dated by. Building this found a bug in
+how a date without a reference period is matched. Taking "the first release
+after the period ends" gave the H.8 the previous week's date every week, and
+gave the two surveys none. Matching now starts three days before the rule's
+own earliest date. The iCal parser also learned the standard's CRLF line
+endings; INE serves LF.
+
+Probed and still without an export: Eurostat (a portlet with no iCal), Istat
+(every calendar path 404 or 500), and the Fed's charge-off rates (not on the
+monthly pages). `us_ci_loans` stays on age, because which weekly H.8 carries
+its monthly figure was not pinned down.
+
+Proven:
+- 458 tests, each feed tested on an inline fragment through `freshness.assess`.
+  The H.8 and survey tests fail against the old matching.
+- Every feed fetched live with every configured release name present.
+- A full `bedrok refresh` of the real store from this branch with no failures; its
+  calendar stage stored all five fetched feeds.
+- `validate` passed every check.
+- In process against the real store, `release_calendar(days=30)` listed:
+  - Canada's CPI on 19 Oct;
+  - Spain's EPA, and the ECB's money and bank lending survey, on 27 Oct;
+  - Spain's CPI on 13 Nov;
+  - the Fed's G.17 today and H.6 on 27 Oct.
+
+  Each was "scheduled for", with the publisher named. `us_bank_credit`
+  named today's 16:15 H.8 for the week to 7 Oct.
 
 **Session G in one paragraph.** Item 15 said a fresh store listed 436
 series; counted on `main` it held 639, so the README's "more than 500" was
@@ -515,7 +557,7 @@ FX pairs and five rows; E retired shrimp; F added the daily Bund).
 `refresh`, `validate`, `query`, `tieout [--only ids]`, `doctor`, `schema`,
 `pctile`, `rates`, `serve`, `docs [--check]`.
 
-**Tests:** 452 (4 skip without a built wheel or bundle, or the owner's term list), network-free, green on 2026-10-16, including the MCP
+**Tests:** 460 (4 skip without a built wheel or bundle, or the owner's term list), network-free, green on 2026-10-16, including the MCP
 server in memory, the layering rule and the publication gate. **Workflows:**
 `tests` (push and PR), `package` (PR: the empty-home install and the gate on
 the wheel), `publish` (a published release), `liveness` (Tuesdays, keyless).
@@ -588,13 +630,16 @@ Owner-side items are in `profile/STATE-private.md`.
    13a (the fetch on a due series has run only in process and from the smoke
    script).
 
-2. **More release calendars** (session 13a's tail; research in
+2. **More release calendars** (what session H left; research in
    `docs/engineering/notes.md`, "Where release dates come from").
-   - **More exact feeds:** StatCan's JSON (Canada's CPI), the Fed Board's
-     monthly calendar pages, INE's and Istat's iCal, the live Eurostat iCal
-     (its documented URL is 404), the ECB's calendar; BLS `latest=true` and
-     ECB `updatedAfter` as cheap "is anything new?" checks before a full
-     fetch. Never the BLS website: it refuses programs by policy.
+   - **Feeds still without an export** (probed 2026-10-16): Eurostat (its
+     calendar page is a portlet with no iCal) and Istat (every calendar path
+     404 or 500). Look again now and then. Never the BLS website: it refuses
+     programs by policy.
+   - **Cheap "is anything new?" checks** before a full fetch: the BLS API's
+     `latest=true` and the ECB's SDMX `updatedAfter`.
+   - **`us_ci_loans`**: H.8 has a calendar, but which weekly release carries
+     the monthly figure was not pinned down, so it stays on age.
    - **Rules not yet written:** families stay on age (the broad HICP set has
      candidate countries that publish later), as do JOLTS, PPI, the regional
      Feds, the OECD, the IMF and the World Bank's annual data.

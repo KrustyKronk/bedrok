@@ -163,3 +163,157 @@ def test_every_calendar_series_has_a_rule_and_a_known_feed():
         assert meta["fetched"] == (r["feed"] in calendars.FETCHERS), r["feed"]
         if meta["fetched"]:
             assert r["release_name"], f"{r['series_id']}: a fetched feed needs a release name"
+    cat = set(pd.read_csv(pipeline.CATALOG_CSV, dtype=str)["series_id"])
+    missing = [r["series_id"] for r in rows if r["series_id"] not in cat]
+    assert not missing, f"calendar rows for series not in the catalog: {missing}"
+
+
+# ---- session H: four more publishers --------------------------------------------
+
+def _series(sid, source, frequency, held, staleness=150):
+    return _con([{"series_id": sid, "source": source, "source_code": "x", "name": sid,
+                  "frequency": frequency, "staleness_days": staleness}], {sid: held})
+
+
+FED_NOW = datetime(2026, 11, 23, 15, tzinfo=timezone.utc)   # the weeks to 11 and 18 Nov are out
+
+
+def _next(con, feed, df, sid, now=NOW):
+    store.replace_release_calendar(con, feed, calendars._frame(feed, df, now))
+    return freshness.assess(con, sid, now=now)["next_release"]
+
+
+# A fragment of Statistics Canada's key-indicator schedule, 2026-10-16.
+STATCAN = [
+    {"date": "2026-10-09 00:00:01", "title": "Labour Force Survey", "description": "September 2026"},
+    {"date": "2026-10-19 00:00:01", "title": "Consumer Price Index", "description": "September 2026"},
+    {"date": "2026-11-30 00:00:01", "title": "Gross domestic product, income and expenditure",
+     "description": "third quarter 2026"},
+]
+
+
+def test_statistics_canada_dates_the_cpi_at_0830_toronto():
+    df = calendars.parse_statcan(STATCAN)
+    assert len(df) == 3 and df["period"].iloc[2] == date(2026, 7, 1)
+    nr = _next(_series("ca_cpi", "statcan", "monthly", date(2026, 8, 1)),
+               "statcan_json", df, "ca_cpi")
+    assert nr["period"] == "September 2026" and nr["due_at"] == "2026-10-19T08:30:00-04:00"
+    assert nr["publisher"] == "Statistics Canada" and nr["approximate"] is False
+
+
+# A fragment of INE's iCal file, 2026-10-16: a final, a flash in Spanish, and a
+# folded line.
+INE = "\r\n".join([
+    "BEGIN:VCALENDAR", "BEGIN:VEVENT", "DTSTART;TZID=Europe/Madrid:20261030T090000",
+    "SUMMARY:Consumer Price Index. Avance. Octubre 2026", "END:VEVENT",
+    "BEGIN:VEVENT", "DTSTART;TZID=Europe/Madrid:20261113T090000",
+    "SUMMARY:Consumer Price Index. October 2026", "END:VEVENT",
+    "BEGIN:VEVENT", "DTSTART;TZID=Europe/Madrid:20261027T090000",
+    "SUMMARY:Economically Active Population Survey. Quar", " ter 3/2026", "END:VEVENT",
+    "END:VCALENDAR"])
+
+
+def test_ine_dates_the_final_cpi_and_ignores_the_flash():
+    df = calendars.parse_ine(INE)
+    assert sorted(df["release_name"]) == ["Consumer Price Index",
+                                          "Economically Active Population Survey"]
+    nr = _next(_series("es_cpi_ine", "ine", "monthly", date(2026, 9, 1), 90),
+               "ine_ics", df, "es_cpi_ine")
+    assert nr["period"] == "October 2026" and nr["due_at"] == "2026-11-13T09:00:00+01:00"
+    nr = _next(_series("es_unemployment_epa", "ine", "quarterly", date(2026, 4, 1), 220),
+               "ine_ics", df, "es_unemployment_epa")
+    assert nr["period"] == "Q3 2026" and nr["due_at"] == "2026-10-27T09:00:00+01:00"
+
+
+# A fragment of the ECB's statistical calendar page, 2026-10-16.
+ECB = """<dl>
+<dt> 27/10/2026 10:00 </dt> <dd> Euro area Bank Lending Survey (Dataset: BLS)<br>
+ Reference period: Q3 2026<br> Includes press release.<br> </dd>
+<dt> 27/10/2026 10:00 </dt> <dd> National balance sheet of euro area monetary financial
+ institutions, excluding the Eurosystem (Dataset: BSI)<br> Reference period: Sep-2026<br> </dd>
+<dt> 27/10/2026 10:00 </dt> <dd> Monetary developments in the euro area (Dataset: BSI)<br>
+ Reference period: Sep-2026<br> Includes press release.<br> </dd>
+<dt> 02/11/2026 10:00 </dt> <dd> Euro area bank interest rate statistics (Dataset: MIR)<br>
+ Reference period: Sep-2026<br> </dd>
+<dt> 04/11/2026 15:00 </dt> <dd> Euro area seasonally adjusted HICP flash estimate
+ (Dataset: HICP)<br> Reference period: Oct-2026<br> </dd>
+</dl>"""
+
+
+def test_the_ecb_dates_money_rates_and_its_lending_survey():
+    df = calendars.parse_ecb(ECB)
+    assert sorted(df["release_name"]) == ["BLS", "BSI", "MIR"]   # its HICP is not Eurostat's
+    assert df.loc[df["release_name"] == "BLS", "period"].isna().all()
+    nr = _next(_series("ea_m3_growth", "ecb", "monthly", date(2026, 8, 1), 100),
+               "ecb_statscal", df, "ea_m3_growth")
+    assert nr["period"] == "September 2026" and nr["due_at"] == "2026-10-27T10:00:00+01:00"
+    assert nr["publisher"] == "ECB"
+    nr = _next(_series("ea_cob_nfc", "ecb", "monthly", date(2026, 8, 1), 120),
+               "ecb_statscal", df, "ea_cob_nfc")
+    assert nr["due_at"] == "2026-11-02T10:00:00+01:00"
+    # The survey is dated by its own quarter: the October round is Q4 here,
+    # whatever reference period the ECB's page gives it.
+    nr = _next(_series("ea_bls_cs_enterprises", "ecb", "quarterly", date(2026, 7, 1)),
+               "ecb_statscal", df, "ea_bls_cs_enterprises")
+    assert nr["period"] == "Q4 2026" and nr["due_at"] == "2026-10-27T10:00:00+01:00"
+    assert nr["source"] == "calendar"
+
+
+def _fed_row(clock, name, days):
+    return (f'<div class="col-xs-2"> <p>{clock}</p> </div> <div class="col-xs-7"> '
+            f'<p>{name}</p> <p></p> </div> <div class="col-xs-3"> <p>{days}</p> </div>')
+
+
+# Rows of the Fed Board's November 2026 calendar page.
+FED_NOV = "\n".join([
+    _fed_row("2:00 p.m.", "Senior Loan Officer Opinion Survey on Bank Lending Practices (SLOOS)", "2"),
+    _fed_row("4:30 p.m.", "H.4.1 - Factors Affecting Reserve Balances", "5, 12, 19, 27"),
+    _fed_row("4:15 p.m.", "H.8 - Assets and Liabilities of Commercial Banks in the U.S.",
+             "6, 13, 20, 27"),
+    _fed_row("", "G.20 - Finance Companies", "30"),
+    _fed_row("", "Holiday - Thanksgiving Day", "26"),
+])
+
+
+def test_the_fed_board_pages_date_each_release_on_each_listed_day():
+    df = calendars.parse_fedboard(FED_NOV, 2026, 11)
+    assert sorted(set(df["release_name"])) == ["H.4.1", "H.8", "SLOOS"]   # no time, no row
+    assert len(df) == 9 and df["period"].isna().all()
+    # Thanksgiving week: the H.4.1 for the week to Wednesday 25 Nov comes on Friday.
+    nr = _next(_series("us_fed_balance_sheet", "fedboard", "weekly", date(2026, 11, 18), 21),
+               "fedboard_pages", df, "us_fed_balance_sheet", FED_NOW)
+    assert nr["due_at"] == "2026-11-27T16:30:00-05:00"
+    nr = _next(_series("us_sloos_cni_tightening", "fedboard", "quarterly", date(2026, 7, 1)),
+               "fedboard_pages", df, "us_sloos_cni_tightening")
+    assert nr["period"] == "Q4 2026" and nr["due_at"] == "2026-11-02T14:00:00-05:00"
+    assert nr["source"] == "calendar"                 # published inside its own quarter
+
+
+def test_a_release_nine_days_after_its_week_is_not_mistaken_for_the_last_one():
+    """Session H: the first H.8 after the week to 18 Nov ends is the 20 Nov one,
+    which carries the week to 11 Nov. The match starts from the rule's own
+    earliest date, so the week to 18 Nov gets 27 Nov."""
+    df = calendars.parse_fedboard(FED_NOV, 2026, 11)
+    nr = _next(_series("us_bank_credit", "fedboard", "weekly", date(2026, 11, 11), 21),
+               "fedboard_pages", df, "us_bank_credit", FED_NOW)
+    assert nr["due_at"] == "2026-11-27T16:15:00-05:00"
+
+
+def test_the_fed_page_after_next_is_used_only_when_it_is_up(monkeypatch):
+    asked = []
+
+    class R:
+        def __init__(self, url):
+            self.status_code = 404 if "2027-january" in url else 200
+            self.text = FED_NOV
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                raise OSError(self.status_code)
+
+    monkeypatch.setattr(calendars.requests, "get",
+                        lambda url, **k: asked.append(url) or R(url))
+    df = calendars.fetch_fedboard(date(2026, 11, 16))
+    assert [u.rsplit("/", 1)[1] for u in asked] == [
+        "2026-november.htm", "2026-december.htm", "2027-january.htm"]
+    assert len(df) == 18                               # November's rows read twice, as December's
