@@ -79,6 +79,10 @@ _HOW_WORDS = {
     ("annual", "mean"): "annual averages", ("annual", "last"): "year-end values",
     ("annual", "sum"): "annual totals", ("annual", "first"): "first value of each year",
 }
+# The other way to make one value per period, offered beside the one used:
+# "by quarter" meant quarterly averages to a cold session that wanted the
+# quarter-end yield, and only the subtitle said so (D2 acceptance test).
+_ALTERNATIVE = {"mean": "last", "last": "mean", "sum": "mean", "first": "last"}
 _MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 _WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 MAX_TICKS = 10
@@ -93,7 +97,10 @@ _TRANSFORM_WORDS = {"yoy": ", annual rate", "mom3_ann": ", 3-month annualised ra
 
 
 def title_suggestion(names: list[str], transform: str = "level") -> str:
-    """One series: its name. Two: both. More: the first and a count. A
+    """Every series named, up to the seven a chart takes: "Germany and 4
+    others" was the D2 acceptance test's title for five places. A family's
+    rows are named "<measure> — <place>", so one measure across places is
+    said once ("Real GDP growth, annual — Germany, France and Italy"). A
     transform is said ("US CPI all items, annual rate"): a chart of a rate
     titled by the index it came from misled the self-test. The assistant may
     always replace it; it never carries units."""
@@ -102,9 +109,14 @@ def title_suggestion(names: list[str], transform: str = "level") -> str:
     suffix = _TRANSFORM_WORDS.get(transform, "")
     if len(names) == 1:
         return names[0] + suffix
-    if len(names) == 2:
-        return f"{names[0]} and {names[1]}" + suffix
-    return f"{names[0]} and {len(names) - 1} others" + suffix
+    split = [n.split(" — ", 1) for n in names]
+    if all(len(s) == 2 for s in split) and len({s[0] for s in split}) == 1:
+        return f"{split[0][0]} — {_and([s[1] for s in split])}" + suffix
+    return _and(names) + suffix
+
+
+def _and(items: list[str]) -> str:
+    return items[0] if len(items) == 1 else f"{', '.join(items[:-1])} and {items[-1]}"
 
 
 def axes(series: list[tuple[str, str]]) -> dict:
@@ -218,9 +230,10 @@ def source_line(publishers: list[tuple]) -> str:
 def footnotes(entries: list[dict], table: dict, frequency: str) -> list[str]:
     """Everything the chart cannot say by itself, one short line each: the
     loud warnings for the period shown, periods not over or missing a part,
-    a cut, and series drawn as steps."""
+    a cut, series drawn as steps, and series whose values were combined."""
     notes: list[str] = []
     names = {e["series_id"]: e.get("name", e["series_id"]) for e in entries}
+    native = {e["series_id"]: e.get("frequency") for e in entries}
     for e in entries:
         for w in e.get("warnings") or []:
             period = w.get("period_start") or ""
@@ -244,6 +257,14 @@ def footnotes(entries: list[dict], table: dict, frequency: str) -> list[str]:
         if stepped:
             notes.append(f"{names.get(sid, sid)} is published less often than {frequency}; "
                          "it is drawn as a step, each value held until the next.")
+    for sid, how in (table.get("aggregated") or {}).items():
+        # A rate held between decisions has its own line above.
+        if sid in (table.get("carried") or {}) or (frequency, how) not in _HOW_WORDS:
+            continue
+        alt = _ALTERNATIVE[how]
+        src = native.get(sid) if native.get(sid) not in (None, "event") else "daily"
+        notes.append(f"{names.get(sid, sid)}: {_HOW_WORDS[(frequency, how)]} of {src} values; "
+                     f"`how: {alt}` gives {_HOW_WORDS[(frequency, alt)]}.")
     for sid, partial in (table.get("partial_last") or {}).items():
         if partial:
             held = (table.get("partial") or {}).get(sid)

@@ -143,3 +143,39 @@ def test_a_blank_bundle_field_does_not_hide_the_key_in_env(monkeypatch, tmp_path
         assert sources.key("eia") == "typed-into-the-field"     # a filled field still wins
     finally:
         config.set_profile()
+
+
+def _smoke_script():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("mcp_smoke", REPO / "scripts" / "mcp_smoke.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_the_smoke_script_fails_when_it_answers_from_another_home(tmp_path):
+    """Session 12: from the repo folder the server found ./profile and the
+    "empty home" run passed against the developer's own store."""
+    smoke = _smoke_script()
+    home, repo = tmp_path / "home", tmp_path / "repo"
+    (home / "bedrok").mkdir(parents=True)
+    (repo / "profile").mkdir(parents=True)
+    env = {"HOME": str(home)}
+    assert smoke.home_check(str(home / "bedrok"), env) is None
+    wrong = smoke.home_check(str(repo / "profile"), env)
+    assert str(repo / "profile") in wrong and str(home) in wrong
+    assert smoke.home_check(str(repo / "profile"), {**env, "BEDROK_PROFILE": str(repo)}) is None
+    assert smoke.home_check(str(repo / "profile"), env, any_home=True) is None
+    assert "HOME is not set" in smoke.home_check(str(home), {})
+
+
+def test_the_smoke_script_knows_every_tool_the_server_has():
+    import anyio
+    from mcp import Client
+
+    from bedrok.surfaces import mcp_server
+
+    async def go():
+        async with Client(mcp_server.server) as c:
+            return {t.name for t in (await c.list_tools()).tools}
+    assert set(_smoke_script().TOOLS) == anyio.run(go)

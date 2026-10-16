@@ -153,10 +153,27 @@ def test_search_finds_by_words_in_the_name(srv):
     assert r["matches"][0]["series_id"] == "jp_policy_rate"
 
 
+def test_get_series_takes_as_many_ids_as_a_chart(srv):
+    """D2: a breakdown's quarterly parts needed two get_series calls and one
+    chart_series call; the two caps are now one."""
+    ids = ["us_cpi", "jp_policy_rate", "nope_1", "nope_2", "nope_3", "nope_4", "nope_5"]
+    r = _call("get_series", {"series_ids": ids, "start": "2026-01-01"})
+    assert not r.is_error
+    assert [s["series_id"] for s in r.structured_content["series"]] == ids
+    assert _call("get_series", {"series_ids": ids + ["us_vix"]}).is_error
+
+
 def test_list_sources_says_whether_a_key_is_set_never_what_it_is(srv):
     out = _call("list_sources").structured_content["sources"]
     fred = next(s for s in out if s["source"] == "fred")
     assert fred["key_set"] is True and "test-key-123456" not in str(out)
+
+
+def test_list_sources_names_the_home_it_answers_from(srv, tmp_path):
+    """The smoke script checks this against the HOME it was started with: in
+    session 12 it passed from the repo folder by answering from ./profile."""
+    out = _call("list_sources").structured_content
+    assert out["home"] == str(tmp_path) and out["store"] == str(tmp_path / "market.duckdb")
 
 
 def test_refresh_runs_in_the_background_and_reports_progress(srv, monkeypatch):
@@ -321,6 +338,7 @@ def test_a_chart_recipe_puts_different_units_on_two_scales(srv):
     assert by["jp_policy_rate"]["dashed"] and not by["us_cpi"]["dashed"]
     assert c["title"] == "US CPI and Japan central bank policy rate (BIS)"
     assert c["subtitle"].startswith("Left: index. Right: percent; monthly;")   # nothing averaged
+    assert r["table"]["aggregated"] == {} and not any("gives" in n for n in c["footnotes"])
     assert r["table"]["frequency"] == "monthly"            # auto: the fastest series' own
     assert c["source"].startswith("Source: ") and c["layout"]["gaps"].startswith("leave empty")
     assert len(c["x"]["labels"]) == len(r["table"]["dates"])
@@ -333,6 +351,9 @@ def test_a_daily_series_charts_weekly_and_a_slower_one_is_footnoted_as_a_step(sr
     assert c["axes"]["right"] is None                      # both "index" in the fixture
     assert any("US CPI" in n and "step" in n for n in c["footnotes"])
     assert "fetched live, not stored" in c["source"]
+    assert r["table"]["aggregated"] == {"us_vix": "last"}
+    assert ("CBOE VIX: weekly closes of daily values; `how: mean` gives weekly averages."
+            in c["footnotes"])
 
 
 def test_a_place_in_the_search_narrows_it_and_two_letters_match_no_substring(srv):

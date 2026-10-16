@@ -56,3 +56,15 @@ def test_refresh_runs_one_path_in_order(con, monkeypatch):
     monkeypatch.setattr(sys, "argv", ["bedrok refresh"])
     assert refresh.main() == 0
     assert calls == ["connect", "init", "catalog", "sync", "close"]
+
+
+def test_a_failed_backfill_exits_3_like_refresh(con, monkeypatch):
+    """`backfill` returned 1 on failures, the code `validate` uses for findings."""
+    from bedrok.ingest import backfill
+    _one_store(monkeypatch, con)
+    monkeypatch.setattr(sys, "argv", ["bedrok backfill", "--stage", "fx"])
+    monkeypatch.setattr(pipeline, "sync_fx", lambda c, incremental=False: [])
+    monkeypatch.setattr(pipeline, "print_report", lambda title, report: 1)
+    assert backfill.main() == 3
+    monkeypatch.setattr(pipeline, "print_report", lambda title, report: 0)
+    assert backfill.main() == 0

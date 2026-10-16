@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-16: session 13a is in and released as 0.3.1.** Bedrok is a local MCP server and store of
+**Updated 2026-10-16: session E is in, after 13a was released as 0.3.1.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -23,9 +23,11 @@ by `publish.yml` and in the Desktop bundle attached to the v0.3.1 GitHub
 release, which was scanned against the owner's terms before upload (only the
 author credit matched). Proven from PyPI: an empty home with no keys answered
 all nine smoke calls, ten tools, in 30 seconds. **The owner installed it in
-Claude Desktop on 2026-10-16 and `release_calendar` worked there.** **Next:**
-the acceptance test's smaller frictions (item 1), then more release
-calendars (item 2).
+Claude Desktop on 2026-10-16 and `release_calendar` worked there.** **Session
+E** (the acceptance test's smaller frictions and three small items) is on
+`main`, not yet released. **Next:** the probe-and-repoint pass (items 3, 4, 5
+and 10 below), then release plumbing (items 13 and 15) and 0.3.2, then more
+release calendars (item 2).
 
 Session 13 is split: **13a, the release calendar**, is in (three parts,
 below; more feeds are item 2); **13b, revisions and vintages**, stays
@@ -34,6 +36,32 @@ deferred.
 **Owner-side items** — the ones that need the owner's accounts or describe one
 machine — live in `profile/STATE-private.md`, which is gitignored. This file
 holds only what any reader may see.
+
+**Session E in one paragraph.** The D2 acceptance test's smaller frictions,
+each checked on the real store, plus three small items. `get_series` takes
+seven ids, as `chart_series` does, so a breakdown's parts come in one call.
+A chart's suggested title names every series; a family's rows ("<measure> —
+<place>") say the measure once ("Real GDP growth, annual — Germany, France,
+Italy, Spain and Netherlands"), which the first live run showed was needed:
+naming each in full repeated the measure five times. Freshness carries
+`latest_period` ("2025", "Q2 2026") beside `age_days`, and the server
+instructions say to name it rather than the age; the age rule is unchanged.
+A chart whose values were combined says so per series in a footnote, with
+the other way ("quarterly averages of daily values; `how: last` gives
+quarter-end values"), from a new `table.aggregated`. `backfill` exits 3 on
+failures, as `refresh` does. `list_sources` names the `home` and `store` it
+answers from, and `scripts/mcp_smoke.py` fails when that home is not under
+the `HOME` (or `BEDROK_PROFILE`) it was started with (`--any-home` turns it
+off). `wb_shrimp` is retired (it ends 2023-10 and held every incremental Pink
+Sheet download back to 2023). The "who publishes what is missing" map is
+closed by decision: the warnings carry it where it matters. Proven: 446
+tests (3 skipped: the wheel checks, and the owner's term list, which passed
+when pointed at it); every changed tool in process against the real store;
+the smoke script FAILED from a folder holding `./profile` and passed from an
+empty one; `backfill` with the network blocked exited 3; a full `bedrok refresh` of the real store
+from this branch with no failures (shrimp's rows and catalog row gone, the
+Pink Sheet's oldest last date now 2026-07); `validate` clean but for the
+known Eurostat debt lag.
 
 **Session 13a, part 3, in one paragraph.** A tenth tool, `release_calendar`,
 answers the two questions the calendar was for. With ids, each series' next
@@ -184,7 +212,7 @@ test passed on 2026-10-14** (session D2): a cold session with only the
 server, asked Spain's growth by expenditure, the US 10-year by quarter and
 annual growth across the big European economies, answered all three from
 Bedrok alone, nine calls, nothing fetched outside. Its friction notes are in
-D2 and item 1.
+D2, and session E fixed them.
 
 **Session B in one paragraph.** The Fed Board's retirement of its Data
 Download Program turned out not to touch Bedrok: the adapter reads the
@@ -423,14 +451,14 @@ BIS, the regional Feds, the OECD, Eurostat, the EIA, Census, the IMF, the ONS,
 the Bank of England, the Bank of Canada, the New York Fed, INSEE, the BEA,
 Statistics Canada, Japan's e-Stat and Ministry of Finance, the ABS, INE, the
 four Nordic offices, Destatis and Istat, with FRED for the nine session-only
-series. 732 catalog rows (session C added 191 for GDP breakdowns; D2 the six
-FX pairs and five rows).
+series. 731 catalog rows (session C added 191 for GDP breakdowns; D2 the six
+FX pairs and five rows; E retired shrimp).
 
 **Twelve commands:** `smoke [--keyless]`, `backfill [--only ids --stage S]`,
 `refresh`, `validate`, `query`, `tieout [--only ids]`, `doctor`, `schema`,
 `pctile`, `rates`, `serve`, `docs [--check]`.
 
-**Tests:** 440, network-free, green on 2026-10-15, including the MCP
+**Tests:** 446 (3 skip without a wheel or the owner's term list), network-free, green on 2026-10-16, including the MCP
 server in memory, the layering rule and the publication gate. **Workflows:**
 `tests` (push and PR), `package` (PR: the empty-home install and the gate on
 the wheel), `publish` (a published release), `liveness` (Tuesdays, keyless).
@@ -494,23 +522,11 @@ None holds a secret.
 Completed items are removed rather than ticked — git history is the record.
 Owner-side items are in `profile/STATE-private.md`.
 
-1. **The acceptance test's smaller frictions.** 0.3.1 is installed in Claude
+1. **A cold question on a release morning.** 0.3.1 is installed in Claude
    Desktop (2026-10-16, upgraded in place) and `release_calendar` answered
-   there. Still worth a cold question on a release morning: "what is out
-   today?" followed by asking for the figure is the full test of 13a (the
-   fetch on a due series has run only in process and from the smoke script).
-   Smaller, from the D2 acceptance test:
-   - `get_series` takes five ids and `chart_series` seven; a breakdown's
-     quarterly parts needed two calls.
-   - A chart of five places is titled "Germany and 4 others".
-   - An annual series reports `age_days` from 1 January (651 days for
-     2025's value in October 2026): right by the rule, odd to read.
-   - "By quarter" means quarterly averages unless `how: last` is asked;
-     the cold session said so, which is the right behaviour, but nothing
-     in the recipe states it beyond the subtitle.
-   - A place-only search that finds nothing now says why; the broader
-     "who publishes what is missing" map was not built (the warnings carry
-     it where it matters).
+   there. "What is out today?" followed by asking for the figure is the full
+   test of 13a (the fetch on a due series has run only in process and from
+   the smoke script). Session E's changes reach Desktop with the next release.
 
 2. **More release calendars** (session 13a's tail; research in
    `docs/engineering/notes.md`, "Where release dates come from").
@@ -594,59 +610,46 @@ Owner-side items are in `profile/STATE-private.md`.
    freeze with their history and go on the gaps page. All in
    `docs/engineering/notes.md`, "The Fed Board is retiring…".
 
-9. **Shrimp has stopped too, probably.** `wb_shrimp` ends 2023-10 and, as the
-   oldest last date among the Pink Sheet series, sets every incremental Pink
-   Sheet download back to 2023. Barley and sorghum were retired for the same
-   reason (`pipeline.RETIRED`); shrimp is the owner's call.
-
-10. **Starter-set gaps from session 4:** Italy's NIC CPI (rebased in 2026, its
+9. **Starter-set gaps from session 4:** Italy's NIC CPI (rebased in 2026, its
    history sits in a differently shaped flow — Eurostat's HICP covers Italy),
    Istat's headline confidence indices, the ABS monthly CPI (only from 2024;
    the quarterly index from 1948 is carried). The ILO and the Bundesbank were
    left for later.
 
-11. **Eurostat's government debt/GDP family is late:** freshest 2026-01-01,
+10. **Eurostat's government debt/GDP family is late:** freshest 2026-01-01,
     past its 260-day allowance. The only `validate` finding. Data, not a fault;
     check whether the release moved before widening the allowance.
 
-12. **Two 7a series are not what one might assume.** Japan's unemployment rate
+11. **Two 7a series are not what one might assume.** Japan's unemployment rate
     is not seasonally adjusted: the seasonally adjusted series are not in
     e-Stat's API database. USD/CAD from the Bank of Canada starts only in 2017.
     Both are said in their notes; a better source for either is welcome.
 
-13. **`backfill` exits 1 on failures while `refresh` exits 3.** Align them when
-    a supervisor needs to read `backfill`.
-
-14. **Test coverage gaps:** nothing tests `rates_infl`, `backfill`, or the sync
-    stages end to end. `smoke`'s verdicts are tested (session 12); whether the
+12. **Test coverage gaps:** nothing tests `rates_infl`, `backfill` (beyond
+    its exit code, session E), or the sync stages end to end. `smoke`'s verdicts are tested (session 12); whether the
     live publishers answer is the liveness run's job, not the suite's.
 
-15. **The `.mcpb` bundle is built by hand** for each release. Building and
+13. **The `.mcpb` bundle is built by hand** for each release. Building and
     attaching it in `publish.yml` is one job (setup-node, setup-uv,
     `scripts/build-mcpb.sh`, `gh release upload`); do it once a manual release
     has proved the artifact.
 
-16. **The liveness run checks keyless publishers only.** The six keyed ones
+14. **The liveness run checks keyless publishers only.** The six keyed ones
     (BEA, Census, EIA, FRED, Destatis, e-Stat) would need their keys as
     repository secrets, and a secret-holding workflow must never run on
     `pull_request`.
 
-17. **A fresh store lists 436 series, not 531.** `list_series` on a new install
+15. **A fresh store lists 436 series, not 531.** `list_series` on a new install
     counts only what the catalog load knows before any bulk stage has run: the
-    World Bank's 50 Pink Sheet series (and a few Eurostat family members)
+    World Bank's 49 Pink Sheet series (and a few Eurostat family members)
     appear after their first download. Each answers when asked by id, so
     nothing is lost, but the README's "more than 500" is only true of a store
     that has refreshed once. Either load the bulk families' rows at catalog
     load, as session 11 did for Eurostat, or count them in `list_series`.
+    Recount first: session E's smoke run from an empty home listed 638 after
+    its first few calls, so the 436 may be out of date.
 
-18. **`scripts/mcp_smoke.py` can pass for the wrong reason.** Started from the
-    repo folder it finds `./profile` and answers from the developer's own
-    store, not the empty home it was given (it happened in session 12). It
-    should fail when the profile it reports is not under the `HOME` it was
-    started with, unless told otherwise. CI is safe today only because a fresh
-    checkout has no `profile/`.
-
-19. **The later sessions in `docs/rebuild-plan.md` are unplanned:** 13
+16. **The later sessions in `docs/rebuild-plan.md` are unplanned:** 13
     (13a, the release calendar, in progress as item 2; 13b, revisions, deferred
     2026-10-12) and 14 (the
     maintenance loop: triage source requests from the issue form, retire stale

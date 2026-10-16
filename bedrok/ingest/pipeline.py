@@ -97,7 +97,9 @@ CATALOG_CSV = config.SEEDS_DIR / "macro_catalog.csv"
 #   wb_barley, wb_sorghum — the World Bank's Pink Sheet shows "…" for both after
 #     August 2020 (an earlier edition carried values to 2026). Their stale last
 #     date also dragged every incremental Pink Sheet download back to 2020.
-RETIRED = frozenset({"wb_barley", "wb_sorghum", "hicp_yoy_xk"})
+#   wb_shrimp — ends 2023-10 (still so on 2026-10-16) and set every incremental
+#     Pink Sheet download back to 2023 the same way; retired by the owner.
+RETIRED = frozenset({"wb_barley", "wb_sorghum", "wb_shrimp", "hicp_yoy_xk"})
 
 
 def load_catalog(con) -> None:

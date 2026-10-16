@@ -91,6 +91,7 @@ def test_licensing_views_come_from_the_list(rows):
 
 def test_retired_series_are_removed_and_stay_out(catalog):
     assert not set(catalog["series_id"]) & pipeline.RETIRED
+    assert "wb_shrimp" in pipeline.RETIRED              # ends 2023-10 (session E)
     con = duckdb.connect(":memory:")
     store.init_db(con)
     store.upsert_macro_catalog(con, pd.DataFrame([{"series_id": "wb_barley", "source": "worldbank",

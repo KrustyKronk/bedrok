@@ -1,26 +1,36 @@
 """Drive `bedrok serve` over stdio the way an MCP host does, and check it answers.
 
-  python scripts/mcp_smoke.py -- <command that starts the server...>
+  python scripts/mcp_smoke.py [--any-home] -- <command that starts the server...>
 
 e.g.  python scripts/mcp_smoke.py -- uvx --from dist/bedrok-0.1.8-py3-none-any.whl bedrok serve
 
-Sends initialize, tools/list and nine keyless questions (euro-area inflation,
+Sends initialize, tools/list, list_sources and nine keyless questions (euro-area inflation,
 the US 10-year, the 10-year breakeven, the German 10-year, Sweden's CPIF, and
 a daily and a monthly series lined up weekly, the same as a chart recipe, a summary of the catalog, and the week's releases), prints what came
 back and how long each step took, and exits 1 if any step failed. Standard
 library only, so it runs under any Python — a clean machine, or CI.
+
+It also fails when the server answers from a home outside $HOME (or outside
+$BEDROK_PROFILE when that is set): started from the repo folder, the server
+finds ./profile and answers from the developer's own store, and the "empty
+home" run passes for the wrong reason (session 12). Run it from an empty
+folder; --any-home turns the check off.
 """
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 TOOLS = ["list_sources", "search_series", "list_series", "describe_series", "get_series",
          "chart_series", "percentile", "release_calendar", "query", "refresh"]
 
 CALLS = [
+    # first: `home` says which store answers everything after it
+    ("list_sources", {}),
     ("percentile", {"series_id": "ea_hicp_yoy"}),
     ("get_series", {"series_ids": ["us_10y"], "start": "2026-01-01", "max_rows": 3}),
     # a computed series (its inputs fetched on demand) and a Eurostat country
@@ -41,7 +51,25 @@ CALLS = [
 ]
 
 
+def home_check(home: str | None, env, any_home: bool = False) -> str | None:
+    """None when the server's home is under the folder it was given, else why.
+    Both sides resolved: macOS `mktemp -d` says /var/..., the server /private/var/..."""
+    if any_home:
+        return None
+    root = env.get("BEDROK_PROFILE") or env.get("HOME")
+    if not root:
+        return "HOME is not set, so the home the server answers from cannot be checked"
+    if not home:
+        return "list_sources did not say which home it answers from"
+    if Path(os.path.realpath(home)).is_relative_to(Path(os.path.realpath(root))):
+        return None
+    return (f"the server answers from {home}, which is not under {root}; "
+            "run from an empty folder, or pass --any-home")
+
+
 def main(argv: list[str]) -> int:
+    own = argv[:argv.index("--")] if "--" in argv else []
+    any_home = "--any-home" in own
     cmd = argv[argv.index("--") + 1:] if "--" in argv else argv
     if not cmd:
         print(__doc__)
@@ -89,6 +117,11 @@ def main(argv: list[str]) -> int:
             ok = not res.get("isError") and not any(
                 "error" in x for x in body.get("series", []))
             failures += not ok
+            if ok and name == "list_sources":
+                wrong = home_check(body.get("home"), os.environ, any_home)
+                if wrong:
+                    print(f"FAILED: {wrong}")
+                    failures += 1
             summary = (json.dumps(body)[:300] if ok
                        else res["content"][0]["text"][:300])
             print(f"[{time.time() - t0:5.1f}s] {name} {'ok' if ok else 'FAILED'} "

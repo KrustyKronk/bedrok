@@ -45,7 +45,17 @@ def test_units_go_in_the_subtitle_never_the_title():
 def test_titles_for_one_two_and_many():
     assert charting.title_suggestion(["A"]) == "A"
     assert charting.title_suggestion(["A", "B"]) == "A and B"
-    assert charting.title_suggestion(["A", "B", "C", "D", "E"]) == "A and 4 others"
+    # D2: five places titled "Germany and 4 others" told the reader nothing.
+    assert charting.title_suggestion(["Germany", "France", "Italy", "Spain", "UK"]) == \
+        "Germany, France, Italy, Spain and UK"
+    assert charting.title_suggestion(list("ABCDEFG"), "yoy") == \
+        "A, B, C, D, E, F and G, annual rate"
+    # one measure across places is said once, not five times
+    family = [f"Real GDP growth, annual — {p}" for p in ("Germany", "France", "Italy")]
+    assert charting.title_suggestion(family) == \
+        "Real GDP growth, annual — Germany, France and Italy"
+    assert charting.title_suggestion(family[:1] + ["HICP annual rate — Spain"]) == \
+        "Real GDP growth, annual — Germany and HICP annual rate — Spain"
 
 
 def test_x_labels_by_frequency_and_about_ten_ticks():
@@ -90,6 +100,18 @@ def test_footnotes_carry_what_the_chart_cannot_say():
     assert "US CPI: the latest period is not over yet (it holds 6 observations, 1 to 8 Oct 2026)." in notes
     assert any("2025-10-01" in n for n in notes)
     assert notes[-1].startswith("the oldest 3")
+
+
+def test_a_combined_series_says_how_and_the_other_way():
+    """D2: "by quarter" was quarterly averages, and only the subtitle said so."""
+    entries = [{"series_id": "us_10y", "name": "US 10-year yield", "frequency": "daily"},
+               {"series_id": "ecb_dfr", "name": "ECB deposit rate", "frequency": "event"}]
+    table = {"aggregated": {"us_10y": "mean", "ecb_dfr": "mean"},
+             "carried": {"ecb_dfr": {"last_change": "2026-06-11", "value": 2.0}}}
+    notes = charting.footnotes(entries, table, "quarterly")
+    assert ("US 10-year yield: quarterly averages of daily values; `how: last` gives "
+            "quarter-end values.") in notes
+    assert not any("ECB deposit rate: quarterly" in n for n in notes)   # its carried line says it
 
 
 def test_rate_like_units_share_one_scale_and_index_bases_do_not():

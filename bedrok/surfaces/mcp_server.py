@@ -102,7 +102,9 @@ status is `due` (inside that window, and a fetch found nothing yet) or `late`
 published one. Do not fill the gap with a number found elsewhere unless you
 say where it came from. When `approximate` is true the time is the
 publisher's usual timing: say "usually". Otherwise it is the publisher's own
-date (`publisher` names whose).
+date (`publisher` names whose). To say how recent a monthly or slower series
+is, name `latest_period` ("2025", "Q2 2026"), not `age_days`: age counts
+from the period's first day.
 
 Rules: quote a percentile only with its sample (start, end, n). Bedrok
 measures and contextualises; it never gives investment advice or buy/sell
@@ -428,7 +430,8 @@ def list_sources() -> dict[str, Any]:
     class, whether its numbers may be stored or are fetched live only
     (cache = session), its terms page, and how many catalog series it has with
     the freshest date held. Use it to answer "what can Bedrok see?" and to
-    explain a missing series (no key, session-only, not wired)."""
+    explain a missing series (no key, session-only, not wired). `home` and
+    `store` say which folder and store file answered."""
     with _store() as con:
         counts = dict(con.execute(
             "SELECT source, count(*) FROM macro_catalog GROUP BY source").fetchall())
@@ -452,7 +455,7 @@ def list_sources() -> dict[str, Any]:
             "series": counts.get(src, 0), "freshest": _iso(fresh.get(src)),
             **({"future_to": _iso(ahead[src])} if src in ahead else {}),
         })
-    return {"sources": out}
+    return {"sources": out, "home": str(config.PROFILE_DIR), "store": str(config.DB_PATH)}
 
 
 # What people ask for → the words series are named by. Small on purpose: only
@@ -763,8 +766,8 @@ def _with_parts(series_ids: list[str], cap: int) -> tuple[list[str], dict, list[
 
 @server.tool(annotations=READ_FETCHING)
 def get_series(
-    series_ids: Annotated[list[str], Field(min_length=1, max_length=5,
-                                           description="one to five catalog ids")],
+    series_ids: Annotated[list[str], Field(min_length=1, max_length=7,
+                                           description="one to seven catalog ids")],
     start: Annotated[str | None, Field(description="first date: YYYY, YYYY-MM or YYYY-MM-DD")] = None,
     end: Annotated[str | None, Field(description="last date: YYYY, YYYY-MM or YYYY-MM-DD")] = None,
     transform: Literal["level", "yoy", "mom3_ann", "index_to"] = "level",
@@ -782,9 +785,9 @@ def get_series(
                                             "rates")] = None,
     with_related: Annotated[bool, Field(description="also fetch what each series is made of "
                                                     "(a yield's real yield, breakeven and term "
-                                                    "premium; growth's parts), up to five in all")] = False,
+                                                    "premium; growth's parts), up to seven in all")] = False,
 ) -> dict[str, Any]:
-    """Observations for up to five series, newest last. transform: level (as
+    """Observations for up to seven series, newest last. transform: level (as
     published), yoy (% change on a year earlier, by date), mom3_ann (3-month
     change annualised), index_to (rebased to 100 at index_date); `transforms`
     sets one per id, so an index level charted as a rate can sit beside a
@@ -810,7 +813,7 @@ def get_series(
     start, end = _span(start, end)
     expanded = {}
     if with_related:
-        series_ids, added, dropped = _with_parts(series_ids, 5)
+        series_ids, added, dropped = _with_parts(series_ids, 7)
         expanded = {"expanded_from": added, "dropped": dropped}
     if frequency != "native":
         return {**_get_aligned(series_ids, start, end, transform, index_date, max_rows,
@@ -946,6 +949,8 @@ def _get_aligned(series_ids, start, end, transform, index_date, max_rows,
         "dates": [_iso(d) for d in dates_kept],
         "columns": {k: [_iso(x) for x in v] for k, v in columns.items()},
         "stepped": {k: n["stepped"] for k, n in notes.items()},
+        # Per series, the ones whose values were combined and how.
+        "aggregated": {k: n["how"] for k, n in notes.items() if n["how"]},
         "partial_last": {k: n["partial_last"] for k, n in notes.items()},
         "partial": {k: n["partial"] for k, n in notes.items() if n.get("partial")},
         "carried": {k: n["carried"] for k, n in notes.items() if n.get("carried")},
