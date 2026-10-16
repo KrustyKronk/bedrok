@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-15: session 13a is in, and 0.3.1 is prepared, not yet published.** Bedrok is a local MCP server and store of
+**Updated 2026-10-16: session 13a is in and released as 0.3.1.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -17,12 +17,14 @@ the questions needed) and 11 (tidying the catalog). Session 12 opened it:
 Board watch, C, breakdown questions, D1, chart and tool mechanics, and D2,
 discovery and catalog, are on PyPI and in the Desktop bundle attached to the
 GitHub release. Proven from PyPI: an empty home with no keys answered all
-nine smoke calls in 56 seconds. **0.3.1 is prepared** (2026-10-15): the
-version is bumped in `pyproject.toml` and the manifest, carrying session 13a
-(release rules, the publishers' own dates, `release_calendar`); it is not on
-PyPI or in a bundle until the owner publishes it (item 1). **Next:** publish
-0.3.1, install its bundle in Claude Desktop and ask it a cold question,
-ideally on a release morning (item 1).
+nine smoke calls in 56 seconds. **0.3.1 is released** (2026-10-16): session
+13a (release rules, the publishers' own dates, `release_calendar`) is on PyPI
+by `publish.yml` and in the Desktop bundle attached to the v0.3.1 GitHub
+release, which was scanned against the owner's terms before upload (only the
+author credit matched). Proven from PyPI: an empty home with no keys answered
+all nine smoke calls, ten tools, in 30 seconds. **Next:** the owner installs
+the 0.3.1 bundle in Claude Desktop and asks it a cold question, ideally on a
+release morning (item 1).
 
 Session 13 is split: **13a, the release calendar**, is in (three parts,
 below; more feeds are item 2); **13b, revisions and vintages**, stays
@@ -104,7 +106,7 @@ CPI); and on a copy of the store with September CPI deleted, the server in
 process reported it due, fetched it from the BLS and turned fresh with the
 November window. The research behind the next part (which publishers publish
 a calendar a program can read) is in `docs/engineering/notes.md`. Not yet
-released: the Desktop bundle runs 0.3.0 until 0.3.1 is published.
+released as 0.3.1 on 2026-10-16.
 
 **Session D2 in one paragraph.** The self-test's discovery frictions, each
 reproduced on the live server first. The six FX pairs answer as series in
@@ -491,17 +493,13 @@ None holds a secret.
 Completed items are removed rather than ticked — git history is the record.
 Owner-side items are in `profile/STATE-private.md`.
 
-1. **Publish 0.3.1, install it in Claude Desktop, then the acceptance test's
-   smaller frictions.** The version is bumped on `main`; publishing is the
-   owner's step: `gh release create v0.3.1` (`publish.yml` refuses a tag that
-   disagrees with `pyproject.toml`, runs the empty-home check on the wheel and
-   uploads to PyPI by trusted publishing), then Mac-side
-   `scripts/build-mcpb.sh` and `gh release upload v0.3.1
-   dist/bedrok-0.3.1.mcpb`. The manifest's author and name are unchanged, so
-   the bundle upgrades 0.3.0 in place. The owner installs it and asks a cold
-   question there, the first time any of A to 13a runs outside this
-   machine's development server; on a release morning, "what is out today?"
-   is the test of 13a. Smaller, from the D2 acceptance test:
+1. **Install 0.3.1 in Claude Desktop, then the acceptance test's smaller
+   frictions.** The release is done (PyPI by `publish.yml`, the bundle on the
+   v0.3.1 release; the manifest's author and name unchanged, so it upgrades
+   0.3.0 in place: open the `.mcpb`, then quit Desktop with Cmd-Q and reopen).
+   The owner asks it a cold question there, the first time 13a runs outside
+   this machine's development server; on a release morning, "what is out
+   today?" is the test of 13a. Smaller, from the D2 acceptance test:
    - `get_series` takes five ids and `chart_series` seven; a breakdown's
      quarterly parts needed two calls.
    - A chart of five places is titled "Germany and 4 others".
