@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-16: session F is in, after session E; 0.3.1 is the release.** Bedrok is a local MCP server and store of
+**Updated 2026-10-16: session G is in, after E and F; 0.3.2 is being released.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -24,9 +24,12 @@ release, which was scanned against the owner's terms before upload (only the
 author credit matched). Proven from PyPI: an empty home with no keys answered
 all nine smoke calls, ten tools, in 30 seconds. **The owner installed it in
 Claude Desktop on 2026-10-16 and `release_calendar` worked there.** **Sessions
-E** (the acceptance test's smaller frictions and three small items) **and F**
-(the probe-and-repoint pass) are on `main`, not yet released. **Next:** release
-plumbing (items 13 and 15) and 0.3.2, then more release calendars (item 2).
+E** (the acceptance test's smaller frictions and three small items), **F**
+(the probe-and-repoint pass) **and G** (a fresh install that finds the bulk
+families, the bundle built by CI) are on `main` and go out as **0.3.2**, the
+first release whose bundle `publish.yml` builds and attaches. **Next:** the
+owner installs 0.3.2 in Claude Desktop and asks a cold question (item 1),
+then more release calendars (item 2).
 
 Session 13 is split: **13a, the release calendar**, is in (three parts,
 below; more feeds are item 2); **13b, revisions and vintages**, stays
@@ -35,6 +38,31 @@ deferred.
 **Owner-side items** — the ones that need the owner's accounts or describe one
 machine — live in `profile/STATE-private.md`, which is gitignored. This file
 holds only what any reader may see.
+
+**Session G in one paragraph.** Item 15 said a fresh store listed 436
+series; counted on `main` it held 639, so the README's "more than 500" was
+already true. The real cost was discovery: the 93 rows only a bulk download
+registers (49 Pink Sheet, 5 CFTC, 39 broad HICP) were missing until a
+refresh, so on a new install "gold" found nothing, "copper price" found house
+prices and "turkey inflation" found nothing. Every cold test had run on the
+owner's refreshed store. The rows ship as `bedrok/seeds/bulk_catalog.csv`,
+written from a refreshed store (the Pink Sheet's units and the HICP labels
+exist only in the downloads), and `load_catalog` adds them without
+overwriting, so a download still refines them; the server already sent an
+empty bulk row to its family's download. A fresh store lists 732; README and
+manifest say "more than 700" (the manifest said "about 160"). `publish.yml`
+builds the Desktop bundle and attaches it, only after PyPI took the wheel,
+with the packer pinned (`@anthropic-ai/mcpb@2.1.2`) and the general
+publication gate run on the bundle; the owner relies on the local scan of the
+tracked tree for their private terms (2026-10-16). Proven: 452 tests (4 skip
+without a built wheel or bundle, or the owner's term list; all six gates
+passed on a locally built wheel and bundle with the list); a fresh scratch
+store found gold, copper and Türkiye by words and fetched `wb_gold` and
+`hicp_yoy_tr` on first ask; a full `bedrok refresh` of the real store
+from this branch with no failures (the seed overwrote no downloaded name or
+units; 732 rows, none empty); `validate` passed every check; a dispatch run
+of `publish.yml` built the bundle in CI (version 0.3.2, ten tools, the seed
+inside) and skipped publishing, as intended.
 
 **Session F in one paragraph.** Every publisher that refused on 2026-10-11
 was asked again on 2026-10-16. The Bundesbank answered, so it is the 31st
@@ -417,8 +445,8 @@ current, and the server serves them as `bedrok://…` resources.
 **Releasing.** Bump `version` in `pyproject.toml` and
 `packaging/mcpb/manifest.json` together (`tests/test_install.py` fails on
 drift), merge, then `gh release create v<version>`: `publish.yml` puts it on
-PyPI. Build the bundle Mac-side with `scripts/build-mcpb.sh` and
-`gh release upload v<version> dist/bedrok-<version>.mcpb`. **Never change the
+PyPI, then builds the Desktop bundle and attaches it to the release (from
+0.3.2; before that it was built by hand). **Never change the
 manifest's `author` or `name`:** Claude Desktop files an extension as
 `local.mcpb.<author>.<name>`, so a new author installs a second extension with
 no settings instead of upgrading (it happened at 0.2.0; `docs/engineering/notes.md`).
@@ -476,14 +504,14 @@ BIS, the regional Feds, the OECD, Eurostat, the EIA, Census, the IMF, the ONS,
 the Bank of England, the Bank of Canada, the New York Fed, INSEE, the BEA,
 Statistics Canada, Japan's e-Stat and Ministry of Finance, the ABS, INE, the
 four Nordic offices, Destatis, Istat and the Bundesbank, with FRED for the nine session-only
-series. 732 catalog rows (session C added 191 for GDP breakdowns; D2 the six
+series. 732 catalog rows, all of them on a fresh install since session G (session C added 191 for GDP breakdowns; D2 the six
 FX pairs and five rows; E retired shrimp; F added the daily Bund).
 
 **Twelve commands:** `smoke [--keyless]`, `backfill [--only ids --stage S]`,
 `refresh`, `validate`, `query`, `tieout [--only ids]`, `doctor`, `schema`,
 `pctile`, `rates`, `serve`, `docs [--check]`.
 
-**Tests:** 448 (3 skip without a wheel or the owner's term list), network-free, green on 2026-10-16, including the MCP
+**Tests:** 452 (4 skip without a built wheel or bundle, or the owner's term list), network-free, green on 2026-10-16, including the MCP
 server in memory, the layering rule and the publication gate. **Workflows:**
 `tests` (push and PR), `package` (PR: the empty-home install and the gate on
 the wheel), `publish` (a published release), `liveness` (Tuesdays, keyless).
@@ -547,11 +575,14 @@ None holds a secret.
 Completed items are removed rather than ticked — git history is the record.
 Owner-side items are in `profile/STATE-private.md`.
 
-1. **A cold question on a release morning.** 0.3.1 is installed in Claude
-   Desktop (2026-10-16, upgraded in place) and `release_calendar` answered
-   there. "What is out today?" followed by asking for the figure is the full
-   test of 13a (the fetch on a due series has run only in process and from
-   the smoke script). Session E's changes reach Desktop with the next release.
+1. **Install 0.3.2 in Claude Desktop, then a cold question on a release
+   morning.** 0.3.1 is installed (2026-10-16, upgraded in place) and
+   `release_calendar` answered there. 0.3.2 carries E, F and G, and is the
+   first bundle `publish.yml` built, so the install is also that bundle's
+   first test. Ask a fresh install for "gold" before anything else (G's fix).
+   "What is out today?" followed by asking for the figure is the full test of
+   13a (the fetch on a due series has run only in process and from the smoke
+   script).
 
 2. **More release calendars** (session 13a's tail; research in
    `docs/engineering/notes.md`, "Where release dates come from").
@@ -648,27 +679,17 @@ Owner-side items are in `profile/STATE-private.md`.
     its exit code, session E), or the sync stages end to end. `smoke`'s verdicts are tested (session 12); whether the
     live publishers answer is the liveness run's job, not the suite's.
 
-13. **The `.mcpb` bundle is built by hand** for each release. Building and
-    attaching it in `publish.yml` is one job (setup-node, setup-uv,
-    `scripts/build-mcpb.sh`, `gh release upload`); do it once a manual release
-    has proved the artifact.
-
-14. **The liveness run checks keyless publishers only.** The six keyed ones
+13. **The liveness run checks keyless publishers only.** The six keyed ones
     (BEA, Census, EIA, FRED, Destatis, e-Stat) would need their keys as
     repository secrets, and a secret-holding workflow must never run on
     `pull_request`.
 
-15. **A fresh store lists 436 series, not 531.** `list_series` on a new install
-    counts only what the catalog load knows before any bulk stage has run: the
-    World Bank's 49 Pink Sheet series (and a few Eurostat family members)
-    appear after their first download. Each answers when asked by id, so
-    nothing is lost, but the README's "more than 500" is only true of a store
-    that has refreshed once. Either load the bulk families' rows at catalog
-    load, as session 11 did for Eurostat, or count them in `list_series`.
-    Recount first: session E's smoke run from an empty home listed 638 after
-    its first few calls, so the 436 may be out of date.
+14. **"Crude oil positioning" does not find the CFTC row.** On a fresh store
+    (session G) it lists four Pink Sheet crude prices and not
+    `cot_wti_net_noncomm`; "positioning" should weigh the CFTC family the way
+    "contribution" weighs the GDP parts (`_CONTRIB_WORDS` in the server).
 
-16. **The later sessions in `docs/rebuild-plan.md` are unplanned:** 13
+15. **The later sessions in `docs/rebuild-plan.md` are unplanned:** 13
     (13a, the release calendar, in progress as item 2; 13b, revisions, deferred
     2026-10-12) and 14 (the
     maintenance loop: triage source requests from the issue form, retire stale

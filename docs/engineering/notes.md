@@ -183,6 +183,19 @@ workflow gains a trigger.
 **`runner.temp` is not available in job-level `env`,** only inside steps, and
 GitHub rejects the entire workflow file rather than the one expression.
 
+**A job that `needs` a skipped job is skipped too,** unless its `if:` says
+otherwise. `publish.yml`'s `bundle` job needs `publish` (no bundle on a
+release whose PyPI upload failed), and `publish` is skipped on a dispatch,
+so `bundle` carries `!cancelled()` and allows a skipped `publish` only on
+`workflow_dispatch`. Its `contents: write` is the only write permission in
+the repo's workflows, and it runs only from a release or a manual dispatch.
+
+**A cold test on the owner's store cannot see what a fresh install lacks.**
+Until session G, "gold" and "turkey inflation" found nothing on a new install
+(the rows came only with their bulk download), and every cold session had run
+against a refreshed store. Check discovery on a scratch store after
+`load_catalog` alone.
+
 ## Ingest and vendors
 
 **Some series are dated in the future, and an incremental start must not be.**

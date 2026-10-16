@@ -819,3 +819,23 @@ def test_series_released_together_share_one_line(due, monkeypatch):
     monkeypatch.setattr(releases, "load", lambda: (rule, {**rule, "series_id": "tst_core"}))
     week = _call("release_calendar", {}).structured_content
     assert [g["series"] for g in week["releases"]] == [["tst_cpi", "tst_core"]]
+
+
+def test_a_fresh_install_finds_the_bulk_families_by_words(tmp_path, monkeypatch):
+    """Session G: on a store that had only loaded its catalog, "gold" found
+    nothing, "copper price" found house prices and "turkey inflation" nothing.
+    Every cold test before then ran on a refreshed store and could not see it."""
+    db = tmp_path / "market.duckdb"
+    monkeypatch.setattr(config, "PROFILE_DIR", tmp_path)
+    monkeypatch.setattr(config, "DB_PATH", db)
+    con = duckdb.connect(str(db))
+    store.init_db(con)
+    pipeline.load_catalog(con)
+    store.close_checkpointed(con)
+
+    def ids(text):
+        return [m["series_id"] for m in
+                _call("search_series", {"text": text}).structured_content["matches"]]
+    assert "wb_gold" in ids("gold")
+    assert "wb_copper" in ids("copper price")
+    assert "hicp_yoy_tr" in ids("turkey inflation")

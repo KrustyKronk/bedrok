@@ -5,7 +5,7 @@
 Bedrok is a local MCP server. Ask Claude — or any assistant that speaks MCP —
 where euro-area inflation sits in its history, how far US real yields have
 risen this year, or what the BIS credit gap says about China, and it answers
-from more than 500 curated series with deep history: US rates and the Fed's
+from more than 700 curated series with deep history: US rates and the Fed's
 releases, US labour and prices, the euro area country by country, the UK, the
 OECD, the BIS, the IMF, national statistics offices from Canada to Japan,
 commodities, futures positioning and FX. Each series is fetched from the

@@ -2,9 +2,9 @@
   "manifest_version": "0.4",
   "name": "bedrok",
   "display_name": "Bedrok",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Public macroeconomic data from central banks, statistics offices and international organisations, each series fetched from its publisher into a local store. No keys needed to start.",
-  "long_description": "Bedrok gives your assistant about 160 curated series and their deep history: US rates and the Fed's releases, US labour and prices, the euro area country by country, the UK, OECD, BIS, IMF, national statistics offices, commodities, positioning and FX. Each series comes from the publisher that produces it, with its licence and the line to credit it with. Most of it works without keys; free keys add US GDP and PCE (BEA), retail and housing (Census), energy (EIA), Germany's and Japan's national statistics (Destatis, e-Stat) and the series only FRED publishes. Your data stays on your machine. Bedrok measures and contextualises; it never gives investment advice.",
+  "long_description": "Bedrok gives your assistant more than 700 curated series and their deep history: US rates and the Fed's releases, US labour and prices, the euro area country by country, the UK, OECD, BIS, IMF, national statistics offices, commodities, positioning and FX. Each series comes from the publisher that produces it, with its licence and the line to credit it with. Most of it works without keys; free keys add US GDP and PCE (BEA), retail and housing (Census), energy (EIA), Germany's and Japan's national statistics (Destatis, e-Stat) and the series only FRED publishes. Your data stays on your machine. Bedrok measures and contextualises; it never gives investment advice.",
   "author": {
     "name": "Andreu Paddack"
   },

@@ -22,7 +22,11 @@ echo "3.12" > "$STAGE/.python-version"
 # Pin exactly what was tested: Desktop's `uv sync` honours the lock.
 (cd "$STAGE" && uv lock --quiet)
 
-npx --yes @anthropic-ai/mcpb validate "$STAGE/manifest.json"
+# The packer is pinned: CI builds the release bundle (publish.yml), and an
+# unpinned npx takes whatever npm serves that day. 2.1.2 was the local
+# version when it was pinned (2026-10-16).
+MCPB="@anthropic-ai/mcpb@2.1.2"
+npx --yes "$MCPB" validate "$STAGE/manifest.json"
 mkdir -p dist
-npx --yes @anthropic-ai/mcpb pack "$STAGE" "dist/bedrok-$VERSION.mcpb"
+npx --yes "$MCPB" pack "$STAGE" "dist/bedrok-$VERSION.mcpb"
 echo "built dist/bedrok-$VERSION.mcpb"

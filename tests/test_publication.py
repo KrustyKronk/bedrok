@@ -122,21 +122,29 @@ def test_no_tracked_file_or_filename_carries_an_owner_term():
     assert not hits, "\n".join(hits)
 
 
-def _wheel_members():
-    wheels = sorted((REPO / "dist").glob("*.whl"))
-    if not wheels:
-        pytest.skip("no wheel built (run `uv build`)")
-    with zipfile.ZipFile(wheels[-1]) as zf:
+def _built_members(pattern: str = "*.whl", how: str = "run `uv build`"):
+    built = sorted((REPO / "dist").glob(pattern))
+    if not built:
+        pytest.skip(f"nothing built for {pattern} ({how})")
+    with zipfile.ZipFile(built[-1]) as zf:
         return [(m, zf.read(m).decode("utf-8", errors="replace")) for m in zf.namelist()
-                if m.endswith((".md", ".csv", ".py", ".json", ".txt", "METADATA"))]
+                if m.endswith((".md", ".csv", ".py", ".json", ".txt", ".toml", ".lock", "METADATA"))]
 
 
 def test_the_wheel_carries_no_general_pattern():
-    hits = [h for name, text in _wheel_members() for h in _hits(name, text)]
+    hits = [h for name, text in _built_members() for h in _hits(name, text)]
+    assert not hits, "\n".join(hits)
+
+
+def test_the_bundle_carries_no_general_pattern():
+    """The Desktop bundle is a zip like the wheel; publish.yml runs this on
+    the one it attaches to a release (session G)."""
+    members = _built_members("*.mcpb", "run scripts/build-mcpb.sh")
+    hits = [h for name, text in members for h in _hits(name, text)]
     assert not hits, "\n".join(hits)
 
 
 def test_the_wheel_carries_no_owner_term():
     terms = _owner_terms()
-    hits = [h for name, text in _wheel_members() for h in _hits(name, text, terms)]
+    hits = [h for name, text in _built_members() for h in _hits(name, text, terms)]
     assert not hits, "\n".join(hits)
