@@ -111,3 +111,35 @@ def test_a_failure_detail_is_one_line_and_keeps_the_part_that_explains_it():
                      "Verbraucherpreisindex für Deutschland (61111)\nwurde kein Datenquader gefunden!")
     detail = pipeline.error_detail(err, 200)
     assert "\n" not in detail and "kein Datenquader gefunden" in detail
+
+
+def test_the_bulk_seed_matches_what_the_downloads_produce():
+    """Session G: the rows a fresh install needs to find "gold" or "turkey
+    inflation". Every row must be one a stage can fill, and every Pink Sheet
+    and CFTC series must be there, so retiring or adding one updates the seed."""
+    from bedrok.core.aliases import ALIASES
+    from bedrok.ingest.adapters import cftc, worldbank
+    seed = pipeline.bulk_catalog_rows()
+    ids = set(seed["series_id"])
+    hicp = {f"{pipeline.HICP_PREFIX}{g.lower()}" for g in pipeline.REUSE_GEOS} - set(ALIASES)
+    wb = set(worldbank.SERIES) - pipeline.RETIRED
+    assert ids <= wb | set(cftc.MARKETS) | hicp
+    assert wb | set(cftc.MARKETS) <= ids
+    assert seed["series_id"].is_unique and seed["name"].notna().all()
+    assert seed["units"].notna().all() and set(seed["cache"]) == {"store"}
+
+
+def test_a_fresh_store_holds_the_bulk_rows_and_a_download_still_refines_them():
+    con = duckdb.connect(":memory:")
+    store.init_db(con)
+    pipeline.load_catalog(con)
+    have = {r[0] for r in con.execute("SELECT series_id FROM macro_catalog").fetchall()}
+    assert {"wb_gold", "cot_gold_net_noncomm", "hicp_yoy_tr"} <= have
+    assert not have & pipeline.RETIRED
+    # a later download's metadata wins, and a second load does not undo it
+    store.upsert_macro_catalog(con, pd.DataFrame([{
+        "series_id": "wb_gold", "source": "worldbank", "source_code": "pinksheet:Gold",
+        "name": "Gold, renamed by the download", "units": "USD per troy ounce"}]))
+    pipeline.load_catalog(con)
+    assert con.execute("SELECT name FROM macro_catalog WHERE series_id = 'wb_gold'"
+                       ).fetchone()[0] == "Gold, renamed by the download"

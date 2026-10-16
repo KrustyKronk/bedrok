@@ -89,6 +89,11 @@ def _incremental_start(con, table, key_col, key_val) -> str | None:
 # The catalog ships with the code, not with the profile: every install reads the
 # same curated list. (Session 4 of the rethink replaces it with a registry.)
 CATALOG_CSV = config.SEEDS_DIR / "macro_catalog.csv"
+# The rows only a bulk download names (Pink Sheet, CFTC, broad HICP), written
+# from a refreshed store so a fresh install can find them by words: before
+# session G, "gold" found nothing and "turkey inflation" nothing until a
+# refresh had run. The download still refines them; these never overwrite it.
+BULK_CATALOG_CSV = config.SEEDS_DIR / "bulk_catalog.csv"
 
 
 # Series a publisher has stopped, removed from the catalog and the store on the
@@ -111,6 +116,7 @@ def load_catalog(con) -> None:
     static = static_catalog_rows()
     store.upsert_macro_catalog(con, pd.read_csv(CATALOG_CSV, dtype=str))
     store.add_missing_catalog_rows(con, static)
+    store.add_missing_catalog_rows(con, bulk_catalog_rows())
     licensing.backfill_source_defaults(con)
     ids = sorted(set(RETIRED) | set(ALIASES))
     ph = ", ".join("?" for _ in ids)
@@ -750,7 +756,7 @@ def static_catalog_rows() -> pd.DataFrame:
     curated Eurostat geographies. A fresh store registers them at once, so the
     first question can find `us_breakeven_10y` or `ltgov_yield_de` — the bulk
     stages that used to register them only run on a refresh. (World Bank, CFTC
-    and broad-HICP ids are named by their downloads; asking for one runs it.)"""
+    and broad-HICP rows are in bulk_catalog_rows.)"""
     from bedrok.ingest import derived
     rows = [derived.catalog_row(spec) for spec in derived.DERIVED]
     for spec in EUROSTAT_BULK_SETS:
@@ -766,6 +772,15 @@ def static_catalog_rows() -> pd.DataFrame:
                 "license": licensing.ATTRIBUTION, "cache": licensing.STORE,
             })
     return pd.DataFrame(rows + fx_catalog_rows())
+
+
+def bulk_catalog_rows() -> pd.DataFrame:
+    """The Pink Sheet, CFTC and broad-HICP rows as a refreshed store had them
+    (seeds/bulk_catalog.csv), less anything retired since. Their units and
+    geography labels exist only in the downloads, hence a seed, not code."""
+    df = pd.read_csv(BULK_CATALOG_CSV, dtype=str)
+    df["staleness_days"] = pd.to_numeric(df["staleness_days"]).astype("Int64")
+    return df[~df["series_id"].isin(RETIRED | set(ALIASES))].reset_index(drop=True)
 
 
 # Bulk families whose series ids only a download names: asking for an unknown
