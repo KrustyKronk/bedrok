@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-16: 0.3.3 is released (session H, four more release calendars).** Bedrok is a local MCP server and store of
+**Updated 2026-10-16: 0.3.3 is released and installed in Claude Desktop.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -35,8 +35,18 @@ home check passing. **Session H** (four more publishers' own release dates)
 is **released as 0.3.3** (2026-10-16). `publish.yml`'s build, publish and
 bundle jobs all passed, and `bedrok-0.3.3.mcpb` is on the release. Proven from
 PyPI: an empty folder and an empty home answered all ten smoke calls in 36
-seconds. **Next:** the owner installs the
-latest release in Claude Desktop and asks a cold question (item 1).
+seconds. **The owner installed 0.3.3 in Claude Desktop the same day** (the
+first CI-built bundle to be installed). Ten questions covering E, F, G and H
+all gave the intended answers there:
+- exact release dates named with their publisher for Canada, Spain, the ECB,
+  H.4.1, H.8 and the SLOOS;
+- gold and Türkiye found on the installed store;
+- the quarterly-average footnote and the five-country title;
+- `latest_period` for an annual series;
+- the Bundesbank's daily Bund.
+
+**Next:** a cold question on a release morning (item 1), then whichever open
+item the owner picks.
 
 Session 13 is split: **13a, the release calendar**, is in (three parts,
 below, and session H's four more feeds; what is left is item 2); **13b,
@@ -624,14 +634,12 @@ None holds a secret.
 Completed items are removed rather than ticked — git history is the record.
 Owner-side items are in `profile/STATE-private.md`.
 
-1. **Install 0.3.2 in Claude Desktop, then a cold question on a release
-   morning.** 0.3.1 is installed (2026-10-16, upgraded in place) and
-   `release_calendar` answered there. 0.3.2 carries E, F and G, and is the
-   first bundle `publish.yml` built, so the install is also that bundle's
-   first test. Ask a fresh install for "gold" before anything else (G's fix).
-   "What is out today?" followed by asking for the figure is the full test of
-   13a (the fetch on a due series has run only in process and from the smoke
-   script).
+1. **A cold question on a release morning.** 0.3.3 is installed in Claude
+   Desktop and passed the owner's ten-question check (2026-10-16). What has not
+   run outside this machine's development server is the fetch on a due
+   series. Test it by asking "what is out today?" on a release morning, then
+   asking for the figure (Canada's CPI on 19 Oct, Spain's EPA and the ECB's M3
+   on 27 Oct).
 
 2. **More release calendars** (what session H left; research in
    `docs/engineering/notes.md`, "Where release dates come from").
