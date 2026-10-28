@@ -35,6 +35,15 @@ Statuses: `fresh` (the next period is not due yet), `due` (inside its window: fe
 | `jp_cpi` | 17 to 25 days after the month, on a Friday | 08:30 Asia/Tokyo |  |
 | `jp_cpi_core` | 17 to 25 days after the month, on a Friday | 08:30 Asia/Tokyo |  |
 | `jp_cpi_core_core` | 17 to 25 days after the month, on a Friday | 08:30 Asia/Tokyo |  |
+| `kz_deposit_rate_firms_kzt` | 22 to 28 days after the month | 09:10 Asia/Almaty | the National Bank of Kazakhstan's next-release date |
+| `kz_deposit_rate_households_kzt` | 22 to 28 days after the month | 09:10 Asia/Almaty | the National Bank of Kazakhstan's next-release date |
+| `kz_m2` | 13 to 20 days after the month | 10:00 Asia/Almaty | the National Bank of Kazakhstan's next-release date |
+| `kz_m3` | 13 to 20 days after the month | 10:00 Asia/Almaty | the National Bank of Kazakhstan's next-release date |
+| `kz_national_fund_fx_assets` | 7 to 12 days after the month | 10:00 Asia/Almaty | the National Bank of Kazakhstan's next-release date |
+| `kz_neer` | 10 to 41 days after the month | 10:00 Asia/Almaty |  |
+| `kz_reer` | 25 to 41 days after the month | 10:00 Asia/Almaty |  |
+| `kz_reserves_gross` | 7 to 12 days after the month | 10:00 Asia/Almaty | the National Bank of Kazakhstan's next-release date |
+| `kz_reserves_net` | 7 to 12 days after the month | 10:00 Asia/Almaty | the National Bank of Kazakhstan's next-release date |
 | `uk_cpi_yoy` | 14 to 22 days after the month | 07:00 Europe/London | the ONS's next-release date |
 | `uk_cpih_yoy` | 14 to 22 days after the month | 07:00 Europe/London | the ONS's next-release date |
 | `uk_gdp_monthly_index` | 38 to 48 days after the month | 07:00 Europe/London | the ONS's next-release date |
@@ -75,6 +84,7 @@ Statuses: `fresh` (the next period is not due yet), `due` (inside its window: fe
 
 - **BEA's release schedule** (`bea_json`): 4 series; fetched at most once a day.
 - **The ONS's next-release date** (`ons_next_release`): 4 series; read from the series' own response, no extra request.
+- **The National Bank of Kazakhstan's next-release date** (`nbk_next_release`): 7 series; read from the series' page after each fetch, one extra request per page.
 - **Statistics Canada's release schedule** (`statcan_json`): 3 series; fetched at most once a day.
 - **INE's release calendar** (`ine_ics`): 4 series; fetched at most once a day.
 - **The ECB's statistical calendar** (`ecb_statscal`): 8 series; fetched at most once a day.

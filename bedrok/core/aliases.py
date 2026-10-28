@@ -31,7 +31,8 @@ ALIASES: dict[str, str] = {
     "gdp_annual_uk": "uk_gdp_annual",
     # The FX pairs are spelled in capitals in fx_rates, the all_series view and
     # the CLI; as series they are lower case (session D2). Both answer.
-    **{p: p.lower() for p in ("EURUSD", "EURGBP", "GBPUSD", "USDEUR", "GBPEUR", "USDGBP")},
+    **{p: p.lower() for p in ("EURUSD", "EURGBP", "GBPUSD", "USDEUR", "GBPEUR", "USDGBP",
+                              "USDKZT", "EURKZT")},
 }
 
 

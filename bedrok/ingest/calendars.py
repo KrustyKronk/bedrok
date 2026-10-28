@@ -264,16 +264,29 @@ def _frame(feed: str, df: pd.DataFrame, now: datetime) -> pd.DataFrame:
     return out[["feed", "release_name", "due_at", "tz", "period", "fetched_at"]]
 
 
+def parse_nbk_next(day: date | None, at: time) -> dict | None:
+    """The National Bank's "Next:" date at the rule's local time, with no
+    period: the page does not say which month is next, and on the reserves
+    page the date is often the revision of the month just published. A
+    period-less date is believed only inside the next period's window
+    (ops/freshness.py), so a revision date before it is ignored."""
+    if day is None:
+        return None
+    due = datetime.combine(day, at, tzinfo=ZoneInfo(releases.FEEDS["nbk_next_release"]["tz"]))
+    return {"period": None, "due_at": _utc_naive(due)}
+
+
 def record_publisher(con, series_id: str, entry: dict | None,
-                     now: datetime | None = None) -> int:
-    """Store the next release a series' own response named (the ONS), replacing
-    what that series had: one date per series, the one just read."""
+                     now: datetime | None = None, feed: str = "ons_next_release") -> int:
+    """Store the next release a series' publisher named (the ONS in the
+    series' own response, the National Bank of Kazakhstan on its page),
+    replacing what that series had: one date per series, the one just read."""
     if not entry:
         return 0
     df = pd.DataFrame([{"release_name": series_id, "due_at": entry["due_at"],
                         "period": entry["period"]}])
-    return store.replace_release_calendar(con, "ons_next_release",
-                                          _frame("ons_next_release", df, now or datetime.now(timezone.utc)),
+    return store.replace_release_calendar(con, feed,
+                                          _frame(feed, df, now or datetime.now(timezone.utc)),
                                           [series_id])
 
 

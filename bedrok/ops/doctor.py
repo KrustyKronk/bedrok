@@ -61,7 +61,9 @@ def _freshness_section(con) -> int:
         except Exception as e:  # noqa: BLE001
             print(f"  {t:<20} (n/a: {str(e)[:50]})")
     try:
-        hi_fx = con.execute("SELECT max(date) FROM fx_rates").fetchone()[0]
+        # EURUSD only: the tenge's newest row is dated tomorrow and would
+        # hide a dead ECB feed.
+        hi_fx = con.execute("SELECT max(date) FROM fx_rates WHERE pair = 'EURUSD'").fetchone()[0]
     except Exception:  # noqa: BLE001
         hi_fx = None
     if hi_fx is not None:

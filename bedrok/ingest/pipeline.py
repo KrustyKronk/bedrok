@@ -16,12 +16,13 @@ import requests
 
 from bedrok.core import config
 from bedrok.core import licensing
+from bedrok.core import releases
 from bedrok.core import sources
 from bedrok.core import store
 from bedrok.core import units
 from bedrok.core.aliases import ALIASES
 from bedrok.ingest import calendars
-from bedrok.ingest.adapters import cftc, eurostat, ons, pxweb, sdmx, worldbank
+from bedrok.ingest.adapters import cftc, eurostat, nbk, ons, pxweb, sdmx, worldbank
 
 # FX pairs come from the profile's base currency (config.fx_pairs()); pairs with
 # source 'derived' are computed from already-synced ECB EUR-reference rates
@@ -731,13 +732,20 @@ def sync_macro(con, incremental=False, only=None, prime=True) -> list[tuple]:
 
 
 def _record_next_release(con, sid: str, row) -> None:
-    """An ONS series names its own next release in the response just read;
-    keep it (ingest/calendars.py). Never fails the series."""
-    if row["source"] != "ons":
-        return
+    """Keep the next release a publisher named (ingest/calendars.py): an ONS
+    series in the response just read, a National Bank of Kazakhstan series on
+    its statistics page, which costs one more request per page. Only series
+    with a calendar row are asked. Never fails the series."""
     try:
-        calendars.record_publisher(con, sid, calendars.parse_ons_next(
-            *(ons.next_release(row["source_code"]) or (None, None, "monthly"))))
+        if row["source"] == "ons":
+            calendars.record_publisher(con, sid, calendars.parse_ons_next(
+                *(ons.next_release(row["source_code"]) or (None, None, "monthly"))))
+        elif row["source"] == "nbk" and releases.calendar_key(sid):
+            rule = releases.rule_for(sid)
+            if rule is None:
+                return
+            calendars.record_publisher(con, sid, calendars.parse_nbk_next(
+                nbk.next_release(row["source_code"]), rule["at"]), feed="nbk_next_release")
     except Exception:  # noqa: BLE001 — a date we could not keep is not a failed series
         pass
 
@@ -811,7 +819,7 @@ def clear_download_caches() -> None:
     process, essential in a long-lived one (the MCP server): an lru_cache never
     expires, so without this a refresh would re-read yesterday's file."""
     import importlib
-    for name in ("bea", "fedboard", "fedfiles"):
+    for name in ("bea", "fedboard", "fedfiles", "nbk"):
         mod = importlib.import_module(f"bedrok.ingest.adapters.{name}")
         for attr in ("_download", "_table"):
             fn = getattr(mod, attr, None)
@@ -842,6 +850,13 @@ _FX = [
     ("usdgbp", "fedboard", "1/GBPUSD",
      "US dollar in pounds sterling, USDGBP (inverse of the Fed H.10 rate)",
      "GBP per USD", "the inverse of gbpusd"),
+    ("usdkzt", "nbk", "fx:5", "US dollar in tenge, USDKZT (National Bank of Kazakhstan official rate)",
+     "KZT per USD", "the National Bank of Kazakhstan's official rate, set the day before the date it "
+     "applies to, so the newest row is dated tomorrow; from 1999-10-19, and a managed rate until "
+     "the tenge floated in August 2015"),
+    ("eurkzt", "nbk", "fx:6", "Euro in tenge, EURKZT (National Bank of Kazakhstan official rate)",
+     "KZT per EUR", "the National Bank of Kazakhstan's official rate, set the day before the date it "
+     "applies to, so the newest row is dated tomorrow; from 1999-10-19"),
 ]
 FX_IDS = tuple(r[0] for r in _FX)
 FX_ALLOWANCE_DAYS = 14   # H.10 publishes weekly; see ops/validate.py
@@ -849,14 +864,15 @@ _NOT_FX = " AND series_id NOT IN (" + ", ".join(f"'{i}'" for i in FX_IDS) + ")"
 
 
 def fx_catalog_rows() -> list[dict]:
-    """The six pairs' catalog rows, knowable without a download."""
+    """The pairs' catalog rows, knowable without a download."""
     rows = []
     for sid, src, code, name, units, how in _FX:
         rows.append({
             "series_id": sid, "source": src, "source_code": code, "name": name,
             "frequency": "daily", "units": units,
             "notes": (f"{units}: {how}. "
-                      + ("" if code.startswith("1/") else f"Its inverse is {sid[3:]}{sid[:3]}. ")
+                      + ("" if code.startswith("1/") or f"{sid[3:]}{sid[:3]}" not in FX_IDS
+                         else f"Its inverse is {sid[3:]}{sid[:3]}. ")
                       + f"Stored in fx_rates as {sid.upper()} and refreshed by the fx stage."),
             "staleness_days": FX_ALLOWANCE_DAYS,
             "license": licensing.SOURCE_DEFAULT_LICENSE[src], "cache": licensing.STORE,

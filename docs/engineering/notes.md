@@ -204,6 +204,43 @@ against a refreshed store. Check discovery on a scratch store after
 
 ## Ingest and vendors
 
+**The National Bank of Kazakhstan keeps its history in its page JSON, not its
+API.** Session K1, 2026-10-28. The open-data API at data.nationalbank.kz
+(`/api/v1/data?formId=…`) is a beta, and most of its tables start in 2018 to
+2023 although their metadata says "since 1994". The statistics pages
+themselves answer `<page>/records` with the whole table in one GET, from the
+1990s. Their column names are terse (`m_3`, `d_o_i_kzt`), so read a row
+before choosing one. Their `reporting_date` is stamped at the month's end in
+recent years and on an arbitrary day inside the month in early ones, at
+times after the `published_at` beside it. **Date a row by the month of its
+`reporting_date` as written.** A rule moving days 1 to 15 to the month before
+matched the IMF's reserves in 43 months of 317; the plain month matched 255,
+and the rest differ by under about 2% (gold valuation), with no shift. M3
+equals the IMF's broad money to the million. `published_at` is Almaty local
+time and holds the latest publication: for reserves that is the final figure
+at the month's end, not the preliminary one about the 9th. The money page
+stamps its month's end at 22:00, which must stay in that month. The
+effective-rate indices are all exactly 100 in December 2016, which the
+metadata does not say. Form 299 carries REER and NEER twice a month, with
+and without oil trade, so pin `subcategory`.
+
+**A "Next:" date can be a revision, not a new period.** Each National Bank
+statistics page prints "Published on … Next …". On the reserves page, "Next"
+is often the final figure for the month just published. The date is stored
+with no period (`calendars.parse_nbk_next`), and freshness believes a
+period-less date only from three days before the next period's earliest rule
+day, so the revision falls outside and the rule answers instead. That holds
+only while every National Bank calendar rule has `lag_min` of 3 or more
+(pinned in `tests/test_calendars.py`). `Asia/Almaty` is UTC+5 since
+2024-03-01; a zone database older than tzdata 2024a says +6 and puts every
+time an hour off.
+
+**The tenge's official rate is dated the day it applies to, set the day
+before.** `usdkzt` and `eurkzt` always hold tomorrow's row, which freshness
+reports as `future_to`. The store heartbeat in `ops/doctor.py` reads EURUSD
+alone for this reason, since a max over every pair would hide a dead ECB
+feed. The rates report also sets weekend days, at the Friday rate.
+
 **Some series are dated in the future, and an incremental start must not be.**
 The ECB's Survey of Professional Forecasters stores forecasts against the
 period they forecast, so `ea_spf_infl_1y` carries observations into the next

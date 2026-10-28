@@ -2,7 +2,7 @@
 
 # Sources
 
-Bedrok is wired to 32 publishers. 26 need no key at all; the others take a free key, entered in Bedrok's settings or its home folder's `.env` (see [INSTALL](INSTALL.md)). Every series is fetched from its publisher by your own copy of Bedrok; nothing is redistributed. Licence classes and what they ask of you are in [LICENSES](LICENSES.md).
+Bedrok is wired to 33 publishers. 27 need no key at all; the others take a free key, entered in Bedrok's settings or its home folder's `.env` (see [INSTALL](INSTALL.md)). Every series is fetched from its publisher by your own copy of Bedrok; nothing is redistributed. Licence classes and what they ask of you are in [LICENSES](LICENSES.md).
 
 | Publisher | Series | Key | Licence | Stored | Terms |
 |---|---|---|---|---|---|
@@ -38,6 +38,7 @@ Bedrok is wired to 32 publishers. 26 need no key at all; the others take a free 
 | **Statistisches Bundesamt (Destatis)** (`destatis`) | 2 curated | [`DESTATIS_API_KEY`](https://www.destatis.de/EN/Service/OpenData/api-webservice.html) | reuse with attribution | yes | [terms](https://www.destatis.de/EN/Service/Legal-Notice/_node.html) |
 | **Statistics Bureau of Japan / e-Stat** (`estat`) | 4 curated | [`ESTAT_API_KEY`](https://www.e-stat.go.jp/api/en) | reuse with attribution | yes | [terms](https://www.e-stat.go.jp/en/terms-of-use) |
 | **Ministry of Finance, Japan** (`mof_jp`) | 1 curated | none | reuse with attribution | yes | [terms](https://www.mof.go.jp/english/about_mof/notice/index.html) |
+| **National Bank of Kazakhstan** (`nbk`) | 11 curated | none | reuse with attribution | yes | [terms](https://nationalbank.kz/en/page/data-usage-terms) |
 
 ## What each publisher covers
 
@@ -420,16 +421,32 @@ Bedrok is wired to 32 publishers. 26 need no key at all; the others take a free 
 
 - `jp_10y_yield` — Japan 10-year government bond yield (MOF)
 
+### National Bank of Kazakhstan
+
+- `kz_base_rate` — Kazakhstan base rate (National Bank of Kazakhstan)
+- `kz_reserves_gross` — Kazakhstan gross international reserves (National Bank of Kazakhstan)
+- `kz_reserves_net` — Kazakhstan net international reserves (National Bank of Kazakhstan)
+- `kz_national_fund_fx_assets` — Kazakhstan National Fund foreign currency assets (National Bank of Kazakhstan)
+- `kz_m2` — Kazakhstan money supply M2 (National Bank of Kazakhstan)
+- `kz_m3` — Kazakhstan broad money M3 (National Bank of Kazakhstan)
+- `kz_deposit_rate_households_kzt` — Kazakhstan weighted average rate on new tenge deposits of individuals (National Bank of Kazakhstan)
+- `kz_deposit_rate_firms_kzt` — Kazakhstan weighted average rate on new tenge deposits of companies (National Bank of Kazakhstan)
+- `kz_reer` — Kazakhstan real effective exchange rate of the tenge (National Bank of Kazakhstan)
+- `kz_neer` — Kazakhstan nominal effective exchange rate of the tenge (National Bank of Kazakhstan)
+- `kz_inflation_expectations` — Kazakhstan households' inflation expectations (National Bank of Kazakhstan)
+
 ## Ids that point elsewhere
 
 These ids still answer, with `alias_of` naming the one Bedrok keeps: the same number from the same dataset is held once.
 
 - `EURGBP` → `eurgbp`
+- `EURKZT` → `eurkzt`
 - `EURUSD` → `eurusd`
 - `GBPEUR` → `gbpeur`
 - `GBPUSD` → `gbpusd`
 - `USDEUR` → `usdeur`
 - `USDGBP` → `usdgbp`
+- `USDKZT` → `usdkzt`
 - `cons_conf_ea20` → `cons_conf_ea21`
 - `esi_ea20` → `esi_ea21`
 - `gdp_annual_uk` → `uk_gdp_annual`
