@@ -767,5 +767,8 @@ Owner-side items are in `profile/STATE-private.md`.
     PPI flows are years stale. JODI is the only source found that splits
     crude from condensate, but its data licence is unresolved (K4). KASE's
     rates and yields are copy-by-permission. About 35 series for K1 to K3.
-    Decide whether to build it, and whether K3 goes first as the quick win.
+    **Size: three build sessions** (K1; K2; K3 with K4) **plus a short
+    release**, four if Taldau's parameter discovery spills. K3 alone can ship
+    first in half a session. JODI's licence is a question for the owner to
+    put to JODI before K4. Decide whether to build it, and in which order.
 

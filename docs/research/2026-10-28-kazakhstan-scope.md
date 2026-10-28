@@ -239,6 +239,36 @@ the 2000s).
 With K1 to K3, Kazakhstan has about 35 series, which matches Bedrok's
 mid-sized countries.
 
+## How many sessions
+
+**Three build sessions, plus a short release.** Four if the Taldau work
+spills, which is the likeliest overrun.
+
+The yardstick is what past sessions held. Session 7a wired nine publishers
+and 22 series in one session, but each of its adapters had one clean API and
+came to 40 to 110 lines. Session H wrote four calendar parsers and their
+tests in one session, about 560 lines. Each Kazakh adapter below is heavier
+than any 7a adapter, so each gets a session of its own.
+
+| session | what it holds | why that size |
+|---|---|---|
+| **K1** | National Bank adapter, about 12 series; the `kz` geography; a USDKZT pair in `fx_rates` and EURKZT derived from it and EURUSD; release dates from the pages' "Next" line | Three interfaces in one adapter (`/records` JSON, the open-data API, the rates XML and HTML), a field-name mapping per table, the FX stage touched, and a new date parser |
+| **K2** | Taldau adapter, about 12 series; quarterly nominal GDP by differencing the year-to-date levels; the HTML release calendar | The adapter is generic, but every series needs its measure, term and period ids discovered by hand, and a wrong id answers with an empty body. The year-to-date GDP needs a design call |
+| **K3 + K4** | The IMF and Eurostat rows (about 12, no new code); the `am` and `kg` codes for the mirror-trade rows; the two warnings pointed at series; JODI's crude and condensate if its licence is settled by then | Rows are quick. JODI is a small bulk adapter. Together they fill one session; without JODI it is half of one |
+| **release** | Bump the patch, `publish.yml` builds the wheel and the bundle, the smoke run from PyPI | As for 0.3.1 to 0.3.3: a short closing session or the tail of K3 |
+
+Each build session ends with `bedrok refresh` against the real store, because
+each changes an ingest path (CLAUDE.md rule 10).
+
+**Ways to make it fewer.** K3 alone can ship first, in half a session, and
+gives Kazakhstan about 12 series straight away. Folding K3 into K1 makes it
+two long sessions instead of three, at the risk of K1 overrunning, since it is
+already the largest.
+
+**What has to happen outside a session.** JODI's data licence needs an answer
+from JODI or a data-use statement found on its site. That is the owner's to
+ask. Until then K4 waits, and the crude and condensate split stays a warning.
+
 ## Changes outside the catalog
 
 - **Geography.** Add `kz` to `bedrok/core/geography.py`: `CODES`
