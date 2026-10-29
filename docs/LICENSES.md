@@ -235,6 +235,12 @@ Source: Bureau of National Statistics of the Agency for Strategic Planning and R
 
 Terms: <https://stat.gov.kz/en/description/>
 
+### Joint Organisations Data Initiative (JODI-Oil World Database)
+
+Source: International Energy Forum (IEF). Joint Organizations Data Initiative (JODI) Database. JODI Oil and Gas World Databases: www.jodidata.org.
+
+Terms: <https://www.jodidata.org/oil/support/user-guide.aspx>
+
 ### DG ECFIN (via Eurostat)
 
 Source: European Commission, Directorate-General for Economic and Financial Affairs (DG ECFIN) Business and Consumer Surveys, via Eurostat. Reused under Commission Decision 2011/833/EU (CC BY 4.0).

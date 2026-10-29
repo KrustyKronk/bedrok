@@ -101,6 +101,7 @@ An EBRD working paper (No. 276, February 2023) found that after EU sanctions on 
 
 - Cross-check: Exporter-side mirror statistics, such as Eurostat Comext EU exports to each country.
 - Source: [European Bank for Reconstruction and Development](https://www.ebrd.com/home/news-and-events/publications/economics/working-papers/the-eurasian-roundabout.html)
+- Bedrok series: `kz_eu_exports`, `kz_eu_imports`
 
 ### Central Asia (remittances from Russia): Cross-border Transfers of Individuals in Breakdown by Countries, Bank of Russia (2022 onward)
 
@@ -282,8 +283,9 @@ Many OPEC member governments treat production data as confidential or publish fi
 
 Kazakhstan's output is often reported as crude oil and gas condensate combined, while its OPEC+ target is compared with crude alone. For March 2025 a deputy energy minister told Argus crude was 1.79 mb/d and condensate 0.29 mb/d, against a 1.468 mb/d target. Combined figures overstate the crude volume relevant to OPEC+ targets by roughly 0.3 mb/d (2025); crude-only figures understate total liquids supply.
 
-- Cross-check: US EIA International Energy Statistics, which report crude including lease condensate and other liquids separately.
+- Cross-check: JODI's oil database, which reports Kazakhstan's crude and NGL (condensate) separately from 2016 (kz_crude_production, kz_ngl_production); US EIA International Energy Statistics, which report crude including lease condensate and other liquids separately.
 - Source: [Argus Media](https://www.argusmedia.com/en/news-and-insights/latest-market-news/2676247-kazakhstan-continues-to-massively-exceed-opec-target)
+- Bedrok series: `kz_crude_production`, `kz_ngl_production`
 
 ### Tanzania: All official statistics, National Bureau of Statistics Tanzania (Statistics Act 2015) (2018–2019-06)
 

@@ -2,13 +2,13 @@
 
 # Sources
 
-Bedrok is wired to 34 publishers. 28 need no key at all; the others take a free key, entered in Bedrok's settings or its home folder's `.env` (see [INSTALL](INSTALL.md)). Every series is fetched from its publisher by your own copy of Bedrok; nothing is redistributed. Licence classes and what they ask of you are in [LICENSES](LICENSES.md).
+Bedrok is wired to 35 publishers. 29 need no key at all; the others take a free key, entered in Bedrok's settings or its home folder's `.env` (see [INSTALL](INSTALL.md)). Every series is fetched from its publisher by your own copy of Bedrok; nothing is redistributed. Licence classes and what they ask of you are in [LICENSES](LICENSES.md).
 
 | Publisher | Series | Key | Licence | Stored | Terms |
 |---|---|---|---|---|---|
 | **Federal Reserve Bank of St. Louis — FRED** (`fred`) | 9 curated | [`FRED_API_KEY`](https://fredaccount.stlouisfed.org/apikeys) | FRED terms (never stored) | no — fetched live | [terms](https://fred.stlouisfed.org/legal/) |
 | **European Central Bank** (`ecb`) | 21 curated | none | reuse with attribution | yes | [terms](https://www.ecb.europa.eu/services/disclaimer/html/index.en.html) |
-| **Eurostat** (`eurostat`) | 10 curated + 31 families | none | reuse with attribution | yes | [terms](https://ec.europa.eu/eurostat/web/main/help/copyright-notice) |
+| **Eurostat** (`eurostat`) | 12 curated + 31 families | none | reuse with attribution | yes | [terms](https://ec.europa.eu/eurostat/web/main/help/copyright-notice) |
 | **U.S. Energy Information Administration** (`eia`) | 8 curated | [`EIA_API_KEY`](https://www.eia.gov/opendata/register.php) | public domain | yes | [terms](https://www.eia.gov/about/copyrights_reuse.php) |
 | **Office for National Statistics** (`ons`) | 10 curated | none | reuse with attribution | yes | [terms](https://www.ons.gov.uk/help/termsandconditions) |
 | **Bank of England** (`boe`) | 9 curated | none | reuse with attribution | yes | [terms](https://www.bankofengland.co.uk/legal) |
@@ -23,7 +23,7 @@ Bedrok is wired to 34 publishers. 28 need no key at all; the others take a free 
 | **U.S. Commodity Futures Trading Commission — Commitments of Traders** (`cftc`) | 1 family | none | public domain | yes | [terms](https://www.cftc.gov/) |
 | **Bedrok (computed from stored series)** (`derived`) | 36 families | none | reuse with attribution | yes |  |
 | **Bank for International Settlements** (`bis`) | 17 curated | none | reuse with attribution | yes | [terms](https://data.bis.org/help/legal) |
-| **International Monetary Fund** (`imf`) | 7 curated | none | reuse with attribution | yes | [terms](https://www.imf.org/en/About/copyright-and-terms) |
+| **International Monetary Fund** (`imf`) | 16 curated | none | reuse with attribution | yes | [terms](https://www.imf.org/en/About/copyright-and-terms) |
 | **Istituto Nazionale di Statistica (Istat)** (`istat`) | 1 curated | none | reuse with attribution | yes | [terms](https://www.istat.it/note-legali/) |
 | **Institut national de la statistique et des études économiques (INSEE)** (`insee`) | 3 curated | none | reuse with attribution | yes | [terms](https://www.insee.fr/fr/information/2008466) |
 | **Australian Bureau of Statistics** (`abs`) | 2 curated | none | reuse with attribution | yes | [terms](https://www.abs.gov.au/website-privacy-copyright-and-disclaimer) |
@@ -40,6 +40,7 @@ Bedrok is wired to 34 publishers. 28 need no key at all; the others take a free 
 | **Ministry of Finance, Japan** (`mof_jp`) | 1 curated | none | reuse with attribution | yes | [terms](https://www.mof.go.jp/english/about_mof/notice/index.html) |
 | **National Bank of Kazakhstan** (`nbk`) | 11 curated | none | reuse with attribution | yes | [terms](https://nationalbank.kz/en/page/data-usage-terms) |
 | **Bureau of National Statistics of Kazakhstan** (`bns`) | 11 curated | none | reuse with attribution | yes | [terms](https://stat.gov.kz/en/description/) |
+| **Joint Organisations Data Initiative (JODI-Oil World Database)** (`jodi`) | 2 curated | none | reuse with attribution | yes | [terms](https://www.jodidata.org/oil/support/user-guide.aspx) |
 
 ## What each publisher covers
 
@@ -91,6 +92,8 @@ Bedrok is wired to 34 publishers. 28 need no key at all; the others take a free 
 - `de_unemployment` — Germany unemployment rate
 - `ea_gdp_qoq` — Euro area real GDP QoQ
 - `es_gdp_qoq` — Spain real GDP QoQ
+- `kz_eu_exports` — Kazakhstan goods imports from the EU, as EU exports (Eurostat)
+- `kz_eu_imports` — Kazakhstan goods exports to the EU, as EU imports (Eurostat)
 - Broad-Europe HICP annual rates (hicp_yoy_*)
 - EMU 10y govt bond yields (ltgov_yield_*, 13 geographies)
 - Economic Sentiment Indicator (esi_*, 13 geographies)
@@ -346,6 +349,15 @@ Bedrok is wired to 34 publishers. 28 need no key at all; the others take a free 
 - `weo_gdp_growth_jp` — Japan real GDP growth, IMF World Economic Outlook
 - `weo_gdp_growth_ea` — Euro area real GDP growth, IMF World Economic Outlook
 - `weo_gdp_growth_cn` — China real GDP growth, IMF World Economic Outlook
+- `kz_current_account` — Kazakhstan current account balance (IMF balance of payments)
+- `kz_niip` — Kazakhstan net international investment position (IMF)
+- `weo_gdp_growth_kz` — Kazakhstan real GDP growth, IMF World Economic Outlook
+- `weo_inflation_kz` — Kazakhstan consumer price inflation, annual average, IMF World Economic Outlook
+- `weo_gov_debt_kz` — Kazakhstan general government gross debt, IMF World Economic Outlook
+- `weo_current_account_kz` — Kazakhstan current account balance, IMF World Economic Outlook
+- `mcdreo_nonoil_gdp_growth_kz` — Kazakhstan non-oil real GDP growth, IMF Regional Economic Outlook
+- `mcdreo_oil_gdp_growth_kz` — Kazakhstan oil GDP growth, IMF Regional Economic Outlook
+- `mcdreo_nonoil_balance_kz` — Kazakhstan non-oil fiscal balance, IMF Regional Economic Outlook
 
 ### Istituto Nazionale di Statistica (Istat)
 
@@ -449,6 +461,11 @@ Bedrok is wired to 34 publishers. 28 need no key at all; the others take a free 
 - `kz_wage_nominal` — Kazakhstan average monthly nominal wage (Bureau of National Statistics)
 - `kz_house_prices_new` — Kazakhstan new apartment prices (Bureau of National Statistics)
 - `kz_house_prices_resale` — Kazakhstan resale apartment prices (Bureau of National Statistics)
+
+### Joint Organisations Data Initiative (JODI-Oil World Database)
+
+- `kz_crude_production` — Kazakhstan crude oil production (JODI)
+- `kz_ngl_production` — Kazakhstan natural gas liquids (condensate) production (JODI)
 
 ## Ids that point elsewhere
 

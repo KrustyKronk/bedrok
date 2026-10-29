@@ -19,6 +19,7 @@ GRAMMAR = [
     r"percent",
     r"percent annualised",
     r"percent of GDP",
+    r"percent of non-oil GDP",                       # an oil producer's fiscal balance
     r"percent change on (previous|a year earlier) (month|quarter)",
     r"percentage points( of GDP)?",
     r"net percent",
@@ -65,6 +66,8 @@ def dimension(units: str) -> str:
         return "rate"
     if u in ("percent of GDP", "percentage points of GDP"):
         return "share of GDP"
+    if u == "percent of non-oil GDP":
+        return "share of non-oil GDP"
     m = _MONEY.fullmatch(u)
     if m:
         return f"money:{m.group(2)}"

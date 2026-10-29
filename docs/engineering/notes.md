@@ -204,6 +204,37 @@ against a refreshed store. Check discovery on a scratch store after
 
 ## Ingest and vendors
 
+**The IMF answers balance of payments in whole dollars.** Session K3,
+2026-10-29. BOP and IIP observations come as full US dollars (3171029227 for
+a quarter) with the display scale only in a `SCALE` attribute (6). Bedrok's
+units grammar needs a scale, so an SDMX `source_code` may end in
+`#scale=1e-6`, which `sdmx._split_scale` strips before the request and
+applies after. Kazakhstan's `QGFS` is a cash statement only (no net lending),
+and the Middle East and Central Asia outlook (`IMF.MCD,MCDREO`) is where the
+oil and non-oil splits live.
+
+**Eurostat's monthly trade-by-partner dataset is not every partner.**
+`ext_st_eu27_2020sitc` answers Kazakhstan and Russia but no values for
+Armenia or the Kyrgyz Republic: the dimension exists and every cell is
+empty. The Comext dissemination paths tried (`DS-018995`, `DS-059322`)
+refused. Check the values, not just the status, before adding a partner.
+
+**A region's warning needs the covered-country gate too.** The mirror-trade
+warning's country is "Caucasus and Central Asia (mirror trade)" with no ISO
+code, so once `_EXTRA` named Kazakhstan for it, the place alone would have
+answered every Kazakh question, oil included. `warnings._covered` treats a
+matched name that maps to a covered country like the row's own ISO code, so
+the warning must also be about what was asked.
+
+**JODI is one CSV per year, and Kazakhstan's condensate starts in 2016.**
+Session K4. `annual-csv/primary/<year>.csv`, with the current year as
+`primaryyear<year>.csv`, 8 to 12 MB each; the downloads page's zip is a
+Beyond 20/20 binary. A new year's file exists only after the first update of
+that year (about the 20th), so a missing current year is no rows, not an
+error. Kazakhstan's NGL is "N/A" in 2002 and about 7 kb/d in 2015, then about
+380 from January 2016; both JODI series start there. Kazakh months reach JODI
+about three months after they end, and every row carries assessment code 3.
+
 **Taldau, Kazakhstan's statistics database, is an API with traps.** Session K2,
 2026-10-29. `GetIndexTreeData` answers rows whose values sit in keys
 `yMMYYYY`, where MM is the period's last month (a quarter's third). A wrong

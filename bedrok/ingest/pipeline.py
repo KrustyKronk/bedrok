@@ -819,7 +819,7 @@ def clear_download_caches() -> None:
     process, essential in a long-lived one (the MCP server): an lru_cache never
     expires, so without this a refresh would re-read yesterday's file."""
     import importlib
-    for name in ("bea", "fedboard", "fedfiles", "nbk", "bns"):
+    for name in ("bea", "fedboard", "fedfiles", "nbk", "bns", "jodi"):
         mod = importlib.import_module(f"bedrok.ingest.adapters.{name}")
         for attr in ("_download", "_table"):
             fn = getattr(mod, attr, None)
