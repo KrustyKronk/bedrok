@@ -16,7 +16,7 @@ def test_defaults(tmp_path: Path, monkeypatch):
     pairs = [p[0] for p in config.fx_pairs()]
     assert pairs[:3] == ["EURUSD", "EURGBP", "GBPUSD"]
     assert set(pairs) == {"EURUSD", "EURGBP", "GBPUSD",
-                          "USDEUR", "GBPEUR", "USDGBP"}
+                          "USDEUR", "GBPEUR", "USDGBP", "USDKZT", "EURKZT"}
 
 
 def test_toml_overrides(tmp_path: Path):

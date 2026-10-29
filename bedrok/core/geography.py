@@ -23,7 +23,7 @@ CODES = {
     "de": "Germany", "fr": "France", "it": "Italy", "es": "Spain",
     "nl": "Netherlands", "be": "Belgium", "at": "Austria", "pt": "Portugal",
     "ie": "Ireland", "el": "Greece", "fi": "Finland", "se": "Sweden",
-    "no": "Norway", "dk": "Denmark",
+    "no": "Norway", "dk": "Denmark", "kz": "Kazakhstan",
 }
 
 # Words a person types for a place → its code. Two-letter country codes that
@@ -44,6 +44,7 @@ NAMES = {
     "greece": "el", "greek": "el", "finland": "fi", "finnish": "fi",
     "sweden": "se", "swedish": "se", "norway": "no", "norwegian": "no",
     "denmark": "dk", "danish": "dk",
+    "kazakhstan": "kz", "kazakh": "kz", "kazakhstani": "kz",
 }
 
 # Places Bedrok carries only as the last token of a broad family (Eurostat's
@@ -88,6 +89,12 @@ _PREFIX = {"ecb": "ea"}
 ISO2 = {**{c: c.upper() for c in CODES}, **{c: c.upper() for c in FAMILY_CODES},
         "uk": "GB", "el": "GR", "ea": "", "eu": ""}
 
+# An exchange rate is about the country of its quote currency when that
+# currency has one country: usdkzt is Kazakhstan's. The euro, the dollar and
+# sterling are left out on purpose: "euro area exchange rate" must not bring
+# every pair into a search.
+_QUOTE_CURRENCY = {"kzt": "kz"}
+
 # Sources whose series are not about a country.
 _PLACELESS_SOURCES = {"worldbank", "cftc"}
 
@@ -97,6 +104,8 @@ def of_series(series_id: str, source: str | None = None) -> str | None:
     if source in _PLACELESS_SOURCES:
         return None
     sid = series_id.lower()
+    if re.fullmatch(r"[a-z]{6}", sid) and sid[3:] in _QUOTE_CURRENCY:
+        return _QUOTE_CURRENCY[sid[3:]]
     first = sid.split("_", 1)[0]
     if first in CODES:
         return first

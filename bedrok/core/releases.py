@@ -116,6 +116,13 @@ FEEDS = {
                  "label": "BEA's release schedule"},
     "ons_next_release": {"publisher": "ONS", "tz": "Europe/London", "fetched": False,
                          "label": "the ONS's next-release date"},
+    # The National Bank of Kazakhstan prints "Next: dd.mm.yyyy" on each
+    # statistics page; it is read after the page's series is fetched, one
+    # extra request per page. Asia/Almaty is UTC+5 since 2024-03-01 (tzdata
+    # 2024a); an older zone database says +6.
+    "nbk_next_release": {"publisher": "National Bank of Kazakhstan", "tz": "Asia/Almaty",
+                         "fetched": False, "extra_request": True,
+                         "label": "the National Bank of Kazakhstan's next-release date"},
     "statcan_json": {"publisher": "Statistics Canada", "tz": "America/Toronto",
                      "fetched": True, "label": "Statistics Canada's release schedule"},
     "ine_ics": {"publisher": "INE", "tz": "Europe/Madrid", "fetched": True,

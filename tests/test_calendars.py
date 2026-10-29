@@ -317,3 +317,57 @@ def test_the_fed_page_after_next_is_used_only_when_it_is_up(monkeypatch):
     assert [u.rsplit("/", 1)[1] for u in asked] == [
         "2026-november.htm", "2026-december.htm", "2027-january.htm"]
     assert len(df) == 18                               # November's rows read twice, as December's
+
+
+# ---- session K1: the National Bank of Kazakhstan's "Next:" dates ------------------
+
+KZ_NOW = datetime(2026, 10, 28, 9, tzinfo=timezone.utc)
+
+
+def _kz(sid, held=date(2026, 9, 1)):
+    return _con([{"series_id": sid, "source": "nbk", "source_code": "records:x/y#z", "name": sid,
+                  "frequency": "monthly", "staleness_days": 100}], {sid: held})
+
+
+def test_the_national_bank_date_is_kept_at_the_rule_time_in_almaty():
+    entry = calendars.parse_nbk_next(date(2026, 11, 16), releases.rule_for("kz_m3")["at"])
+    assert entry == {"period": None, "due_at": datetime(2026, 11, 16, 5, 0)}   # 10:00 at UTC+5
+    assert calendars.parse_nbk_next(None, releases.rule_for("kz_m3")["at"]) is None
+    con = _kz("kz_m3")
+    calendars.record_publisher(con, "kz_m3", entry, KZ_NOW, feed="nbk_next_release")
+    nr = freshness.assess(con, "kz_m3", now=KZ_NOW)["next_release"]
+    assert nr["due_at"] == "2026-11-16T10:00:00+05:00"
+    assert nr["publisher"] == "National Bank of Kazakhstan" and nr["approximate"] is False
+
+
+def test_a_reserves_revision_date_is_not_taken_for_the_next_month():
+    """The reserves page's "Next: 30.10.2026" is September's final figure, a
+    month already held; October's first figure is due about 9 November."""
+    con = _kz("kz_reserves_gross")
+    calendars.record_publisher(con, "kz_reserves_gross", calendars.parse_nbk_next(
+        date(2026, 10, 30), releases.rule_for("kz_reserves_gross")["at"]), KZ_NOW,
+        feed="nbk_next_release")
+    nr = freshness.assess(con, "kz_reserves_gross", now=KZ_NOW)["next_release"]
+    assert nr["approximate"] is True and nr["period"] == "October 2026"
+
+
+def test_every_national_bank_calendar_series_waits_three_days_into_its_window():
+    """A period-less date is believed from three days before the rule's
+    earliest day, so a rule starting sooner would let a revision date through."""
+    with open(releases.CALENDAR_CSV, newline="", encoding="utf-8") as f:
+        sids = [r["series_id"] for r in csv.DictReader(f) if r["feed"] == "nbk_next_release"]
+    assert len(sids) == 7
+    for sid in sids:
+        assert releases.rule_for(sid)["lag_min"] >= 3, sid
+
+
+def test_the_pipeline_asks_the_page_only_for_a_series_with_a_calendar(monkeypatch):
+    from bedrok.ingest.adapters import nbk
+    asked = []
+    monkeypatch.setattr(nbk, "next_release", lambda code: asked.append(code) or date(2026, 11, 16))
+    con = _kz("kz_m3")
+    pipeline._record_next_release(con, "kz_m3", {"source": "nbk", "source_code": "records:a/b#m_3"})
+    pipeline._record_next_release(con, "kz_reer", {"source": "nbk", "source_code": "api:299?c=x"})
+    assert asked == ["records:a/b#m_3"]
+    got = con.execute("SELECT feed, release_name, due_at FROM release_calendar").fetchall()
+    assert got == [("nbk_next_release", "kz_m3", datetime(2026, 11, 16, 5, 0))]

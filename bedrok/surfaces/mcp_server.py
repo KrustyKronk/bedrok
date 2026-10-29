@@ -495,7 +495,8 @@ def search_series(
     de_, …), then the measure — e.g. us_10y, ea_hicp_yoy, jp_policy_rate; the
     bulk families end with the geography instead (hicp_core_es, gdp_qoq_de).
     Exchange rates are series too: eurusd, eurgbp, gbpusd and their inverses
-    (usdeur, gbpeur, usdgbp), each in quote currency per 1 unit of the base.
+    (usdeur, gbpeur, usdgbp), and the tenge's usdkzt and eurkzt, each in quote
+    currency per 1 unit of the base.
     Empty text lists everything (with source/frequency filters); to walk the
     whole catalog or get counts, use list_series. Returns the best matches with
     their frequency, units, whether they are stored or fetched live, and their

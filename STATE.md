@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-28: 0.3.3 is released and installed in Claude Desktop; Kazakhstan is scoped (item 16), not built.** Bedrok is a local MCP server and store of
+**Updated 2026-10-28: 0.3.3 is released and installed in Claude Desktop; session K1 (Kazakhstan's National Bank) is built on a branch, not released (item 16).** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -55,6 +55,19 @@ revisions and vintages**, stays deferred.
 **Owner-side items** — the ones that need the owner's accounts or describe one
 machine — live in `profile/STATE-private.md`, which is gitignored. This file
 holds only what any reader may see.
+
+**Session K1 in one paragraph.** Bedrok carries Kazakhstan for the first
+time: 13 series from the National Bank of Kazakhstan, a new keyless adapter
+(`nbk`). They are the base rate (from 2015), gross and net reserves and the
+National Fund's FX assets (from 1993 and 2001), M2 and M3 (from 1994), tenge
+deposit rates for households and companies (from 1996), the real and nominal
+effective rates (from 1995, Dec-2016=100) and households' inflation
+expectations (from 2016). The tenge joins the FX layer as `usdkzt` and
+`eurkzt`, both the bank's own official rates, so no cross is derived. Seven
+of the series read the bank's own next-release date from their statistics
+page. The month each figure belongs to was checked against the IMF: M3
+equals its broad money to the million. Backfilled into the repo store, smoke
+40/40, validate and doctor clean. Not yet released.
 
 **Session H in one paragraph.** Four more publishers give Bedrok their
 own release dates, so 25 more series say "scheduled for" with the publisher
@@ -755,20 +768,27 @@ Owner-side items are in `profile/STATE-private.md`.
     maintenance loop: triage source requests from the issue form, retire stale
     publishers, a second pass over the register for the next thirty).
 
-16. **Kazakhstan: scoped 2026-10-28, not built, the owner's call.** Bedrok
-    carries no Kazakh series, only three warnings. The scope, with every
-    endpoint probed live, is `docs/research/2026-10-28-kazakhstan-scope.md`.
-    In short: the National Bank (`/records` JSON per statistics page, full
-    history from 1993; an open-data API with the base rate from 2015) and the
-    Bureau of National Statistics (the Taldau JSON API, CPI from 2011) are
-    key-free and reusable with credit, and need one adapter each (K1, K2).
-    The IMF's SDMX flows add the external accounts, fiscal and WEO rows with
-    no new code (K3); its Kazakh interest-rate, quarterly GDP, labour and
-    PPI flows are years stale. JODI is the only source found that splits
-    crude from condensate, but its data licence is unresolved (K4). KASE's
-    rates and yields are copy-by-permission. About 35 series for K1 to K3.
-    **Size: three build sessions** (K1; K2; K3 with K4) **plus a short
-    release**, four if Taldau's parameter discovery spills. K3 alone can ship
-    first in half a session. JODI's licence is a question for the owner to
-    put to JODI before K4. Decide whether to build it, and in which order.
+16. **Kazakhstan: K1 built 2026-10-28; K2 is next.** The scope is
+    `docs/research/2026-10-28-kazakhstan-scope.md`; K1 is described at the
+    top of this file. What is left:
+    - **K2, the Taldau adapter** (the Bureau of National Statistics): CPI
+      headline and core from 2011, GDP (quarterly only year to date),
+      unemployment, wages, industrial output, house prices. One session.
+    - **K3, rows only:** the IMF's current account, net IIP, `QGFS` and WEO
+      rows for KAZ, and Eurostat's EU exports to Kazakhstan, Armenia and the
+      Kyrgyz Republic. Do it with the mirror-trade warning, which "kazakhstan"
+      does not find: its country is "Caucasus and Central Asia (mirror
+      trade)" and `warnings._EXTRA` has no names for it.
+    - **K4, JODI's crude and condensate,** after the owner asks JODI about
+      its data licence.
+    - **Event series have no calendar.** Release rules exclude `event`, so
+      `kz_base_rate`, like the ECB's rates, has no next decision date. The
+      bank publishes its decision schedule (a page whose id changes each
+      year). The owner's call whether event calendars are worth a design.
+    - **Small things seen in K1:** "kazakhstan exchange rate" ranks the REER
+      and NEER above `usdkzt` and `eurkzt`. A percentile of an event series
+      counts decisions, not time spent at each rate (true of the ECB's rows
+      too). There is no GBPKZT. Inflation expectations have no release rule,
+      because the bank states no timing for them.
+    - **Release:** K1 goes out with the next patch.
 

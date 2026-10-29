@@ -32,3 +32,10 @@ us_sloos_cni_tightening,fedboard_pages,SLOOS
 us_sloos_cni_demand,fedboard_pages,SLOOS
 us_sloos_cni_small,fedboard_pages,SLOOS
 us_sloos_cc_tightening,fedboard_pages,SLOOS
+kz_reserves_gross,nbk_next_release,
+kz_reserves_net,nbk_next_release,
+kz_national_fund_fx_assets,nbk_next_release,
+kz_m2,nbk_next_release,
+kz_m3,nbk_next_release,
+kz_deposit_rate_households_kzt,nbk_next_release,
+kz_deposit_rate_firms_kzt,nbk_next_release,

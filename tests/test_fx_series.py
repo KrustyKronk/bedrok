@@ -25,7 +25,7 @@ def _fake_fetchers(monkeypatch, calls):
             calls.append((source, code))
             return _daily(30, TODAY - timedelta(days=1), 1.25 if source == "fedboard" else 1.10)
         return fetch
-    for s in ("ecb", "fedboard"):
+    for s in ("ecb", "fedboard", "nbk"):
         monkeypatch.setitem(pipeline.MACRO_FETCHERS, s, fake(s))
         monkeypatch.setenv(f"BEDROK_PACE_{s.upper()}", "0")
 
@@ -102,3 +102,18 @@ def test_a_pair_answers_in_every_series_tool(fx_srv):
 
 def test_a_place_does_not_bring_the_pairs_into_a_search(fx_srv):
     assert _call("search_series", {"text": "euro area exchange rate"})["matches"] == []
+
+
+def test_the_tenge_pairs_are_the_national_banks_own_rates_with_no_inverse():
+    """Session K1: both tenge rates are fetched, so EURKZT needs no cross, and
+    neither claims an inverse Bedrok does not carry."""
+    from bedrok.core import geography
+    rows = {r["series_id"]: r for r in pipeline.fx_catalog_rows()}
+    assert rows["usdkzt"]["units"] == "KZT per USD" and rows["eurkzt"]["units"] == "KZT per EUR"
+    assert rows["usdkzt"]["source"] == rows["eurkzt"]["source"] == "nbk"
+    assert "inverse is" not in rows["usdkzt"]["notes"] and "inverse is" not in rows["eurkzt"]["notes"]
+    assert "Its inverse is usdeur" in rows["eurusd"]["notes"]
+    assert ("EURKZT", "nbk", "fx:6") in config.fx_pairs()
+    # a tenge rate is Kazakhstan's; a euro or dollar rate is still no country's
+    assert geography.of_series("usdkzt") == geography.of_series("eurkzt") == "kz"
+    assert geography.of_series("eurusd") is None and geography.of_series("usdeur") is None

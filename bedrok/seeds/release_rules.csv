@@ -61,3 +61,12 @@ us_sloos_cni_tightening,,quarterly,-61,-52,mon,14:00,America/New_York,Fed Board 
 us_sloos_cni_demand,,quarterly,-61,-52,mon,14:00,America/New_York,Fed Board SLOOS
 us_sloos_cni_small,,quarterly,-61,-52,mon,14:00,America/New_York,Fed Board SLOOS
 us_sloos_cc_tightening,,quarterly,-61,-52,mon,14:00,America/New_York,Fed Board SLOOS
+kz_reserves_gross,,monthly,7,12,,10:00,Asia/Almaty,"NBK reserves, preliminary: about the 9th of the next month, revised at its end. https://nationalbank.kz/en/page/statistika"
+kz_reserves_net,,monthly,7,12,,10:00,Asia/Almaty,NBK reserves release
+kz_national_fund_fx_assets,,monthly,7,12,,10:00,Asia/Almaty,NBK reserves release
+kz_m2,,monthly,13,20,,10:00,Asia/Almaty,NBK money base and aggregates: mid next month. https://nationalbank.kz/en/page/statistika
+kz_m3,,monthly,13,20,,10:00,Asia/Almaty,NBK money aggregates release
+kz_deposit_rate_households_kzt,,monthly,22,28,,09:10,Asia/Almaty,NBK deposit rates: about the 25th of the next month. https://nationalbank.kz/en/page/statistika
+kz_deposit_rate_firms_kzt,,monthly,22,28,,09:10,Asia/Almaty,NBK deposit rates release
+kz_reer,,monthly,25,41,,10:00,Asia/Almaty,NBK effective exchange rates: no later than the 10th of the second month (the bank's metadata for form 299).
+kz_neer,,monthly,10,41,,10:00,Asia/Almaty,NBK effective exchange rates: the nominal index often comes a month sooner than the real one.

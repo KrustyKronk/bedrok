@@ -112,6 +112,11 @@ def fx_pairs() -> list[tuple[str, str, str]]:
         ("EURUSD", "ecb", "EXR/D.USD.EUR.SP00.A"),
         ("EURGBP", "ecb", "EXR/D.GBP.EUR.SP00.A"),
         ("GBPUSD", "fedboard", "H10:RXI$US_N.B.UK"),  # FRED's DEXUSUK is this H.10 series
+        # The tenge (session K1): the National Bank of Kazakhstan's own official
+        # rates, both of them, so EURKZT needs no cross through the dollar.
+        # No reciprocals: nothing asks for tenge-based rates.
+        ("USDKZT", "nbk", "fx:5"),
+        ("EURKZT", "nbk", "fx:6"),
     ]
     derived = [
         ("USDEUR", "derived", "1/EURUSD"),

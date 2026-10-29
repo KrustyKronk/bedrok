@@ -223,6 +223,12 @@ Source: Ministry of Finance, Japan, JGB interest rates (https://www.mof.go.jp/),
 
 Terms: <https://www.mof.go.jp/english/about_mof/notice/index.html>
 
+### National Bank of Kazakhstan
+
+Source: National Bank of the Republic of Kazakhstan (nationalbank.kz), reused with reference to the source under its data-usage terms; transformations are Bedrok's and are stated.
+
+Terms: <https://nationalbank.kz/en/page/data-usage-terms>
+
 ### DG ECFIN (via Eurostat)
 
 Source: European Commission, Directorate-General for Economic and Financial Affairs (DG ECFIN) Business and Consumer Surveys, via Eurostat. Reused under Commission Decision 2011/833/EU (CC BY 4.0).

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import re
 
-CURRENCIES = r"(USD|EUR|GBP|JPY|CAD|AUD|CHF|CNY|SEK|NOK|DKK)"
+CURRENCIES = r"(USD|EUR|GBP|JPY|CAD|AUD|CHF|CNY|SEK|NOK|DKK|KZT)"
 SCALES = r"(thousands|millions|billions)"
 
 GRAMMAR = [

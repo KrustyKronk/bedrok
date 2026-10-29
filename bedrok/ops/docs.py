@@ -218,6 +218,8 @@ def releases_md() -> str:
     for feed, meta in releases.FEEDS.items():
         n = sum(1 for f, _ in cal.values() if f == feed)
         how = ("fetched at most once a day" if meta["fetched"]
+               else "read from the series' page after each fetch, one extra request per page"
+               if meta.get("extra_request")
                else "read from the series' own response, no extra request")
         label = meta["label"][0].upper() + meta["label"][1:]
         out.append(f"- **{label}** (`{feed}`): {n} series; {how}.\n")
