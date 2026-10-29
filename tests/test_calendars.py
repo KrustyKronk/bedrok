@@ -371,3 +371,67 @@ def test_the_pipeline_asks_the_page_only_for_a_series_with_a_calendar(monkeypatc
     assert asked == ["records:a/b#m_3"]
     got = con.execute("SELECT feed, release_name, due_at FROM release_calendar").fetchall()
     assert got == [("nbk_next_release", "kz_m3", datetime(2026, 11, 16, 5, 0))]
+
+
+# ---- session K2: the Bureau of National Statistics of Kazakhstan's calendar ---------
+
+def _bns_event(day, title, kind="Publication"):
+    return (f'<div class="calendar-event " id="bx_1"><div class="calendar-event-day">\n'
+            f'    {day}                    </div>\n\n        {title}          \n'
+            f'<div class="calendar-event-type">  {kind}  </div></div>')
+
+
+# Cut from the October and November 2026 pages, 2026-10-29: a past month's
+# titles carry their period, a coming month's do not; one wages title is spelt
+# "emloyees"; industry is listed twice on one day.
+BNS_OCT = "".join([
+    _bns_event("01.10.2026", "Inflation in the Republic of Kazakhstan (September 2026 )"),
+    _bns_event("09.10.2026", "Price indices and prices in the housing market in the Republic of "
+                             "Kazakhstan (September 2026)"),
+    _bns_event("16.10.2026", "Main indicators of industry performance (January-September 2026)"),
+    _bns_event("16.10.2026", "Main indicators of industry performance in the Republic of Kazakhstan "
+                             "(January-September 2026)"),
+    _bns_event("30.10.2026", "Fixed assets of the Republic of Kazakhstan", "Spreadsheet"),
+])
+BNS_NOV = "".join([
+    _bns_event("02.11.2026", "Inflation in the Republic of Kazakhstan"),
+    _bns_event("10.11.2026", "Number and wages of emloyees in the Republic of Kazakhstan"),
+    _bns_event("16.11.2026", "GDP by method of production"),
+])
+BNS_NOW = datetime(2026, 10, 29, 9, tzinfo=timezone.utc)
+
+
+def test_the_bureau_calendar_keeps_its_releases_and_their_periods():
+    oct_ = calendars.parse_bns(BNS_OCT)
+    # housing is published here but reaches Taldau weeks later: on its rule instead
+    assert oct_["release_name"].tolist() == ["Inflation", "Industry"]
+    assert oct_["period"].iloc[0] == date(2026, 9, 1)
+    assert pd.isna(oct_["period"].iloc[1])                 # "January-September" is not a month
+    assert oct_["due_at"].iloc[0] == datetime(2026, 10, 1, 5, 0)   # 10:00 at UTC+5
+    nov = calendars.parse_bns(BNS_NOV)
+    assert nov["release_name"].tolist() == ["Inflation", "Wages"]   # GDP has no calendar row
+
+
+def test_the_next_cpi_date_is_the_bureaus():
+    df = pd.concat([calendars.parse_bns(BNS_OCT), calendars.parse_bns(BNS_NOV)], ignore_index=True)
+    nr = _next(_series("kz_cpi_yoy", "bns", "monthly", date(2026, 9, 1), 90),
+               "bns_calendar", df, "kz_cpi_yoy", BNS_NOW)
+    assert nr["due_at"] == "2026-11-02T10:00:00+05:00" and nr["approximate"] is False
+    assert nr["publisher"] == "Bureau of National Statistics of Kazakhstan"
+
+
+def test_the_bureau_calendar_asks_for_this_month_and_the_next(monkeypatch):
+    asked = []
+
+    class R:
+        status_code = 200
+
+        def __init__(self, url):
+            self.text = BNS_NOV if "11.2026" in url else BNS_OCT
+
+        def raise_for_status(self):
+            pass
+    monkeypatch.setattr(calendars.requests, "get", lambda url, **k: asked.append(url) or R(url))
+    df = calendars.fetch_bns(date(2026, 10, 29))
+    assert [u.rsplit("=", 1)[1] for u in asked] == ["10.2026", "11.2026"]
+    assert len(df) == 4

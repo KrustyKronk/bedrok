@@ -229,6 +229,12 @@ Source: National Bank of the Republic of Kazakhstan (nationalbank.kz), reused wi
 
 Terms: <https://nationalbank.kz/en/page/data-usage-terms>
 
+### Bureau of National Statistics of Kazakhstan
+
+Source: Bureau of National Statistics of the Agency for Strategic Planning and Reforms of the Republic of Kazakhstan (stat.gov.kz, Taldau), used with a reference to the source under its conditions for official statistical information; transformations are Bedrok's and are stated.
+
+Terms: <https://stat.gov.kz/en/description/>
+
 ### DG ECFIN (via Eurostat)
 
 Source: European Commission, Directorate-General for Economic and Financial Affairs (DG ECFIN) Business and Consumer Surveys, via Eurostat. Reused under Commission Decision 2011/833/EU (CC BY 4.0).

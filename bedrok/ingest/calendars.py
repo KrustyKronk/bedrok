@@ -13,6 +13,9 @@ the answer says whose date it is. The feeds (researched 2026-10-15 and
   ecb_statscal      the ECB's statistical calendar page, about ten months ahead.
   fedboard_pages    the Fed Board's monthly calendar pages, this month and the
                     next (the one after when it is up).
+  bns_calendar      the Bureau of National Statistics of Kazakhstan's release
+                    calendar, a month per page (this month and the next);
+                    dates without a time, so at 10:00 Almaty.
   ons_next_release  the ONS series JSON the adapter already downloads carries
                     `description.nextRelease`; recorded after each fetch
                     (pipeline.sync_macro), no request of its own.
@@ -236,8 +239,50 @@ def fetch_fedboard(today: date | None = None) -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True) if frames else _rows([])
 
 
+BNS_URL = "https://stat.gov.kz/en/release-calendar/?date={month:02d}.{year}"
+_BNS_EVENT = re.compile(r'<div class="calendar-event-day">\s*(\d{2})\.(\d{2})\.(\d{4})\s*</div>'
+                        r'(.*?)<div class="calendar-event-type">', re.S)
+# Title prefixes, lower-cased, → the release names release_calendar.csv uses.
+# The bureau spells one wages title "emloyees", so the prefix stops before it.
+BNS_RELEASES = {
+    "inflation in the republic of kazakhstan": "Inflation",
+    "main indicators of industry performance": "Industry",
+    "number and wages of em": "Wages",
+}
+BNS_TIME = time(10, 0)      # the calendar gives days only
+
+
+def parse_bns(text: str) -> pd.DataFrame:
+    """One month of the bureau's calendar: day, title, type. A title carries
+    its period only once its month has come ("(September 2026 )")."""
+    rows = []
+    for dd, mm, yyyy, body in _BNS_EVENT.findall(text or ""):
+        title = " ".join(html.unescape(re.sub(r"<[^>]+>", " ", body)).split())
+        low = title.lower()
+        name = next((v for k, v in BNS_RELEASES.items() if low.startswith(k)), None)
+        if name is None:
+            continue
+        m = re.search(r"\(\s*([A-Za-z]+ \d{4})\s*\)", title)
+        period = releases.parse_period(m.group(1)) if m else None
+        rows.append((name, _at(date(int(yyyy), int(mm), int(dd)), BNS_TIME, "bns_calendar"), period))
+    return _rows(rows)
+
+
+def fetch_bns(today: date | None = None) -> pd.DataFrame:
+    """This month's page and the next; a page without a date shows only the
+    current month."""
+    first = (today or date.today()).replace(day=1)
+    frames = []
+    for m in (first, releases.next_label(first, "monthly")):
+        r = requests.get(BNS_URL.format(month=m.month, year=m.year), headers=BROWSER_UA, timeout=60)
+        r.raise_for_status()
+        frames.append(parse_bns(r.text))
+    return pd.concat(frames, ignore_index=True)
+
+
 FETCHERS = {"bea_json": fetch_bea, "statcan_json": fetch_statcan, "ine_ics": fetch_ine,
-            "ecb_statscal": fetch_ecb, "fedboard_pages": fetch_fedboard}
+            "ecb_statscal": fetch_ecb, "fedboard_pages": fetch_fedboard,
+            "bns_calendar": fetch_bns}
 
 
 def parse_ons_next(text: str | None, latest: date | None, frequency: str) -> dict | None:

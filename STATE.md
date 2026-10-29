@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-28: 0.3.3 is released and installed in Claude Desktop; session K1 (Kazakhstan's National Bank) is built on a branch, not released (item 16).** Bedrok is a local MCP server and store of
+**Updated 2026-10-29: 0.3.3 is released and installed in Claude Desktop; sessions K1 (Kazakhstan's National Bank, merged) and K2 (its statistics bureau, on a branch) are built, not released (item 16).** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -55,6 +55,21 @@ revisions and vintages**, stays deferred.
 **Owner-side items** — the ones that need the owner's accounts or describe one
 machine — live in `profile/STATE-private.md`, which is gitignored. This file
 holds only what any reader may see.
+
+**Session K2 in one paragraph.** Kazakhstan's own statistics follow the
+National Bank's: 11 series from the Bureau of National Statistics through its
+Taldau API, a new keyless adapter (`bns`). They are the CPI (an index on
+December 2010 and the published annual and monthly rates, from 2011), core
+inflation (from 2023 only), real GDP growth year to date and nominal GDP by
+quarter (from 2010), industrial production (from 2014), unemployment (from
+2013, with gaps), the average wage (from 2015) and new and resale apartment
+prices (from 2015). The bureau publishes changes as relatives (109.3) and
+GDP year to date. Bedrok subtracts 100, and makes discrete nominal quarters
+by subtracting each year-to-date level from the next; the quarters sum to the
+published year in every year. The bureau's release calendar is a feed of its
+own for the CPI, industry and wages. Backfilled into the repo store, refresh
+clean apart from one INE timeout that passed on retry, smoke 41/41. Not yet
+released.
 
 **Session K1 in one paragraph.** Bedrok carries Kazakhstan for the first
 time: 13 series from the National Bank of Kazakhstan, a new keyless adapter
@@ -768,12 +783,9 @@ Owner-side items are in `profile/STATE-private.md`.
     maintenance loop: triage source requests from the issue form, retire stale
     publishers, a second pass over the register for the next thirty).
 
-16. **Kazakhstan: K1 built 2026-10-28; K2 is next.** The scope is
-    `docs/research/2026-10-28-kazakhstan-scope.md`; K1 is described at the
-    top of this file. What is left:
-    - **K2, the Taldau adapter** (the Bureau of National Statistics): CPI
-      headline and core from 2011, GDP (quarterly only year to date),
-      unemployment, wages, industrial output, house prices. One session.
+16. **Kazakhstan: K1 and K2 built (2026-10-28 and -29); K3 is next.** The
+    scope is `docs/research/2026-10-28-kazakhstan-scope.md`; K1 and K2 are
+    described at the top of this file. What is left:
     - **K3, rows only:** the IMF's current account, net IIP, `QGFS` and WEO
       rows for KAZ, and Eurostat's EU exports to Kazakhstan, Armenia and the
       Kyrgyz Republic. Do it with the mirror-trade warning, which "kazakhstan"
@@ -790,5 +802,18 @@ Owner-side items are in `profile/STATE-private.md`.
       counts decisions, not time spent at each rate (true of the ECB's rows
       too). There is no GBPKZT. Inflation expectations have no release rule,
       because the bank states no timing for them.
-    - **Release:** K1 goes out with the next patch.
+    - **What K2 left out, and why.** The short-term economic indicator,
+      Kazakhstan's monthly activity gauge, is in Taldau only in tenge, not as
+      its growth rate. Real wages start in 2021 and lag two quarters. The
+      annual GDP and wage views lag the year-to-date data (2025 is in Q4 to
+      date, not in the annual view), so annual history before 2010 is not
+      carried. Retail trade is nominal only.
+    - **Watch house prices in Taldau.** The bureau publishes them about the
+      9th, but September 2026 was still not in Taldau on 29 Oct, so they are
+      on a wide rule (lag 8 to 50 days) and off the calendar. Narrow the rule
+      once a few months show when Taldau actually updates.
+    - **GDP has no exact calendar.** The 2026 calendar shows GDP by
+      production about 47 and about 92 days after a quarter, inconsistently;
+      it stays on a wide rule until a pattern is clear.
+    - **Release:** K1 and K2 go out with the next patch.
 

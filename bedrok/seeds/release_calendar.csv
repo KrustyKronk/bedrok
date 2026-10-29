@@ -39,3 +39,8 @@ kz_m2,nbk_next_release,
 kz_m3,nbk_next_release,
 kz_deposit_rate_households_kzt,nbk_next_release,
 kz_deposit_rate_firms_kzt,nbk_next_release,
+kz_cpi,bns_calendar,Inflation
+kz_cpi_yoy,bns_calendar,Inflation
+kz_cpi_mom,bns_calendar,Inflation
+kz_industrial_production_yoy,bns_calendar,Industry
+kz_wage_nominal,bns_calendar,Wages
