@@ -119,8 +119,23 @@ def parse_xml(stream) -> pd.DataFrame:
     return _finish(pd.DataFrame(rows, columns=["TIME_PERIOD", "OBS_VALUE"]))
 
 
+def _split_scale(code: str) -> tuple[str, float]:
+    """`FLOW/KEY#scale=1e-6` → ("FLOW/KEY", 1e-6). The IMF answers balance of
+    payments in whole US dollars and states the display scale only as a
+    `SCALE` attribute, so a row asks for millions with this suffix; it never
+    reaches the publisher."""
+    key, _, frag = code.partition("#")
+    if not frag:
+        return code, 1.0
+    name, _, value = frag.partition("=")
+    if name != "scale":
+        raise ValueError(f"unknown SDMX code option {frag!r}")
+    return key, float(value)
+
+
 def fetch(spec: dict, code: str, start: str | None = None) -> pd.DataFrame:
     """Fetch one series. `spec` is the publisher's row from the source list."""
+    code, scale = _split_scale(code)
     fmt = spec.get("format") or "accept"
     headers = dict(BROWSER_UA) if spec.get("user_agent") == "browser" else {}
     params = {}
@@ -146,4 +161,6 @@ def fetch(spec: dict, code: str, start: str | None = None) -> pd.DataFrame:
           else parse_csv(r.text, latest_of=spec.get("latest_of") or None))
     if start and not df.empty:
         df = df[df["date"] >= pd.Timestamp(start).date()].reset_index(drop=True)
+    if scale != 1.0 and not df.empty:
+        df["value"] = df["value"] * scale
     return df

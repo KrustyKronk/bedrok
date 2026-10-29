@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-29: 0.3.3 is released and installed in Claude Desktop; sessions K1 (Kazakhstan's National Bank, merged) and K2 (its statistics bureau, on a branch) are built, not released (item 16).** Bedrok is a local MCP server and store of
+**Updated 2026-10-29: 0.3.3 is released and installed in Claude Desktop; Kazakhstan's scope is built: K1 and K2 merged, K3 and K4 on a branch, none released (item 16).** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -55,6 +55,20 @@ revisions and vintages**, stays deferred.
 **Owner-side items** — the ones that need the owner's accounts or describe one
 machine — live in `profile/STATE-private.md`, which is gitignored. This file
 holds only what any reader may see.
+
+**Sessions K3 and K4 in one paragraph.** Kazakhstan's scope is finished
+with 13 more series and no new adapter but one. From the IMF, through the
+existing SDMX client, come the quarterly current account and net
+international investment position in millions of dollars, four World Economic
+Outlook rows and three from the Middle East and Central Asia outlook,
+including non-oil growth and the non-oil fiscal balance. The client learned a
+`#scale=` suffix, because the IMF answers in whole dollars. Eurostat gives EU
+exports to and imports from Kazakhstan, the mirror-trade check, and that
+warning is now found by "kazakhstan exports" without riding on every Kazakh
+question. A new `jodi` adapter reads JODI's yearly oil files for Kazakhstan's
+crude and condensate from 2016, when the split begins, and the
+crude-condensate warning links to both. Backfilled into the repo store,
+smoke 42/42. Not yet released.
 
 **Session K2 in one paragraph.** Kazakhstan's own statistics follow the
 National Bank's: 11 series from the Bureau of National Statistics through its
@@ -783,16 +797,21 @@ Owner-side items are in `profile/STATE-private.md`.
     maintenance loop: triage source requests from the issue form, retire stale
     publishers, a second pass over the register for the next thirty).
 
-16. **Kazakhstan: K1 and K2 built (2026-10-28 and -29); K3 is next.** The
-    scope is `docs/research/2026-10-28-kazakhstan-scope.md`; K1 and K2 are
-    described at the top of this file. What is left:
-    - **K3, rows only:** the IMF's current account, net IIP, `QGFS` and WEO
-      rows for KAZ, and Eurostat's EU exports to Kazakhstan, Armenia and the
-      Kyrgyz Republic. Do it with the mirror-trade warning, which "kazakhstan"
-      does not find: its country is "Caucasus and Central Asia (mirror
-      trade)" and `warnings._EXTRA` has no names for it.
-    - **K4, JODI's crude and condensate,** after the owner asks JODI about
-      its data licence.
+16. **Kazakhstan: the scope is built (K1 to K4, 2026-10-28 and -29), 37
+    series.** The scope is `docs/research/2026-10-28-kazakhstan-scope.md`;
+    each session is described at the top of this file. What stays open:
+    - **Armenia and the Kyrgyz Republic.** Eurostat's
+      `ext_st_eu27_2020sitc` has no values for them (Kazakhstan and Russia
+      are there), and Comext was not reachable at the paths tried, so the
+      mirror-trade warning links only to Kazakhstan's rows.
+    - **Dropped from the scope, with reasons.** The IMF has no National Fund
+      ratio, and Kazakhstan's `QGFS` is cash-based only, so the fiscal rows
+      are the outlooks' annual ratios. JODI's own data licence was taken from
+      its user guide ("freely available", cite JODI), not from a reply.
+    - **JODI disagrees with the ministry.** For March 2025 JODI shows crude
+      about 1,845 and condensate about 395 kb/d, against the 1.79 and 0.29
+      mb/d the warning quotes. Both are in the catalog notes; the cause is
+      not known.
     - **Event series have no calendar.** Release rules exclude `event`, so
       `kz_base_rate`, like the ECB's rates, has no next decision date. The
       bank publishes its decision schedule (a page whose id changes each
@@ -801,7 +820,8 @@ Owner-side items are in `profile/STATE-private.md`.
       and NEER above `usdkzt` and `eurkzt`. A percentile of an event series
       counts decisions, not time spent at each rate (true of the ECB's rows
       too). There is no GBPKZT. Inflation expectations have no release rule,
-      because the bank states no timing for them.
+      because the bank states no timing for them. "kazakhstan oil" ranks the
+      condensate series below the first six matches.
     - **What K2 left out, and why.** The short-term economic indicator,
       Kazakhstan's monthly activity gauge, is in Taldau only in tenge, not as
       its growth rate. Real wages start in 2021 and lag two quarters. The
@@ -815,5 +835,5 @@ Owner-side items are in `profile/STATE-private.md`.
     - **GDP has no exact calendar.** The 2026 calendar shows GDP by
       production about 47 and about 92 days after a quarter, inconsistently;
       it stays on a wide rule until a pattern is clear.
-    - **Release:** K1 and K2 go out with the next patch.
+    - **Release:** K1 to K4 go out with the next patch.
 

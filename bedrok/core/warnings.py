@@ -106,7 +106,11 @@ def _tokens(text: str) -> set[str]:
 # cover. ISO codes are not used for matching: "in", "it" and "no" are words
 # before they are India, Italy and Norway.
 _EXTRA = {"china": {"prc"}, "russia": {"russian"}, "turkey": {"turkish", "turkiye"},
-          "argentina": {"argentine", "argentinian"}, "india": {"indian"}, "opec": {"opec"}}
+          "argentina": {"argentine", "argentinian"}, "india": {"indian"}, "opec": {"opec"},
+          # A region's warning is about its countries: "kazakhstan exports"
+          # must find the mirror-trade case (session K3).
+          "caucasus and central asia": {"kazakhstan", "kazakh", "armenia", "armenian",
+                                        "kyrgyz", "kyrgyzstan"}}
 
 
 def _words(text: str) -> str:
@@ -142,6 +146,17 @@ _NOT_PLACES = {"global"}
 _COVERED = {iso for iso in geography.ISO2.values() if iso}
 
 
+def _covered(row: dict, hits_place: set[str]) -> bool:
+    """Whether Bedrok carries the place a search reached this warning by: the
+    warning's own country, or a covered country named for a region's warning
+    ("kazakhstan" for the Caucasus and Central Asia), so that a regional case
+    also needs the words to be about it."""
+    if (row.get("iso2") or "") in _COVERED:
+        return True
+    return any(geography.ISO2.get(geography.NAMES.get(n, ""), "") in _COVERED
+               for n in hits_place)
+
+
 def search(text: str, limit: int = 5) -> list[dict]:
     """Warnings whose country and concept match the words asked for. A place
     must be named: "inflation" alone is not a question about Argentina."""
@@ -159,7 +174,7 @@ def search(text: str, limit: int = 5) -> list[dict]:
         # also be about what was asked: "us 10 year yield" drew all five BLS
         # warnings (the D2 self-test). Where it does not, the warning is the
         # whole answer and the place alone is enough.
-        if (r.get("iso2") or "") in _COVERED and \
+        if _covered(r, hits_place) and \
                 not (words - set().union(*map(_tokens, hits_place))) & about:
             continue
         scored.append((3 * len(hits_place) + len(words & about), r["warning_id"], r))

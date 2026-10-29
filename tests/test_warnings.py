@@ -138,3 +138,8 @@ def test_a_place_bedrok_covers_also_needs_the_words_to_be_about_the_warning():
     assert ids("kazakhstan oil output") == {"kz_crude_condensate"}
     assert ids("kazakh crude production") == {"kz_crude_condensate"}
     assert "kz_crude_condensate" not in ids("kazakhstan inflation")
+    # A region's warning answers for a covered country only when it is about
+    # what was asked (session K3): exports, yes; oil output, no.
+    assert "cca_mirror_trade_russia_sanctions" in ids("kazakhstan exports")
+    assert "cca_mirror_trade_russia_sanctions" in ids("armenia trade")
+    assert "cca_mirror_trade_russia_sanctions" not in ids("kazakhstan inflation")

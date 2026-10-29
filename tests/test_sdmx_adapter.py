@@ -150,6 +150,21 @@ def test_request_shape_by_format(monkeypatch):
     assert "Mozilla" in seen["headers"]["User-Agent"]
 
 
+def test_a_scale_suffix_scales_the_values_and_never_reaches_the_publisher(monkeypatch):
+    """The IMF's balance of payments arrives in whole dollars (session K3)."""
+    seen = {}
+
+    def fake_get(url, params, headers, timeout):
+        seen.update(url=url)
+        return _Resp(200, OECD + _oecd("2026-01", "3171029227.3"))
+    monkeypatch.setattr(sdmx.requests, "get", fake_get)
+    df = sdmx.fetch(ROW, "FLOW/M.US#scale=1e-6")
+    assert seen["url"] == "https://example.org/rest/data/FLOW/M.US"
+    assert df["value"].iloc[0] == pytest.approx(3171.0292273)
+    with pytest.raises(ValueError, match="unknown SDMX code option"):
+        sdmx.fetch(ROW, "FLOW/M.US#unit=USD")
+
+
 def test_a_day_start_period_sends_the_whole_date(monkeypatch):
     """The Bundesbank answers startPeriod=2026-10 with 400, which an incremental
     fetch reads as "nothing new": the series would freeze with no error."""
