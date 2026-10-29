@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bedrok"
-version = "0.3.3"
+version = "0.3.4"
 description = "Public macroeconomic data from central banks, statistics offices and international organisations, in your AI assistant: a local MCP server and store. No keys needed to start. Not financial advice."
 readme = "README.md"
 license = "MIT"
