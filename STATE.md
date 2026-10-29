@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-16: 0.3.3 is released and installed in Claude Desktop.** Bedrok is a local MCP server and store of
+**Updated 2026-10-28: 0.3.3 is released and installed in Claude Desktop; Kazakhstan is scoped (item 16), not built.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -754,4 +754,21 @@ Owner-side items are in `profile/STATE-private.md`.
     2026-10-12) and 14 (the
     maintenance loop: triage source requests from the issue form, retire stale
     publishers, a second pass over the register for the next thirty).
+
+16. **Kazakhstan: scoped 2026-10-28, not built, the owner's call.** Bedrok
+    carries no Kazakh series, only three warnings. The scope, with every
+    endpoint probed live, is `docs/research/2026-10-28-kazakhstan-scope.md`.
+    In short: the National Bank (`/records` JSON per statistics page, full
+    history from 1993; an open-data API with the base rate from 2015) and the
+    Bureau of National Statistics (the Taldau JSON API, CPI from 2011) are
+    key-free and reusable with credit, and need one adapter each (K1, K2).
+    The IMF's SDMX flows add the external accounts, fiscal and WEO rows with
+    no new code (K3); its Kazakh interest-rate, quarterly GDP, labour and
+    PPI flows are years stale. JODI is the only source found that splits
+    crude from condensate, but its data licence is unresolved (K4). KASE's
+    rates and yields are copy-by-permission. About 35 series for K1 to K3.
+    **Size: three build sessions** (K1; K2; K3 with K4) **plus a short
+    release**, four if Taldau's parameter discovery spills. K3 alone can ship
+    first in half a session. JODI's licence is a question for the owner to
+    put to JODI before K4. Decide whether to build it, and in which order.
 
