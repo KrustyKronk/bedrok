@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-29: 0.3.3 is released and installed in Claude Desktop; Kazakhstan's scope is built: K1 and K2 merged, K3 and K4 on a branch, none released (item 16).** Bedrok is a local MCP server and store of
+**Updated 2026-10-29: 0.3.4 is released, carrying Kazakhstan (sessions K1 to K4, item 16); the owner has not yet installed it in Claude Desktop.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -45,8 +45,19 @@ all gave the intended answers there:
 - `latest_period` for an annual series;
 - the Bundesbank's daily Bund.
 
-**Next:** a cold question on a release morning (item 1), then whichever open
-item the owner picks.
+**0.3.4 is released** (2026-10-29): the four Kazakhstan sessions, 37 series
+from the National Bank, the Bureau of National Statistics, the IMF, Eurostat
+and JODI. `publish.yml`'s build, publish and bundle jobs all passed, the wheel
+and sdist are on PyPI and `bedrok-0.3.4.mcpb` is on the GitHub release.
+Proven from PyPI: an empty folder and an empty home answered all ten smoke
+calls in 36 seconds, with 769 catalog series, then fetched `kz_cpi_yoy`,
+`kz_base_rate`, `kz_crude_production` and `weo_gdp_growth_kz` on demand. The
+first try raced PyPI's simple index a minute after upload; it listed 0.3.4 on
+the retry.
+
+**Next:** install 0.3.4 in Claude Desktop and ask it about Kazakhstan; then a
+cold question on a release morning (item 1), then whichever open item the
+owner picks.
 
 Session 13 is split: **13a, the release calendar**, is in (three parts,
 below, and session H's four more feeds; what is left is item 2); **13b,
@@ -68,7 +79,7 @@ warning is now found by "kazakhstan exports" without riding on every Kazakh
 question. A new `jodi` adapter reads JODI's yearly oil files for Kazakhstan's
 crude and condensate from 2016, when the split begins, and the
 crude-condensate warning links to both. Backfilled into the repo store,
-smoke 42/42. Not yet released.
+smoke 42/42. Released in 0.3.4.
 
 **Session K2 in one paragraph.** Kazakhstan's own statistics follow the
 National Bank's: 11 series from the Bureau of National Statistics through its
@@ -82,8 +93,8 @@ GDP year to date. Bedrok subtracts 100, and makes discrete nominal quarters
 by subtracting each year-to-date level from the next; the quarters sum to the
 published year in every year. The bureau's release calendar is a feed of its
 own for the CPI, industry and wages. Backfilled into the repo store, refresh
-clean apart from one INE timeout that passed on retry, smoke 41/41. Not yet
-released.
+clean apart from one INE timeout that passed on retry, smoke 41/41. Released
+in 0.3.4.
 
 **Session K1 in one paragraph.** Bedrok carries Kazakhstan for the first
 time: 13 series from the National Bank of Kazakhstan, a new keyless adapter
@@ -96,7 +107,7 @@ expectations (from 2016). The tenge joins the FX layer as `usdkzt` and
 of the series read the bank's own next-release date from their statistics
 page. The month each figure belongs to was checked against the IMF: M3
 equals its broad money to the million. Backfilled into the repo store, smoke
-40/40, validate and doctor clean. Not yet released.
+40/40, validate and doctor clean. Released in 0.3.4.
 
 **Session H in one paragraph.** Four more publishers give Bedrok their
 own release dates, so 25 more series say "scheduled for" with the publisher
@@ -835,5 +846,6 @@ Owner-side items are in `profile/STATE-private.md`.
     - **GDP has no exact calendar.** The 2026 calendar shows GDP by
       production about 47 and about 92 days after a quarter, inconsistently;
       it stays on a wide rule until a pattern is clear.
-    - **Release:** K1 to K4 go out with the next patch.
+    - **Released in 0.3.4** (2026-10-29), not yet installed in Claude
+      Desktop.
 
