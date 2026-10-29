@@ -70,3 +70,13 @@ kz_deposit_rate_households_kzt,,monthly,22,28,,09:10,Asia/Almaty,NBK deposit rat
 kz_deposit_rate_firms_kzt,,monthly,22,28,,09:10,Asia/Almaty,NBK deposit rates release
 kz_reer,,monthly,25,41,,10:00,Asia/Almaty,NBK effective exchange rates: no later than the 10th of the second month (the bank's metadata for form 299).
 kz_neer,,monthly,10,41,,10:00,Asia/Almaty,NBK effective exchange rates: the nominal index often comes a month sooner than the real one.
+kz_cpi,,monthly,1,3,,10:00,Asia/Almaty,BNS inflation: about the 1st or 2nd of the next month. https://stat.gov.kz/en/release-calendar/
+kz_cpi_yoy,,monthly,1,3,,10:00,Asia/Almaty,BNS inflation release
+kz_cpi_mom,,monthly,1,3,,10:00,Asia/Almaty,BNS inflation release
+kz_core_cpi_yoy,,monthly,1,10,,10:00,Asia/Almaty,BNS consumer prices and derived indicators: between the 1st and the 9th.
+kz_industrial_production_yoy,,monthly,14,19,,10:00,Asia/Almaty,BNS main indicators of industry performance: the 15th to 17th. https://stat.gov.kz/en/release-calendar/
+kz_house_prices_new,,monthly,8,50,,10:00,Asia/Almaty,"BNS housing prices are published about the 9th of the next month, but reach Taldau weeks later: September 2026, published 9 Oct, was still absent on 29 Oct."
+kz_house_prices_resale,,monthly,8,50,,10:00,Asia/Almaty,BNS housing prices in Taldau
+kz_wage_nominal,,quarterly,40,95,,10:00,Asia/Almaty,"BNS number and wages of employees: about 41 days after the quarter, Q4 about 93."
+kz_gdp_real_ytd_yoy,,quarterly,45,95,,10:00,Asia/Almaty,BNS GDP by production: between about 47 and 92 days after the quarter in the 2026 calendar.
+kz_gdp_nominal,,quarterly,45,95,,10:00,Asia/Almaty,BNS GDP by production release

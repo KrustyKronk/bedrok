@@ -131,6 +131,9 @@ FEEDS = {
                      "label": "the ECB's statistical calendar"},
     "fedboard_pages": {"publisher": "Federal Reserve Board", "tz": "America/New_York",
                        "fetched": True, "label": "the Fed Board's release calendar"},
+    "bns_calendar": {"publisher": "Bureau of National Statistics of Kazakhstan",
+                     "tz": "Asia/Almaty", "fetched": True,
+                     "label": "the Bureau of National Statistics' release calendar"},
 }
 # An exact date has no window to wait through: the period is late a day after
 # it, which is long enough for a publisher's API to catch up with its website.

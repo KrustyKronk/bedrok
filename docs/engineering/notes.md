@@ -204,6 +204,45 @@ against a refreshed store. Check discovery on a scratch store after
 
 ## Ingest and vendors
 
+**Taldau, Kazakhstan's statistics database, is an API with traps.** Session K2,
+2026-10-29. `GetIndexTreeData` answers rows whose values sit in keys
+`yMMYYYY`, where MM is the period's last month (a quarter's third). A wrong
+`p_measure_id` answers an empty body rather than an error: take it from
+`GetIndexAttributes` (`measureId`). `GetSegmentList` gives only a default
+combination of terms per period, and some indicators have a second
+combination that is the current one (industrial production's first ends in
+2015). To list a dimension's elements, call the data endpoint with
+`idx=<that dimension>` and `p_term_id=<its term>`, and open a parent row
+with `p_parent_id`. With `idx=0` the Republic of Kazakhstan (741880) is not
+always the first row (house prices list cities first), so pick it by id.
+Changes are published as relatives (109.3 for 9.3%) and suppressed figures
+as "x". The annual view of an indicator can lag its year-to-date quarters:
+GDP's annual view ends in 2024 while Q4 2025 to date is there.
+
+**Year-to-date levels de-cumulate; year-to-date rates do not.** The bureau
+publishes GDP year to date. `bns` makes discrete nominal quarters by
+subtracting each quarter's year-to-date level from the next (`ytd=decumulate`),
+and drops a quarter whose predecessor is missing rather than guess it. The
+quarters sum to the published year in every year 2010-2025. They are not
+seasonally adjusted, so Q4 is the largest. The IMF's quarterly series for
+Kazakhstan is smooth and the same under both its seasonal labels, so compare
+annual totals with it, which agree within about 1%, not quarters. Real
+growth stays year to date (`kz_gdp_real_ytd_yoy`): a cumulative rate has no
+quarterly split.
+
+**The bureau's calendar is a month per page, and a release is not a Taldau
+update.** `stat.gov.kz/en/release-calendar/?date=MM.YYYY` lists a month
+(without the parameter, only the current one); a coming month's titles carry
+no period. One wages title is spelt "emloyees". Dates have no time. The CPI,
+industrial production and wages reach Taldau on their release day, but house
+prices did not: September 2026, published 9 Oct, was still absent on 29 Oct.
+A calendar date only helps a series whose API updates with the release.
+
+**The bureau's CPI rate is not the IMF's.** The published annual rate differs
+from the IMF's by up to about 0.3 points in a third of months since 2011;
+the rate computed from the bureau's own index agrees with the published one
+(5.54 against 5.5 where the IMF says 5.64). Bedrok carries the bureau's.
+
 **The National Bank of Kazakhstan keeps its history in its page JSON, not its
 API.** Session K1, 2026-10-28. The open-data API at data.nationalbank.kz
 (`/api/v1/data?formId=…`) is a beta, and most of its tables start in 2018 to

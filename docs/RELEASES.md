@@ -35,8 +35,17 @@ Statuses: `fresh` (the next period is not due yet), `due` (inside its window: fe
 | `jp_cpi` | 17 to 25 days after the month, on a Friday | 08:30 Asia/Tokyo |  |
 | `jp_cpi_core` | 17 to 25 days after the month, on a Friday | 08:30 Asia/Tokyo |  |
 | `jp_cpi_core_core` | 17 to 25 days after the month, on a Friday | 08:30 Asia/Tokyo |  |
+| `kz_core_cpi_yoy` | 1 to 10 days after the month | 10:00 Asia/Almaty |  |
+| `kz_cpi` | 1 to 3 days after the month | 10:00 Asia/Almaty | the Bureau of National Statistics' release calendar |
+| `kz_cpi_mom` | 1 to 3 days after the month | 10:00 Asia/Almaty | the Bureau of National Statistics' release calendar |
+| `kz_cpi_yoy` | 1 to 3 days after the month | 10:00 Asia/Almaty | the Bureau of National Statistics' release calendar |
 | `kz_deposit_rate_firms_kzt` | 22 to 28 days after the month | 09:10 Asia/Almaty | the National Bank of Kazakhstan's next-release date |
 | `kz_deposit_rate_households_kzt` | 22 to 28 days after the month | 09:10 Asia/Almaty | the National Bank of Kazakhstan's next-release date |
+| `kz_gdp_nominal` | 45 to 95 days after the quarter | 10:00 Asia/Almaty |  |
+| `kz_gdp_real_ytd_yoy` | 45 to 95 days after the quarter | 10:00 Asia/Almaty |  |
+| `kz_house_prices_new` | 8 to 50 days after the month | 10:00 Asia/Almaty |  |
+| `kz_house_prices_resale` | 8 to 50 days after the month | 10:00 Asia/Almaty |  |
+| `kz_industrial_production_yoy` | 14 to 19 days after the month | 10:00 Asia/Almaty | the Bureau of National Statistics' release calendar |
 | `kz_m2` | 13 to 20 days after the month | 10:00 Asia/Almaty | the National Bank of Kazakhstan's next-release date |
 | `kz_m3` | 13 to 20 days after the month | 10:00 Asia/Almaty | the National Bank of Kazakhstan's next-release date |
 | `kz_national_fund_fx_assets` | 7 to 12 days after the month | 10:00 Asia/Almaty | the National Bank of Kazakhstan's next-release date |
@@ -44,6 +53,7 @@ Statuses: `fresh` (the next period is not due yet), `due` (inside its window: fe
 | `kz_reer` | 25 to 41 days after the month | 10:00 Asia/Almaty |  |
 | `kz_reserves_gross` | 7 to 12 days after the month | 10:00 Asia/Almaty | the National Bank of Kazakhstan's next-release date |
 | `kz_reserves_net` | 7 to 12 days after the month | 10:00 Asia/Almaty | the National Bank of Kazakhstan's next-release date |
+| `kz_wage_nominal` | 40 to 95 days after the quarter | 10:00 Asia/Almaty | the Bureau of National Statistics' release calendar |
 | `uk_cpi_yoy` | 14 to 22 days after the month | 07:00 Europe/London | the ONS's next-release date |
 | `uk_cpih_yoy` | 14 to 22 days after the month | 07:00 Europe/London | the ONS's next-release date |
 | `uk_gdp_monthly_index` | 38 to 48 days after the month | 07:00 Europe/London | the ONS's next-release date |
@@ -89,5 +99,6 @@ Statuses: `fresh` (the next period is not due yet), `due` (inside its window: fe
 - **INE's release calendar** (`ine_ics`): 4 series; fetched at most once a day.
 - **The ECB's statistical calendar** (`ecb_statscal`): 8 series; fetched at most once a day.
 - **The Fed Board's release calendar** (`fedboard_pages`): 10 series; fetched at most once a day.
+- **The Bureau of National Statistics' release calendar** (`bns_calendar`): 5 series; fetched at most once a day.
 
 The BLS publishes a calendar file, but its website refuses automated retrieval, so BLS series stay on their rules.

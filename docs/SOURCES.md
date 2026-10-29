@@ -2,7 +2,7 @@
 
 # Sources
 
-Bedrok is wired to 33 publishers. 27 need no key at all; the others take a free key, entered in Bedrok's settings or its home folder's `.env` (see [INSTALL](INSTALL.md)). Every series is fetched from its publisher by your own copy of Bedrok; nothing is redistributed. Licence classes and what they ask of you are in [LICENSES](LICENSES.md).
+Bedrok is wired to 34 publishers. 28 need no key at all; the others take a free key, entered in Bedrok's settings or its home folder's `.env` (see [INSTALL](INSTALL.md)). Every series is fetched from its publisher by your own copy of Bedrok; nothing is redistributed. Licence classes and what they ask of you are in [LICENSES](LICENSES.md).
 
 | Publisher | Series | Key | Licence | Stored | Terms |
 |---|---|---|---|---|---|
@@ -39,6 +39,7 @@ Bedrok is wired to 33 publishers. 27 need no key at all; the others take a free 
 | **Statistics Bureau of Japan / e-Stat** (`estat`) | 4 curated | [`ESTAT_API_KEY`](https://www.e-stat.go.jp/api/en) | reuse with attribution | yes | [terms](https://www.e-stat.go.jp/en/terms-of-use) |
 | **Ministry of Finance, Japan** (`mof_jp`) | 1 curated | none | reuse with attribution | yes | [terms](https://www.mof.go.jp/english/about_mof/notice/index.html) |
 | **National Bank of Kazakhstan** (`nbk`) | 11 curated | none | reuse with attribution | yes | [terms](https://nationalbank.kz/en/page/data-usage-terms) |
+| **Bureau of National Statistics of Kazakhstan** (`bns`) | 11 curated | none | reuse with attribution | yes | [terms](https://stat.gov.kz/en/description/) |
 
 ## What each publisher covers
 
@@ -434,6 +435,20 @@ Bedrok is wired to 33 publishers. 27 need no key at all; the others take a free 
 - `kz_reer` — Kazakhstan real effective exchange rate of the tenge (National Bank of Kazakhstan)
 - `kz_neer` — Kazakhstan nominal effective exchange rate of the tenge (National Bank of Kazakhstan)
 - `kz_inflation_expectations` — Kazakhstan households' inflation expectations (National Bank of Kazakhstan)
+
+### Bureau of National Statistics of Kazakhstan
+
+- `kz_cpi` — Kazakhstan consumer price index (Bureau of National Statistics)
+- `kz_cpi_yoy` — Kazakhstan CPI inflation, annual rate (Bureau of National Statistics)
+- `kz_cpi_mom` — Kazakhstan CPI inflation, monthly rate (Bureau of National Statistics)
+- `kz_core_cpi_yoy` — Kazakhstan core inflation, annual rate (Bureau of National Statistics)
+- `kz_gdp_real_ytd_yoy` — Kazakhstan real GDP growth, year to date (Bureau of National Statistics)
+- `kz_gdp_nominal` — Kazakhstan nominal GDP, quarterly (Bureau of National Statistics)
+- `kz_industrial_production_yoy` — Kazakhstan industrial production, annual change (Bureau of National Statistics)
+- `kz_unemployment` — Kazakhstan unemployment rate (Bureau of National Statistics)
+- `kz_wage_nominal` — Kazakhstan average monthly nominal wage (Bureau of National Statistics)
+- `kz_house_prices_new` — Kazakhstan new apartment prices (Bureau of National Statistics)
+- `kz_house_prices_resale` — Kazakhstan resale apartment prices (Bureau of National Statistics)
 
 ## Ids that point elsewhere
 
