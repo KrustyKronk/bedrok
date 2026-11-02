@@ -8,6 +8,14 @@ us_pce,,monthly,26,36,,08:30,America/New_York,BEA Personal Income and Outlays: e
 us_core_pce,,monthly,26,36,,08:30,America/New_York,BEA Personal Income and Outlays release
 us_real_gdp,,quarterly,26,32,,08:30,America/New_York,BEA GDP advance estimate: about four weeks after the quarter. https://www.bea.gov/news/schedule
 us_gdp_growth_saar,,quarterly,26,32,,08:30,America/New_York,BEA GDP advance estimate
+us_nominal_gdp,,quarterly,26,32,,08:30,America/New_York,BEA GDP advance estimate
+us_ip_investment,,quarterly,26,32,,08:30,America/New_York,BEA GDP advance estimate (NIPA table 5.3.5 is in it)
+us_z1_nfc_financing_gap,,quarterly,66,80,,12:00,America/New_York,"Fed Board Z.1: about ten weeks after the quarter, second week of the third month. https://www.federalreserve.gov/releases/z1/"
+us_z1_nfc_capex,,quarterly,66,80,,12:00,America/New_York,Fed Board Z.1
+us_z1_nfc_debt_issuance,,quarterly,66,80,,12:00,America/New_York,Fed Board Z.1
+us_z1_nfc_debt,,quarterly,66,80,,12:00,America/New_York,Fed Board Z.1
+us_dc_construction,,monthly,28,36,,10:00,America/New_York,Census construction spending: first business day of the second month after. https://www.census.gov/construction/c30/release_schedule.html
+us_ebp,,monthly,3,20,,12:00,America/New_York,"Fed Board excess bond premium file: early in the next month, no published date; the time is a guess."
 us_retail_sales,,monthly,13,17,,08:30,America/New_York,Census advance retail sales: mid next month. https://www.census.gov/retail/release_schedule.html
 us_indpro,,monthly,14,19,,09:15,America/New_York,Fed Board G.17: mid next month. https://www.federalreserve.gov/releases/g17/
 us_m2,,monthly,21,28,tue,13:00,America/New_York,Fed Board H.6: fourth Tuesday of the next month. https://www.federalreserve.gov/releases/h6/

@@ -29,16 +29,40 @@ Facts confirmed against the live API:
   * the response is a JSON array of arrays whose first row is the header, in
     the long format: cell_value, time, category_code, data_type_code, …
 
+Construction spending (C30) is the exception, read from its workbook rather
+than the API. The API's `vip` dataset carries about sixteen coded categories,
+none of them the data-centre line, which exists only in the published
+spreadsheets (checked 2026-11-02). `source_code` is then
+"c30:<workbook>:<column heading>", e.g.
+
+  c30:privtime:Data center   private construction, data centres, NSA, from 2014
+
+Workbook traps, confirmed against the live file on 2026-11-02:
+  * one sheet; the header row is the one whose first cell is "Date", below
+    three rows of title and notes, and footnotes follow the data.
+  * headings carry a carriage-return escape and a footnote digit
+    ("Total\n_x000D_Private Construction1"), so they are compared cleaned.
+  * dates are "Sep-26" with a "p" (preliminary) or "r" (revised) suffix,
+    newest first; a line that did not exist yet is an empty string.
+  * the workbook needs no key, but the source row does: a keyless install
+    skips it along with the API series.
+
 Licence: public domain — a US government work.
 """
 from __future__ import annotations
 
+import functools
+import io
+import re
 from datetime import date
 
 import pandas as pd
 import requests
 
+from bedrok.ingest.adapters._util import BROWSER_UA
+
 BASE = "https://api.census.gov/data/timeseries/eits/"
+C30_URL = "https://www.census.gov/construction/c30/xlsx/{book}.xlsx"
 EMPTY = ["date", "value"]
 
 
@@ -62,7 +86,53 @@ def _parse(payload: list[list], category: str, data_type: str) -> pd.DataFrame:
                .sort_values("date").reset_index(drop=True))[EMPTY]
 
 
+def _heading(cell) -> str:
+    """A workbook heading as words: escapes, line breaks and footnote digits gone."""
+    text = str(cell or "").replace("_x000D_", " ")
+    return " ".join(re.sub(r"\d+$", "", text.strip()).split()).lower()
+
+
+def _parse_c30(content: bytes, column: str) -> pd.DataFrame:
+    """Pure: a C30 workbook → one column as DataFrame[date, value]."""
+    import openpyxl
+    ws = openpyxl.load_workbook(io.BytesIO(content), read_only=True,
+                                data_only=True).worksheets[0]
+    rows = list(ws.iter_rows(values_only=True))
+    top = next((i for i, r in enumerate(rows) if str(r[0]).strip() == "Date"), None)
+    if top is None:
+        raise ValueError("C30 workbook: no header row starting 'Date'")
+    heads = [_heading(c) for c in rows[top]]
+    if _heading(column) not in heads:
+        raise ValueError(f"C30 workbook has no column {column!r}")
+    j = heads.index(_heading(column))
+    df = pd.DataFrame([(r[0], r[j]) for r in rows[top + 1:] if len(r) > j],
+                      columns=EMPTY)
+    label = df["date"].astype(str).str.strip().str.rstrip("pr")
+    df["date"] = pd.to_datetime(label, format="%b-%y", errors="coerce")
+    df["value"] = pd.to_numeric(df["value"], errors="coerce")
+    df = df.dropna()
+    df["date"] = df["date"].dt.date
+    return (df.drop_duplicates(subset=["date"], keep="first")
+              .sort_values("date").reset_index(drop=True))[EMPTY]
+
+
+@functools.lru_cache(maxsize=4)
+def _download(book: str) -> bytes:
+    r = requests.get(C30_URL.format(book=book), headers=BROWSER_UA, timeout=120)
+    r.raise_for_status()
+    if not r.content.startswith(b"PK"):
+        raise ValueError(f"the C30 workbook {book}.xlsx is gone: Census answered "
+                         f"{r.headers.get('content-type', 'something else')}")
+    return r.content
+
+
 def fetch(source_code: str, api_key: str, start: str | None = None) -> pd.DataFrame:
+    if source_code.startswith("c30:"):
+        _, book, column = source_code.split(":", 2)
+        df = _parse_c30(_download(book), column)
+        if start and not df.empty:
+            df = df[df["date"] >= pd.Timestamp(start).date()].reset_index(drop=True)
+        return df
     dataset, category, data_type = source_code.split(":")
     since = pd.Timestamp(start).strftime("%Y-%m") if start else "1950-01"
     r = requests.get(BASE + dataset, timeout=120, params={

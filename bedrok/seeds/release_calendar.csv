@@ -3,6 +3,8 @@ us_pce,bea_json,Personal Income and Outlays
 us_core_pce,bea_json,Personal Income and Outlays
 us_real_gdp,bea_json,Gross Domestic Product
 us_gdp_growth_saar,bea_json,Gross Domestic Product
+us_nominal_gdp,bea_json,Gross Domestic Product
+us_ip_investment,bea_json,Gross Domestic Product
 uk_cpi_yoy,ons_next_release,
 uk_cpih_yoy,ons_next_release,
 uk_gdp_monthly_index,ons_next_release,
@@ -32,6 +34,10 @@ us_sloos_cni_tightening,fedboard_pages,SLOOS
 us_sloos_cni_demand,fedboard_pages,SLOOS
 us_sloos_cni_small,fedboard_pages,SLOOS
 us_sloos_cc_tightening,fedboard_pages,SLOOS
+us_z1_nfc_financing_gap,fedboard_pages,Z.1
+us_z1_nfc_capex,fedboard_pages,Z.1
+us_z1_nfc_debt_issuance,fedboard_pages,Z.1
+us_z1_nfc_debt,fedboard_pages,Z.1
 kz_reserves_gross,nbk_next_release,
 kz_reserves_net,nbk_next_release,
 kz_national_fund_fx_assets,nbk_next_release,
