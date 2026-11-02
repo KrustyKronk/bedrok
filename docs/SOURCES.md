@@ -13,11 +13,11 @@ Bedrok is wired to 35 publishers. 29 need no key at all; the others take a free 
 | **Office for National Statistics** (`ons`) | 10 curated | none | reuse with attribution | yes | [terms](https://www.ons.gov.uk/help/termsandconditions) |
 | **Bank of England** (`boe`) | 9 curated | none | reuse with attribution | yes | [terms](https://www.bankofengland.co.uk/legal) |
 | **OECD** (`oecd`) | 11 curated | none | reuse with attribution | yes | [terms](https://www.oecd.org/en/about/terms-conditions.html) |
-| **Federal Reserve Banks' research files and FHFA** (`fedfiles`) | 14 curated | none | reuse with attribution | yes | [terms](https://www.newyorkfed.org/privacy/termsofuse) |
-| **Board of Governors of the Federal Reserve System** (`fedboard`) | 22 curated | none | public domain | yes | [terms](https://www.federalreserve.gov/disclaimer.htm) |
+| **Federal Reserve Banks' research files and FHFA** (`fedfiles`) | 15 curated | none | reuse with attribution | yes | [terms](https://www.newyorkfed.org/privacy/termsofuse) |
+| **Board of Governors of the Federal Reserve System** (`fedboard`) | 26 curated | none | public domain | yes | [terms](https://www.federalreserve.gov/disclaimer.htm) |
 | **U.S. Bureau of Labor Statistics** (`bls`) | 18 curated | [`BLS_API_KEY`](https://data.bls.gov/registrationEngine/) (optional) | public domain | yes | [terms](https://www.bls.gov/opub/copyright-information.htm) |
-| **U.S. Bureau of Economic Analysis** (`bea`) | 12 curated | [`BEA_API_KEY`](https://apps.bea.gov/API/signup/) | public domain | yes | [terms](https://www.bea.gov/help/guidelines-for-citing-bea) |
-| **U.S. Census Bureau** (`census`) | 7 curated | [`CENSUS_API_KEY`](https://api.census.gov/data/key_signup.html) | public domain | yes | [terms](https://www.census.gov/data/developers/about/terms-of-service.html) |
+| **U.S. Bureau of Economic Analysis** (`bea`) | 14 curated | [`BEA_API_KEY`](https://apps.bea.gov/API/signup/) | public domain | yes | [terms](https://www.bea.gov/help/guidelines-for-citing-bea) |
+| **U.S. Census Bureau** (`census`) | 8 curated | [`CENSUS_API_KEY`](https://api.census.gov/data/key_signup.html) | public domain | yes | [terms](https://www.census.gov/data/developers/about/terms-of-service.html) |
 | **Federal Reserve Bank of New York — Markets Data and surveys** (`nyfed`) | 6 curated | none | reuse with attribution | yes | [terms](https://www.newyorkfed.org/privacy/termsofuse) |
 | **The World Bank — Commodity Markets (Pink Sheet)** (`worldbank`) | 1 family | none | reuse with attribution | yes | [terms](https://data.worldbank.org/summary-terms-of-use) |
 | **U.S. Commodity Futures Trading Commission — Commitments of Traders** (`cftc`) | 1 family | none | public domain | yes | [terms](https://www.cftc.gov/) |
@@ -184,6 +184,7 @@ Bedrok is wired to 35 publishers. 29 need no key at all; the others take a free 
 - `us_trimmed_pce` — US trimmed-mean PCE 12-month (Dallas Fed)
 - `us_sticky_core_cpi` — US sticky-price core CPI (Atlanta Fed)
 - `us_nfci` — US national financial conditions index (Chicago Fed)
+- `us_ebp` — US excess bond premium (Gilchrist-Zakrajsek, Fed Board)
 - `us_anfci` — US adjusted national financial conditions index (Chicago Fed)
 - `us_cfnai` — US national activity index (Chicago Fed)
 - `us_philly_fed` — US Philadelphia Fed manufacturing current general activity
@@ -210,6 +211,10 @@ Bedrok is wired to 35 publishers. 29 need no key at all; the others take a free 
 - `us_sloos_cc_tightening` — US SLOOS: net share of banks tightening credit-card standards
 - `us_bank_credit` — US bank credit all commercial banks (H.8)
 - `us_ci_loans` — US commercial and industrial loans
+- `us_z1_nfc_financing_gap` — US nonfinancial corporate financing gap (Z.1)
+- `us_z1_nfc_capex` — US nonfinancial corporate capital expenditures (Z.1)
+- `us_z1_nfc_debt_issuance` — US nonfinancial corporate net issuance of debt securities (Z.1)
+- `us_z1_nfc_debt` — US nonfinancial corporate debt securities and loans outstanding (Z.1)
 - `us_cc_delinquency` — US credit-card delinquency rate
 - `us_mortgage_delinquency` — US single-family mortgage delinquency rate
 - `us_fed_balance_sheet` — US Federal Reserve balance sheet, total assets (H.4.1)
@@ -244,6 +249,8 @@ Bedrok is wired to 35 publishers. 29 need no key at all; the others take a free 
 - `us_pce` — US PCE price index
 - `us_core_pce` — US Core PCE price index
 - `us_real_gdp` — US real GDP chained 2017 USD
+- `us_nominal_gdp` — US nominal GDP
+- `us_ip_investment` — US private fixed investment in information processing equipment and software
 - `us_gdp_growth_saar` — US real GDP growth, quarter on quarter at an annual rate
 - `us_gdp_contrib_hh` — US contribution of personal consumption to GDP growth
 - `us_gdp_contrib_inv_total` — US contribution of gross private domestic investment to GDP growth
@@ -262,6 +269,7 @@ Bedrok is wired to 35 publishers. 29 need no key at all; the others take a free 
 - `us_retail_sales` — US advance retail and food services sales
 - `us_durable_orders` — US durable goods new orders
 - `us_core_capex_orders` — US nondefense capital goods orders ex aircraft
+- `us_dc_construction` — US private construction spending on data centers
 - `us_trade_balance` — US trade balance goods and services
 
 ### Federal Reserve Bank of New York — Markets Data and surveys

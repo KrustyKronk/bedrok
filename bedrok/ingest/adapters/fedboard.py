@@ -127,7 +127,7 @@ def to_frame(attrs: dict, obs: list, scale: str | None = None) -> pd.DataFrame:
               .sort_values("date").reset_index(drop=True))[EMPTY]
 
 
-@functools.lru_cache(maxsize=8)        # one slot per release the catalog uses
+@functools.lru_cache(maxsize=12)       # one slot per release the catalog uses
 def _download(rel: str) -> bytes:
     r = requests.get(URL.format(rel=rel.lower(), REL=rel.upper()),
                      headers=BROWSER_UA, timeout=300)

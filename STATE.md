@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-10-29: 0.3.4 is released, carrying Kazakhstan (sessions K1 to K4, item 16); the owner has not yet installed it in Claude Desktop.** Bedrok is a local MCP server and store of
+**Updated 2026-11-02: eight US series for the AI capex cycle are merged on `main` and in the owner's store, not yet released (item 17). 0.3.4 is released, carrying Kazakhstan (sessions K1 to K4, item 16); the owner has not yet installed it in Claude Desktop.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -55,9 +55,31 @@ calls in 36 seconds, with 769 catalog series, then fetched `kz_cpi_yoy`,
 first try raced PyPI's simple index a minute after upload; it listed 0.3.4 on
 the retry.
 
-**Next:** install 0.3.4 in Claude Desktop and ask it about Kazakhstan; then a
-cold question on a release morning (item 1), then whichever open item the
-owner picks.
+**Next:** release 0.3.5 so the Desktop server carries the eight series' rules
+and adapters (item 17); install it and ask about Kazakhstan and the Z.1
+financing gap; then a cold question on a release morning (item 1), then
+whichever open item the owner picks.
+
+**The capex-cycle series in one paragraph (2026-11-02).** A downstream
+dashboard that asks whether the AI build-out is outrunning its revenue needed
+eight public series it was about to fetch from FRED with a key of its own;
+they are Bedrok's now, all public domain and stored. Four come from the Fed
+Board's **Z.1** Financial Accounts with no new code: `fedboard` already reads
+`releases/z1/data/FRB_Z1_xml.zip` (37.6 MB zipped, a 620 MB XML, about 14 s to
+stream-parse): `us_z1_nfc_financing_gap`, `us_z1_nfc_capex`,
+`us_z1_nfc_debt_issuance` and `us_z1_nfc_debt`, 1946 to 2026 Q2. Two are BEA
+NIPA lines: `us_nominal_gdp` (table 1.1.5) and `us_ip_investment`
+(information-processing equipment and software, table 5.3.5 line 31). Two
+needed a little code: `census` gains a workbook path, `c30:<book>:<heading>`,
+because the construction API has no data-centre category and the line exists
+only in `privtime.xlsx` (`us_dc_construction`, NSA, from January 2014); and
+`fedfiles` gains the Board's excess bond premium file (`us_ebp`, 1973 on). The
+Z.1 series take the Fed calendar's own dates ("Z.1" is on its monthly pages),
+the BEA pair BEA's; C30 and the EBP are on rules. The `fedboard` download
+cache grew to twelve slots, and `clear_download_caches` now clears the Census
+workbook too. Proven: 493 tests; `backfill --only` filled all eight from the
+publishers; the information-processing share of GDP reads 5.35% in 2026 Q3
+and 4.46% in 2000 Q4, matching FRED's copies of the same lines.
 
 Session 13 is split: **13a, the release calendar**, is in (three parts,
 below, and session H's four more feeds; what is left is item 2); **13b,
@@ -616,14 +638,14 @@ BIS, the regional Feds, the OECD, Eurostat, the EIA, Census, the IMF, the ONS,
 the Bank of England, the Bank of Canada, the New York Fed, INSEE, the BEA,
 Statistics Canada, Japan's e-Stat and Ministry of Finance, the ABS, INE, the
 four Nordic offices, Destatis, Istat and the Bundesbank, with FRED for the nine session-only
-series. 732 catalog rows, all of them on a fresh install since session G (session C added 191 for GDP breakdowns; D2 the six
-FX pairs and five rows; E retired shrimp; F added the daily Bund).
+series. 777 catalog rows, all of them on a fresh install since session G (session C added 191 for GDP breakdowns; D2 the six
+FX pairs and five rows; E retired shrimp; F added the daily Bund; K1 to K4 Kazakhstan; eight for the capex cycle on 2026-11-02).
 
 **Twelve commands:** `smoke [--keyless]`, `backfill [--only ids --stage S]`,
 `refresh`, `validate`, `query`, `tieout [--only ids]`, `doctor`, `schema`,
 `pctile`, `rates`, `serve`, `docs [--check]`.
 
-**Tests:** 460 (4 skip without a built wheel or bundle, or the owner's term list), network-free, green on 2026-10-16, including the MCP
+**Tests:** 493 (4 skip without a built wheel or bundle, or the owner's term list), network-free, green on 2026-11-02, including the MCP
 server in memory, the layering rule and the publication gate. **Workflows:**
 `tests` (push and PR), `package` (PR: the empty-home install and the gate on
 the wheel), `publish` (a published release), `liveness` (Tuesdays, keyless).
@@ -849,3 +871,11 @@ Owner-side items are in `profile/STATE-private.md`.
     - **Released in 0.3.4** (2026-10-29), not yet installed in Claude
       Desktop.
 
+17. **Release the capex-cycle series (0.3.5).** The eight rows are in the
+    owner's store, so the installed server answers them, but it carries
+    0.3.4's seeds: until a release it has neither their release rules nor the
+    two new adapter paths. A due or stale judgment would try the API path for
+    `us_dc_construction` and an unknown `fedfiles` key for `us_ebp`, fail, and
+    keep the stored data; `bedrok refresh` from this repo updates them in the
+    meantime. The Z.1 zip is the largest file Bedrok downloads (37.6 MB); it is
+    fetched once per refresh and held only for the run.

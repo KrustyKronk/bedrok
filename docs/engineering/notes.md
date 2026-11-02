@@ -461,6 +461,20 @@ deletes the history of any `cache = session` row it still finds stored, and
 derived id's FRED history: `sync_derived` replaces each series in full rather
 than upserting over it.
 
+**Census's API does not carry the data-centre construction line.** Its
+construction dataset (`vip`) answers with about sixteen unlabelled category
+codes; the "Data center" line under Office exists only in the C30 workbooks
+(`construction/c30/xlsx/privtime.xlsx`, one sheet, header row starting
+"Date", newest month first with p and r suffixes, footnotes below). `census`
+reads it by heading, cleaned of the `_x000D_` escape and the footnote digit
+("Total\n_x000D_Private Construction1"). Checked 2026-11-02.
+
+**The Z.1 zip is the biggest file Bedrok reads.** 37.6 MB zipped and one
+620 MB `Z1_data.xml`; `fedboard.parse` streams it in about 14 s and keeps only
+the series asked for. Its names come from the Board's DDP-FRED crosswalk
+(`FA105005305.Q` is FRED's BOGZ1FA105005305Q); `LA` is the seasonally adjusted
+level and `FL` the unadjusted one.
+
 **Census's EITS API wants things it does not document.** Every dataset but
 `marts` answers 400 without `time_slot_id` in `get` and without `for=us:*`;
 without the geography, `resconst` and `ressales` also return each census region

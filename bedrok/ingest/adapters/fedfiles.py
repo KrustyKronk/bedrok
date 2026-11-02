@@ -35,7 +35,9 @@ More traps, from the regional Fed files added in session 3b (2026-10-10):
 Licence is per catalog row, not per file: the NY Fed is attribution; the
 Chicago, Cleveland, Dallas and Atlanta Feds allow reuse only non-commercially
 and with credit (noncommercial); the Philadelphia Fed reserves all rights
-(personal_use); FHFA is a US government work (public_domain, with its notice).
+(personal_use); FHFA is a US government work (public_domain, with its
+notice). The excess bond premium is the Board's own file, so public_domain
+like `fedboard`.
 See bedrok/core/licensing.py.
 """
 from __future__ import annotations
@@ -109,6 +111,11 @@ def _csv(content: bytes, **kw) -> pd.DataFrame:
 def _parse_nfci(content: bytes, column: str = "NFCI") -> pd.DataFrame:
     df = _csv(content, usecols=["Friday_of_Week", column])
     return _tidy(df)
+
+
+def _parse_ebp(content: bytes, column: str = "ebp") -> pd.DataFrame:
+    """The Board's excess bond premium file: date, gz_spread, ebp, est_prob."""
+    return _tidy(_csv(content, usecols=["date", column]))
 
 
 def _parse_cfnai(content: bytes, column: str = "CFNAI") -> pd.DataFrame:
@@ -197,6 +204,11 @@ FILES: dict[str, dict] = {
     "nfci": {
         "url": "https://api.data.chicagofed.org/NFCI/nfci-data-series-csv.csv",
         "parse": _parse_nfci,
+    },
+    "ebp": {
+        # The Board's own research file (FEDS Notes), not a regional Fed's.
+        "url": "https://www.federalreserve.gov/econres/notes/feds-notes/ebp_csv.csv",
+        "parse": _parse_ebp,
     },
     "cfnai": {
         "url": "https://api.data.chicagofed.org/CFNAI/cfnai-data-series-csv.csv",

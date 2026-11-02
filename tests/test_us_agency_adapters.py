@@ -112,6 +112,72 @@ def test_census_parse_empty():
     assert census._parse([], "44X72", "SM").empty
 
 
+def _c30_workbook(rows) -> bytes:
+    import io
+    import openpyxl
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    for r in rows:
+        ws.append(r)
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
+# The shape of privtime.xlsx on 2026-11-02, cut to four months: title rows, a
+# header row with escaped line breaks and footnote digits, newest first with p
+# and r suffixes, an empty string before the line existed, footnotes after.
+C30_ROWS = [
+    ["Value of Private Construction Put in Place - Not Seasonally Adjusted", None, None],
+    ["(Millions of dollars.)", None, None],
+    [None, None, None],
+    ["Date", "Total\n_x000D_Private Construction1", "Data center"],
+    ["Sep-26p", 143952, 8517],
+    ["Aug-26r", 151371, 8091],
+    ["Sep-25", 150244, 4430],
+    ["Dec-13", 60000, ""],
+    ["p Preliminary r Revised", None, None],
+    ["1Total private construction includes the following categories", None, None],
+]
+
+
+def test_c30_reads_a_named_column_drops_blanks_and_footnotes():
+    df = census._parse_c30(_c30_workbook(C30_ROWS), "Data center")
+    assert [str(d) for d in df["date"]] == ["2025-09-01", "2026-08-01", "2026-09-01"]
+    assert df["value"].tolist() == [4430, 8091, 8517]
+
+
+def test_c30_matches_a_heading_through_its_escapes_and_footnote_digit():
+    df = census._parse_c30(_c30_workbook(C30_ROWS), "Total Private Construction")
+    assert df["value"].iloc[-1] == 143952
+    assert len(df) == 4
+
+
+def test_c30_unknown_column_fails_loudly():
+    with pytest.raises(ValueError, match="no column"):
+        census._parse_c30(_c30_workbook(C30_ROWS), "Data centre")
+
+
+def test_c30_codes_go_to_the_workbook_not_the_api(monkeypatch):
+    seen = []
+
+    class _R:
+        content = _c30_workbook(C30_ROWS)
+        headers = {}
+        def raise_for_status(self): pass
+
+    def _get(url, **kw):
+        seen.append(url)
+        return _R()
+
+    census._download.cache_clear()
+    monkeypatch.setattr(census.requests, "get", _get)
+    df = census.fetch("c30:privtime:Data center", "unused-key", start="2026-01-01")
+    assert seen == ["https://www.census.gov/construction/c30/xlsx/privtime.xlsx"]
+    assert df["value"].tolist() == [8091, 8517]
+    census._download.cache_clear()
+
+
 # ---- NY Fed ---------------------------------------------------------------
 def test_nyfed_rrp_sums_treasury_tranches_per_day_in_billions():
     payload = {"repo": {"operations": [

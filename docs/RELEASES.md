@@ -72,12 +72,16 @@ Statuses: `fresh` (the next period is not due yet), `due` (inside its window: fe
 | `us_core_pce` | 26 to 36 days after the month | 08:30 America/New_York | BEA's release schedule |
 | `us_cpi` | 10 to 18 days after the month | 08:30 America/New_York |  |
 | `us_cpi_nsa` | 10 to 18 days after the month | 08:30 America/New_York |  |
+| `us_dc_construction` | 28 to 36 days after the month | 10:00 America/New_York |  |
+| `us_ebp` | 3 to 20 days after the month | 12:00 America/New_York |  |
 | `us_fed_balance_sheet` | 1 days after the week, on a Thursday | 16:30 America/New_York | the Fed Board's release calendar |
 | `us_gdp_growth_saar` | 26 to 32 days after the quarter | 08:30 America/New_York | BEA's release schedule |
 | `us_indpro` | 14 to 19 days after the month | 09:15 America/New_York | the Fed Board's release calendar |
 | `us_initial_claims` | 5 days after the week, on a Thursday | 08:30 America/New_York |  |
 | `us_initial_claims_4wk` | 5 days after the week, on a Thursday | 08:30 America/New_York |  |
+| `us_ip_investment` | 26 to 32 days after the quarter | 08:30 America/New_York | BEA's release schedule |
 | `us_m2` | 21 to 28 days after the month, on a Tuesday | 13:00 America/New_York | the Fed Board's release calendar |
+| `us_nominal_gdp` | 26 to 32 days after the quarter | 08:30 America/New_York | BEA's release schedule |
 | `us_payrolls` | 1 to 8 days after the month, on a Friday | 08:30 America/New_York |  |
 | `us_pce` | 26 to 36 days after the month | 08:30 America/New_York | BEA's release schedule |
 | `us_real_gdp` | 26 to 32 days after the quarter | 08:30 America/New_York | BEA's release schedule |
@@ -88,17 +92,21 @@ Statuses: `fresh` (the next period is not due yet), `due` (inside its window: fe
 | `us_sloos_cni_tightening` | 52 to 61 days before the end of the quarter, on a Monday | 14:00 America/New_York | the Fed Board's release calendar |
 | `us_tga` | 1 days after the week, on a Thursday | 16:30 America/New_York | the Fed Board's release calendar |
 | `us_unemployment` | 1 to 8 days after the month, on a Friday | 08:30 America/New_York |  |
+| `us_z1_nfc_capex` | 66 to 80 days after the quarter | 12:00 America/New_York | the Fed Board's release calendar |
+| `us_z1_nfc_debt` | 66 to 80 days after the quarter | 12:00 America/New_York | the Fed Board's release calendar |
+| `us_z1_nfc_debt_issuance` | 66 to 80 days after the quarter | 12:00 America/New_York | the Fed Board's release calendar |
+| `us_z1_nfc_financing_gap` | 66 to 80 days after the quarter | 12:00 America/New_York | the Fed Board's release calendar |
 | `wb_…` (family) | 1 to 6 days after the month | 12:00 America/New_York |  |
 
 ## Exact calendars
 
-- **BEA's release schedule** (`bea_json`): 4 series; fetched at most once a day.
+- **BEA's release schedule** (`bea_json`): 6 series; fetched at most once a day.
 - **The ONS's next-release date** (`ons_next_release`): 4 series; read from the series' own response, no extra request.
 - **The National Bank of Kazakhstan's next-release date** (`nbk_next_release`): 7 series; read from the series' page after each fetch, one extra request per page.
 - **Statistics Canada's release schedule** (`statcan_json`): 3 series; fetched at most once a day.
 - **INE's release calendar** (`ine_ics`): 4 series; fetched at most once a day.
 - **The ECB's statistical calendar** (`ecb_statscal`): 8 series; fetched at most once a day.
-- **The Fed Board's release calendar** (`fedboard_pages`): 10 series; fetched at most once a day.
+- **The Fed Board's release calendar** (`fedboard_pages`): 14 series; fetched at most once a day.
 - **The Bureau of National Statistics' release calendar** (`bns_calendar`): 5 series; fetched at most once a day.
 
 The BLS publishes a calendar file, but its website refuses automated retrieval, so BLS series stay on their rules.

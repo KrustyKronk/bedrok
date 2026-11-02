@@ -214,3 +214,25 @@ def test_fhfa_keeps_the_purchase_only_monthly_national_index():
            b"traditional,purchase-only,monthly,USA or Census Division,Pacific,DV_PAC,2026,7,500,501\n")
     df = fedfiles._parse_fhfa(csv)
     assert df.values.tolist() == [[pd.Timestamp("2026-07-01").date(), 443.52]]
+
+
+# ---- The Board's excess bond premium (2026-11-02) ----------------------------
+
+# The live file's shape, captured 2026-11-02 and cut to three rows.
+EBP_CSV = (
+    "date,gz_spread,ebp,est_prob\n"
+    "1973-01-01,1.1307714053429057,-0.04758657214441975,0.1834563942368741\n"
+    "2026-08-01,0.8788529799959449,-0.2254507226190453,0.13030261122488357\n"
+    "2026-09-01,0.9259102941329188,-0.3919245963723856,0.09120169411563048\n"
+)
+
+
+def test_ebp_reads_the_premium_not_the_full_spread():
+    df = fedfiles._parse_ebp(EBP_CSV.encode())
+    assert df["value"].round(4).tolist() == [-0.0476, -0.2255, -0.3919]
+    assert df["date"].iloc[-1] == pd.Timestamp("2026-09-01").date()
+
+
+def test_ebp_file_can_give_the_gz_spread():
+    df = fedfiles._parse_ebp(EBP_CSV.encode(), "gz_spread")
+    assert round(df["value"].iloc[-1], 4) == 0.9259
