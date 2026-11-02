@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-11-02: eight US series for the AI capex cycle are merged on `main` and in the owner's store, not yet released (item 17). 0.3.4 is released, carrying Kazakhstan (sessions K1 to K4, item 16); the owner has not yet installed it in Claude Desktop.** Bedrok is a local MCP server and store of
+**Updated 2026-11-02: 0.3.5 is released, carrying the eight US series for the AI capex cycle (item 17), on top of 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed neither in Claude Desktop yet.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -55,10 +55,19 @@ calls in 36 seconds, with 769 catalog series, then fetched `kz_cpi_yoy`,
 first try raced PyPI's simple index a minute after upload; it listed 0.3.4 on
 the retry.
 
-**Next:** release 0.3.5 so the Desktop server carries the eight series' rules
-and adapters (item 17); install it and ask about Kazakhstan and the Z.1
-financing gap; then a cold question on a release morning (item 1), then
-whichever open item the owner picks.
+**0.3.5 is released** (2026-11-02): the eight capex-cycle series below.
+`publish.yml`'s build, publish and bundle jobs all passed, the wheel and sdist
+are on PyPI and `bedrok-0.3.5.mcpb` is on the GitHub release. Proven from
+PyPI: an empty folder and an empty home answered all ten smoke calls in 28
+seconds, with 777 catalog series, then fetched `us_ebp`,
+`us_z1_nfc_financing_gap` and `us_z1_nfc_capex` on demand (the two keyless
+new paths; the BEA and Census rows need keys the clean home does not have).
+The release PR's macOS clean-install job sat queued for GitHub's 15-minute
+limit and was cancelled without running; the re-run passed in under a minute.
+
+**Next:** install 0.3.5 in Claude Desktop and ask about Kazakhstan and the
+Z.1 financing gap (items 16 and 17); then a cold question on a release
+morning (item 1), then whichever open item the owner picks.
 
 **The capex-cycle series in one paragraph (2026-11-02).** A downstream
 dashboard that asks whether the AI build-out is outrunning its revenue needed
@@ -868,14 +877,16 @@ Owner-side items are in `profile/STATE-private.md`.
     - **GDP has no exact calendar.** The 2026 calendar shows GDP by
       production about 47 and about 92 days after a quarter, inconsistently;
       it stays on a wide rule until a pattern is clear.
-    - **Released in 0.3.4** (2026-10-29), not yet installed in Claude
-      Desktop.
+    - **Released in 0.3.4** (2026-10-29), and carried by 0.3.5; neither is
+      installed in Claude Desktop yet.
 
-17. **Release the capex-cycle series (0.3.5).** The eight rows are in the
-    owner's store, so the installed server answers them, but it carries
-    0.3.4's seeds: until a release it has neither their release rules nor the
-    two new adapter paths. A due or stale judgment would try the API path for
-    `us_dc_construction` and an unknown `fedfiles` key for `us_ebp`, fail, and
-    keep the stored data; `bedrok refresh` from this repo updates them in the
-    meantime. The Z.1 zip is the largest file Bedrok downloads (37.6 MB); it is
-    fetched once per refresh and held only for the run.
+17. **The capex-cycle series are released in 0.3.5** (2026-11-02), not yet
+    installed in Claude Desktop. Until they are, the installed server answers
+    the eight stored rows but carries 0.3.4's seeds: a due or stale judgment
+    would try the API path for `us_dc_construction` and an unknown `fedfiles`
+    key for `us_ebp`, fail, and keep the stored data. What stays open:
+    - **Z.1 asked on demand costs about 13 s a series.** From the clean
+      install, `us_z1_nfc_financing_gap` and `us_z1_nfc_capex` asked one after
+      the other took 13.1 and 12.7 s, so the 37.6 MB zip is downloaded or
+      parsed again for each; a refresh fetches it once. Not looked into;
+      worth it only if a cold session asking four Z.1 series feels slow.
