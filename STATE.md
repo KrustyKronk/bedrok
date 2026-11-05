@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-11-05: session I puts six central banks' decisions on the release calendar (item 19), merged and cut as 0.3.7 but not yet released; 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
+**Updated 2026-11-05: 0.3.7 is released, carrying session I's six central banks' decisions on the release calendar (item 19); 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -82,6 +82,14 @@ the logo byte for byte; a clean `uvx --python 3.12 bedrok==0.3.6 serve` on an
 empty folder answered initialize as `Bedrok` 0.3.6 with the 512x512 PNG in
 `serverInfo.icons`.
 
+**0.3.7 is released** (2026-11-05): session I, nothing else. `publish.yml`'s
+build, publish and bundle jobs all passed, and `bedrok-0.3.7.mcpb` is on the
+GitHub release. Proven from the published artefacts: the released bundle's
+manifest is 0.3.7 and carries `ingest/calendars.py` and the calendar seed;
+PyPI has the 0.3.7 wheel and sdist; a clean `uvx --python 3.12 bedrok==0.3.7
+serve` on an empty home passed `scripts/mcp_smoke.py`, and the installed
+package lists the six meeting feeds.
+
 **Session I in one paragraph (2026-11-05).** Asked "does the calendar
 include the FOMC?", Bedrok had every policy rate's decisions after the fact and
 no bank's meeting dates. Now six banks' schedules are fetched from their own
@@ -113,8 +121,7 @@ calendar listed Bank Rate as due, data to 28 Oct; the refresh brought the
 live store every linked rate now names its bank's next decision (the FOMC and
 the Bank of Canada on 9 Dec, the ECB and the Bank of England on 17 Dec).
 
-**Next:** `gh release create v0.3.7` (item 19), then install 0.3.7 in Claude
-Desktop over the old extension, which also brings 0.3.6's logo and 0.3.4's and
+**Next:** install 0.3.7 in Claude Desktop over the old extension (item 19), which also brings 0.3.6's logo and 0.3.4's and
 0.3.5's series, and ask about Kazakhstan and the
 Z.1 financing gap (items 16 and 17); then a cold question on a release
 morning (item 1), then whichever open item the owner picks.
@@ -946,17 +953,15 @@ Owner-side items are in `profile/STATE-private.md`.
       worth it only if a cold session asking four Z.1 series feels slow.
 
 18. **The logo is released in 0.3.6** (2026-11-05), not yet installed in
-    Claude Desktop. Install `bedrok-0.3.6.mcpb` from the release over the old
-    extension; the extension list draws the manifest's icon, which an
+    Claude Desktop. Installing 0.3.7 (item 19) over the old extension brings it; the extension list draws the manifest's icon, which an
     installed older version does not have. Not yet seen in any host: whether Desktop's list draws it at small sizes
     well, and which other hosts draw `serverInfo.icons` (it is in the MCP
     spec from 2025-11-25; hosts are free to ignore it). A Claude Code
     install (`uvx … bedrok serve`) picks it up on its next start from PyPI.
 
 19. **Central banks' decisions are on the calendar** (session I, 2026-11-05),
-    merged (PR #36) and versioned 0.3.7, not released. What stays open:
-    - **Release 0.3.7** with `gh release create v0.3.7`, which runs
-      `publish.yml`; then install it in Claude Desktop and ask
+    released in 0.3.7, not yet installed in Claude Desktop. What stays open:
+    - **Install `bedrok-0.3.7.mcpb`** from the release in Claude Desktop and ask
       "when does the FOMC meet next?" and, the day after a decision, for the
       rate.
     - **Banks not read yet.** The SNB (its decisions page lists past
