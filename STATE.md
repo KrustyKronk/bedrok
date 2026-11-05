@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-11-05: 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
+**Updated 2026-11-05: session I puts six central banks' decisions on the release calendar (item 19), on a branch and not yet released; 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -81,6 +81,37 @@ manifest is 0.3.6 with the icon, and the bundle and the PyPI wheel each carry
 the logo byte for byte; a clean `uvx --python 3.12 bedrok==0.3.6 serve` on an
 empty folder answered initialize as `Bedrok` 0.3.6 with the 512x512 PNG in
 `serverInfo.icons`.
+
+**Session I in one paragraph (2026-11-05).** Asked "does the calendar
+include the FOMC?", Bedrok had every policy rate's decisions after the fact and
+no bank's meeting dates. Now six banks' schedules are fetched from their own
+pages, at most once a day, into `release_calendar` as six new feeds
+(`fomc_calendar`, `ecb_meetings`, `boe_mpc`, `boj_mpm`, `boc_rate`,
+`rba_board`): the day is the bank's and the time its usual practice, said with
+"usually", except the Bank of Canada's, which its page states. The six series
+that show a decision on its day (the Fed's two bounds, the ECB's two rates,
+Bank Rate, the Bank of Canada's target) are linked to their bank in
+`release_calendar.csv` and judged by its decisions, not by a rule: `due` once
+the bank has decided and the store does not show it, `late` two days after the
+day it should first show, which is read off each bank's own series (the New
+York Fed and the Bank of Canada date a change from the next day, Bank Rate on
+the day, the ECB from the following Wednesday). A rate that gains a row only
+on a change shows a hold through a fifth table, `series_checks`, the last fetch
+without error, written by `sync_macro`. The Bank of Japan and the RBA are dates
+only: their rates are the BIS month-end rows. `release_calendar` lists the
+decisions with the statistics (the two Fed bounds on one line), a past
+decision is kept when a bank's page drops it, the six pages each have a
+`smoke` check, and the catalog note on the Fed's target says a decision shows
+the next day. Bedrok never says what a bank is expected to decide.
+Proven: 512 tests; a full `bedrok refresh` of the real store from this branch
+stored 56 FOMC, 18 ECB, 16 Bank of England, 16 Bank of Japan, 1 Bank of Canada
+and 16 RBA decision dates and recorded 234 series checks. It exited 3 on 15
+failures outside this session (item 20). The Bank of England decided on the
+morning of the session: on a copy of the store taken before the refresh the
+calendar listed Bank Rate as due, data to 28 Oct; the refresh brought the
+5 Nov row (3.75 to 4.00) and it turned fresh, next decision 17 Dec. On the
+live store every linked rate now names its bank's next decision (the FOMC and
+the Bank of Canada on 9 Dec, the ECB and the Bank of England on 17 Dec).
 
 **Next:** install 0.3.6 in Claude Desktop over the old extension (item 18),
 which also brings 0.3.4's and 0.3.5's series, and ask about Kazakhstan and the
@@ -723,6 +754,10 @@ None holds a secret.
   payloads; recorded cassettes were judged not worth a dependency (session 12).
 - **The liveness run is keyless** until keys are worth putting on GitHub as
   repository secrets (session 12).
+- **A policy rate is judged by its bank's decisions** (session I,
+  2026-11-05), not by a rule: due after a decision the store does not show,
+  fresh until the next. Meeting dates come from each bank's own page, never a
+  list kept by hand (the owner's rule of 2026-10-11 for Fed decisions).
 - **Freshness is age and the next release** (2026-10-15). Statuses: `fresh`,
   `due`, `late`, `stale`, `empty`, `session`. A series without a release rule
   is judged by age exactly as before; staleness overrides due and late, so a
@@ -872,10 +907,10 @@ Owner-side items are in `profile/STATE-private.md`.
       about 1,845 and condensate about 395 kb/d, against the 1.79 and 0.29
       mb/d the warning quotes. Both are in the catalog notes; the cause is
       not known.
-    - **Event series have no calendar.** Release rules exclude `event`, so
-      `kz_base_rate`, like the ECB's rates, has no next decision date. The
-      bank publishes its decision schedule (a page whose id changes each
-      year). The owner's call whether event calendars are worth a design.
+    - **Kazakhstan's base rate has no decision dates.** Session I gave the
+      ECB's rates their bank's schedule; the National Bank publishes its own
+      on a page whose id changes each year, so `kz_base_rate` is still judged
+      by age (item 19).
     - **Small things seen in K1:** "kazakhstan exchange rate" ranks the REER
       and NEER above `usdkzt` and `eurkzt`. A percentile of an event series
       counts decisions, not time spent at each rate (true of the ECB's rows
@@ -916,3 +951,29 @@ Owner-side items are in `profile/STATE-private.md`.
     well, and which other hosts draw `serverInfo.icons` (it is in the MCP
     spec from 2025-11-25; hosts are free to ignore it). A Claude Code
     install (`uvx … bedrok serve`) picks it up on its next start from PyPI.
+
+19. **Central banks' decisions are on the calendar** (session I, 2026-11-05),
+    on a branch, not released. What stays open:
+    - **Release it as 0.3.7**, then install it in Claude Desktop and ask
+      "when does the FOMC meet next?" and, the day after a decision, for the
+      rate.
+    - **Banks not read yet.** The SNB (its decisions page lists past
+      assessments only; the future dates were not found), the National Bank
+      of Kazakhstan (the page's address changes yearly), and the People's Bank
+      of China, which has no fixed schedule. The Bank of Canada's page lists
+      only the next announcement; its full-year schedule is a press release.
+    - **The ECB's hold rule rests on an assumption.** A hold counts as shown
+      once the rates were fetched on or after the effective Wednesday. If the
+      ECB publishes a changed rate in its data before that day, the rule is
+      merely cautious; if it publishes later, the rule calls a cut a hold.
+      Watch the 17 Dec 2026 decision: when does the new row appear?
+    - **Not carried:** which FOMC meetings come with projections (the page
+      marks them), the minutes' dates, and the press conference times.
+
+20. **Failures seen in session I's refresh** (2026-11-05), none from the
+    session's code: the ECB's data API answered 503 (once a DNS failure) for
+    twelve euro-area series and EURUSD, which looked like an outage; Destatis
+    refused `de_industrial_production` again; and the Atlanta Fed's sticky
+    CPI (`us_sticky_core_cpi`) now redirects to a 404 page. That last one
+    may be a moved file: look before the next release.
+

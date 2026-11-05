@@ -216,6 +216,8 @@ def releases_md() -> str:
         out.append(f"| {name} | {_timing(r)} | {r['time']} {r['tz']} | {exact} |\n")
     out.append("\n## Exact calendars\n\n")
     for feed, meta in releases.FEEDS.items():
+        if feed in releases.MEETING_FEEDS:
+            continue
         n = sum(1 for f, _ in cal.values() if f == feed)
         how = ("fetched at most once a day" if meta["fetched"]
                else "read from the series' page after each fetch, one extra request per page"
@@ -225,6 +227,30 @@ def releases_md() -> str:
         out.append(f"- **{label}** (`{feed}`): {n} series; {how}.\n")
     out.append("\nThe BLS publishes a calendar file, but its website refuses automated "
                "retrieval, so BLS series stay on their rules.\n")
+    out.append("\n## Central banks' decisions\n\n"
+               "Six banks' meeting schedules are read from their own pages, at most once "
+               "a day. The day is the bank's; the time is its usual practice, said with "
+               "\"usually\", except where the bank states it. A policy rate is `due` once "
+               "its bank has decided and the store does not show the decision yet, and "
+               "`late` two days after the day the decision should first show. A rate that "
+               "only gains a row when it changes counts a hold as shown once it has been "
+               "fetched on or after that day. Past decisions are kept when a page drops "
+               "them. Bedrok never says what a bank is expected to decide.\n\n"
+               "| Bank | Decision time | Shows in | Shows from |\n|---|---|---|---|\n")
+    for feed in releases.MEETING_FEEDS:
+        meta = releases.FEEDS[feed]
+        series = ", ".join(f"`{s}`" for s in releases.meeting_series(feed))
+        if not series:
+            series = (f"dates only (`{meta['related']}` is the BIS month-end rate)"
+                      if meta.get("related") else "dates only")
+        clock = meta["time"].strftime("%H:%M") + f" {meta['tz']}"
+        clock = (clock + ", stated" if meta.get("time_stated")
+                 else "no set time" if meta.get("time_note") else clock + ", usually")
+        days = meta.get("reflected_days")
+        shows = ("" if days is None else "the decision day" if days == 0
+                 else "the next day" if days == 1 else f"{days} days after the decision")
+        label = meta["label"][0].upper() + meta["label"][1:]
+        out.append(f"| {label} (`{feed}`) | {clock} | {series} | {shows} |\n")
     return "".join(out)
 
 

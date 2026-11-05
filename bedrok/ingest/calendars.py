@@ -20,6 +20,10 @@ the answer says whose date it is. The feeds (researched 2026-10-15 and
                     `description.nextRelease`; recorded after each fetch
                     (pipeline.sync_macro), no request of its own.
 
+And six central banks' meeting schedules, one page each (session I):
+fomc_calendar, ecb_meetings, boe_mpc, boj_mpm, boc_rate and rba_board. Their
+dates are decisions, not periods; freshness reads them in its own way.
+
 The fetched feeds are read at most once a day.
 
 The BLS publishes an iCal file, but its website refuses automated retrieval
@@ -280,9 +284,214 @@ def fetch_bns(today: date | None = None) -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
+# ---- central banks' meeting schedules (session I) ------------------------------
+# Each page gives the decision day; the time is the bank's usual practice
+# (core/releases.py FEEDS), except the Bank of Canada's, which states it. A
+# multi-day meeting is dated by its last day, the day of the decision. Every
+# fetched date is kept once it has passed, even when the page drops it (the
+# ECB's and the Bank of Canada's pages list only what is ahead), because a
+# policy-rate series is due after its bank's last decision.
+
+def _month_number(word: str) -> int | None:
+    """"Dec", "Sept.", "June", "December" → 12, 9, 6, 12."""
+    w = word.strip(". ").lower()[:3]
+    hit = [i for i, m in enumerate(releases._MONTHS) if m.lower()[:3] == w]
+    return hit[0] + 1 if hit else None
+
+
+def _decision(feed: str, day: date, clock: time | None = None) -> tuple:
+    return (releases.FEEDS[feed]["decision"],
+            _at(day, clock or releases.FEEDS[feed]["time"], feed), None)
+
+
+def _text(fragment: str) -> str:
+    return " ".join(html.unescape(re.sub(r"<[^>]+>", " ", fragment or "")).split())
+
+
+FOMC_URL = "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
+_FOMC_ROW = re.compile(r'fomc-meeting__month[^>]*>\s*<strong>([^<]+)</strong>.*?'
+                       r'fomc-meeting__date[^>]*>([^<]*)<', re.S)
+
+
+def parse_fomc(text: str) -> pd.DataFrame:
+    """The FOMC's calendars page: a panel per year ("2027 FOMC Meetings"), a
+    row per meeting with its month ("January", "Apr/May") and days ("27-28",
+    "16-17*", the star marking projections). The last day is the decision. A
+    row whose days carry words (an unscheduled meeting, a notation vote) is
+    not on the schedule, and is skipped."""
+    rows = []
+    parts = re.split(r">\s*(\d{4}) FOMC Meetings\s*<", text or "")
+    for year, body in zip(parts[1::2], parts[2::2]):
+        for month, days in _FOMC_ROW.findall(body):
+            days = days.replace("*", "").strip()
+            if not re.fullmatch(r"\d{1,2}(\s*-\s*\d{1,2})?", days):
+                continue
+            last = int(re.findall(r"\d{1,2}", days)[-1])
+            n = _month_number(month.split("/")[-1])
+            if n is None:
+                continue
+            try:
+                rows.append(_decision("fomc_calendar", date(int(year), n, last)))
+            except ValueError:
+                continue
+    return _rows(rows)
+
+
+def fetch_fomc() -> pd.DataFrame:
+    r = requests.get(FOMC_URL, headers=BROWSER_UA, timeout=60)
+    r.raise_for_status()
+    return parse_fomc(r.text)
+
+
+ECB_MEETINGS_URL = "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html"
+
+
+def parse_ecb_meetings(text: str) -> pd.DataFrame:
+    """The ECB's meeting schedule: `<dt>17/12/2026</dt><dd>Governing Council of
+    the ECB: monetary policy meeting in Frankfurt (Day 2), followed by press
+    conference</dd>`. A policy meeting's decision is its second day (or its
+    only one); non-monetary meetings and the General Council are not decisions."""
+    rows = []
+    for when, body in re.findall(r"<dt>\s*([^<]+?)\s*</dt>\s*<dd>(.*?)</dd>", text or "", re.S):
+        words = _text(body)
+        if ("Governing Council" not in words or "non-monetary" in words
+                or not re.search(r"\bmonetary policy meeting\b", words) or "(Day 1)" in words):
+            continue
+        try:
+            rows.append(_decision("ecb_meetings", datetime.strptime(when.strip(), "%d/%m/%Y").date()))
+        except ValueError:
+            continue
+    return _rows(rows)
+
+
+def fetch_ecb_meetings() -> pd.DataFrame:
+    r = requests.get(ECB_MEETINGS_URL, headers=BROWSER_UA, timeout=60)
+    r.raise_for_status()
+    return parse_ecb_meetings(r.text)
+
+
+BOE_MPC_URL = "https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates"
+
+
+def parse_boe_mpc(text: str) -> pd.DataFrame:
+    """The Bank's MPC dates: under "2026 confirmed dates", a table whose first
+    cell per row is the announcement day ("Thursday 5 November"). Provisional
+    dates are not taken: they may move."""
+    rows = []
+    for year, table in re.findall(r"<h2>\s*(\d{4}) confirmed dates\s*</h2>\s*<table>(.*?)</table>",
+                                  text or "", re.S):
+        for cell in re.findall(r"<tr>\s*<td>(.*?)</td>", table, re.S):
+            m = re.search(r"(\d{1,2}) ([A-Za-z]+)", _text(cell))
+            n = _month_number(m.group(2)) if m else None
+            if n is None:
+                continue
+            try:
+                rows.append(_decision("boe_mpc", date(int(year), n, int(m.group(1)))))
+            except ValueError:
+                continue
+    return _rows(rows)
+
+
+def fetch_boe_mpc() -> pd.DataFrame:
+    r = requests.get(BOE_MPC_URL, headers=BROWSER_UA, timeout=60)
+    r.raise_for_status()
+    return parse_boe_mpc(r.text)
+
+
+BOJ_MPM_URL = "https://www.boj.or.jp/en/mopo/mpmsche_minu/index.htm"
+
+
+def parse_boj_mpm(text: str) -> pd.DataFrame:
+    """The Bank of Japan's schedule: a table per year ("Table : 2026"), whose
+    first cell per row is the meeting ("Apr. 30 (Thurs.), May 1 (Fri.)"). The
+    last day named is the decision; a month carries over until another is
+    named."""
+    rows = []
+    for year, table in re.findall(r"Table : (\d{4})</caption>(.*?)</table>", text or "", re.S):
+        for cell in re.findall(r"<tr>\s*<td>(.*?)</td>", table, re.S):
+            month, day = None, None
+            for word, d in re.findall(r"(?:([A-Z][a-z]+)\.?\s+)?(\d{1,2})\s*\(", _text(cell)):
+                month = _month_number(word) if word else month
+                day = int(d)
+            if month is None or day is None:
+                continue
+            try:
+                rows.append(_decision("boj_mpm", date(int(year), month, day)))
+            except ValueError:
+                continue
+    return _rows(rows)
+
+
+def fetch_boj_mpm() -> pd.DataFrame:
+    r = requests.get(BOJ_MPM_URL, headers=BROWSER_UA, timeout=60)
+    r.raise_for_status()
+    return parse_boj_mpm(r.text)
+
+
+BOC_EVENTS_URL = "https://www.bankofcanada.ca/press/upcoming-events/"
+_BOC_EVENT = re.compile(r"media-date[^>]*>\s*([A-Z][a-z]+ \d{1,2}, \d{4})\s*</span>\s*"
+                        r"<h3[^>]*>\s*<a[^>]*>\s*Interest Rate Announcement\s*</a>(.*?)</article>",
+                        re.S)
+
+
+def parse_boc_rate(text: str) -> pd.DataFrame:
+    """The Bank of Canada's upcoming events: an "Interest Rate Announcement"
+    entry per scheduled date ("December 9, 2026"), with its time ("09:45
+    (ET)"). Only what is ahead is listed, usually the next one."""
+    rows = []
+    for when, body in _BOC_EVENT.findall(text or ""):
+        try:
+            day = datetime.strptime(when, "%B %d, %Y").date()
+        except ValueError:
+            continue
+        m = re.search(r"(\d{1,2}):(\d{2})\s*\(ET\)", body)
+        rows.append(_decision("boc_rate", day, time(int(m.group(1)), int(m.group(2))) if m else None))
+    return _rows(rows)
+
+
+def fetch_boc_rate() -> pd.DataFrame:
+    r = requests.get(BOC_EVENTS_URL, headers=BROWSER_UA, timeout=60)
+    r.raise_for_status()
+    return parse_boc_rate(r.text)
+
+
+RBA_BOARD_URL = "https://www.rba.gov.au/schedules-events/board-meeting-schedules.html"
+
+
+def parse_rba_board(text: str) -> pd.DataFrame:
+    """The RBA's schedules: a table per year ("Board meeting schedules 2026"),
+    a row per month whose first cell is the Monetary Policy Board's meeting
+    ("2–3 February", "31 March–1 April"). The last day is the decision."""
+    rows = []
+    for year, table in re.findall(r"<caption[^>]*>\s*Board meeting schedules (\d{4})\s*</caption>"
+                                  r"(.*?)</table>", text or "", re.S):
+        for cell in re.findall(r'<th scope="row">[^<]*</th>\s*<td>(.*?)</td>', table, re.S):
+            found = re.findall(r"(\d{1,2})(?:\s*[–-]\s*(\d{1,2}))?\s+([A-Z][a-z]+)", _text(cell))
+            if not found:
+                continue
+            first, second, month = found[-1]
+            n = _month_number(month)
+            if n is None:
+                continue
+            try:
+                rows.append(_decision("rba_board", date(int(year), n, int(second or first))))
+            except ValueError:
+                continue
+    return _rows(rows)
+
+
+def fetch_rba_board() -> pd.DataFrame:
+    r = requests.get(RBA_BOARD_URL, headers=BROWSER_UA, timeout=60)
+    r.raise_for_status()
+    return parse_rba_board(r.text)
+
+
 FETCHERS = {"bea_json": fetch_bea, "statcan_json": fetch_statcan, "ine_ics": fetch_ine,
             "ecb_statscal": fetch_ecb, "fedboard_pages": fetch_fedboard,
-            "bns_calendar": fetch_bns}
+            "bns_calendar": fetch_bns,
+            "fomc_calendar": fetch_fomc, "ecb_meetings": fetch_ecb_meetings,
+            "boe_mpc": fetch_boe_mpc, "boj_mpm": fetch_boj_mpm, "boc_rate": fetch_boc_rate,
+            "rba_board": fetch_rba_board}
 
 
 def parse_ons_next(text: str | None, latest: date | None, frequency: str) -> dict | None:
@@ -353,8 +562,15 @@ def sync_feed(con, feed: str, now: datetime | None = None) -> tuple:
         return (feed, "FAIL", f"{type(e).__name__}: {str(e)[:160]}; stored dates kept")
     if df.empty:
         return (feed, "FAIL", "no dates in the answer; stored dates kept")
-    n = store.replace_release_calendar(con, feed, _frame(feed, df, now or datetime.now(timezone.utc)))
-    return (feed, "ok", f"{n} release dates")
+    # A bank's past decisions stay: its page may list only what is ahead, and a
+    # policy rate is due after the last one. Everything ahead is replaced, so a
+    # moved meeting drops its old date, whichever way it moved.
+    now = now or datetime.now(timezone.utc)
+    keep = (min(df["due_at"].min(), _utc_naive(now)) if feed in releases.MEETING_FEEDS
+            else None)
+    n = store.replace_release_calendar(con, feed, _frame(feed, df, now), keep_before=keep)
+    what = "decision dates" if feed in releases.MEETING_FEEDS else "release dates"
+    return (feed, "ok", f"{n} {what}")
 
 
 def sync_calendars(con, incremental: bool = True) -> list[tuple]:

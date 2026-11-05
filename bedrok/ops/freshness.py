@@ -18,6 +18,9 @@ Two tests, the second only where a series has a release rule
      the publisher has stated the date (the store's release_calendar, filled
      by ingest/calendars.py), that date replaces the rule's window. Reading it
      is offline: `assess` never fetches.
+  3. A central bank's decision, for a series that shows one (a policy rate
+     whose bank's schedule is in the calendar): due once the decision has been
+     taken and the store does not show it yet, else fresh until the next one.
 
 Session series (never stored) have no stored age; `assess` reports them as
 such rather than as stale, with their next release when a rule names it.
@@ -75,6 +78,49 @@ def _calendar(con, series_id: str, rule: dict, w: dict) -> dict | None:
     if row is None:
         return None
     return releases.calendar_window(feed, w["label"], row[0].replace(tzinfo=timezone.utc))
+
+
+def _utc(d: datetime) -> datetime:
+    return d.astimezone(timezone.utc).replace(tzinfo=None)
+
+
+def _meeting(con, series_id: str, feed: str, top: date | None, frequency: str,
+             now: datetime) -> tuple[dict, str] | None:
+    """(window, state) for a series that shows a central bank's decisions.
+
+    Due once the bank's last decision (within MEETING_LOOKBACK) has been taken
+    and the store does not show it: a daily series shows it once it holds a
+    row dated on or after the day the decision is first dated (the New York
+    Fed's next-day target); a series that gains a row only on a change (the
+    ECB's rates) shows a change the same way, and a hold once it has been
+    fetched on or after that day (series_checks). Otherwise fresh, with the
+    next decision. None when the schedule holds no dates."""
+    name = releases.FEEDS[feed]["decision"]
+    try:
+        prev, nxt = con.execute(
+            "SELECT max(due_at) FILTER (WHERE due_at <= ? AND due_at >= ?), "
+            "min(due_at) FILTER (WHERE due_at > ?) FROM release_calendar "
+            "WHERE feed = ? AND release_name = ?",
+            [_utc(now), _utc(now - releases.MEETING_LOOKBACK), _utc(now), feed, name]).fetchone()
+    except duckdb.CatalogException:          # a store from before the table
+        return None
+    if prev is not None:
+        w = releases.meeting_window(feed, prev)
+        first = releases.reflected_on(feed, w["label"])
+        shown = first is None or (top is not None and top >= first)
+        if not shown and frequency == "event":
+            try:
+                got = con.execute("SELECT checked_at FROM series_checks WHERE series_id = ?",
+                                  [series_id]).fetchone()
+            except duckdb.CatalogException:
+                got = None
+            start = datetime.combine(first, time(0), tzinfo=w["due_at"].tzinfo)
+            shown = got is not None and got[0] >= _utc(start)
+        if not shown:
+            return w, ("late" if now > w["late_after"] else "due")
+    if nxt is not None:
+        return releases.meeting_window(feed, nxt), "fresh"
+    return None
 
 
 def _window(con, series_id: str, last: date | None, now: datetime) -> tuple[dict, str] | None:
@@ -146,6 +192,14 @@ def assess(con, series_id: str, today: date | None = None, *,
     age = (today - hi).days
     stale = age > allow
     status = "stale" if stale else "fresh"
+    feed = releases.meeting_feed(series_id)
+    if feed:
+        met = _meeting(con, series_id, feed, top, (freq or "").lower(), now)
+        if met:
+            w, state = met
+            status = "stale" if stale else state
+            out["next_release"] = releases.describe_meeting(w, state, hi, (freq or "").lower())
+        return {**out, "age_days": age, "stale": stale, "status": status}
     found = _window(con, series_id, hi, now)
     if found:
         w, wfreq = found

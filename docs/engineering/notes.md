@@ -636,6 +636,65 @@ same bot check as its data.
   `news/release-calendar` is a Liferay portlet with no export, and every
   known Istat calendar path is 404 or 500.
 
+**Central banks' meeting schedules (session I, 2026-11-05).** Six banks'
+pages, all plain HTML with no calendar file, all answering a browser
+User-Agent on 2026-11-05:
+- **The Fed**: `monetarypolicy/fomccalendars.htm`, one panel per year from 2021
+  to the next year (`2027 FOMC Meetings`), a row per meeting with
+  `fomc-meeting__month` ("January", "Apr/May") and `fomc-meeting__date`
+  ("27-28", "16-17*", the star marking projections; words such as
+  "(unscheduled)" mark meetings off the schedule). The Board's monthly
+  calendar pages, already read for H.4.1 and the rest, do not list the FOMC.
+- **The ECB**: `press/calendars/mgcgc`, `<dt>dd/mm/yyyy</dt><dd>…</dd>`, only
+  what is ahead (to the end of 2028 on 2026-11-05). A policy meeting has a
+  Day 1 and a Day 2 "followed by press conference"; non-monetary meetings and
+  the General Council share the page.
+- **The Bank of England**: `monetary-policy/upcoming-mpc-dates`, an
+  `<h2>2026 confirmed dates</h2>` table per year; the first cell is
+  "Thursday 5 November", sometimes with `&nbsp;`.
+- **The Bank of Japan**: `mopo/mpmsche_minu`, a table per year (caption
+  "Table : 2026"), first cell "Oct. 29 (Thurs.), 30 (Fri.)"; a meeting can
+  run across a month, and "Sept." and "June" are both spellings.
+- **The Bank of Canada**: `press/upcoming-events/` lists only what is ahead,
+  usually just the next announcement, with its time ("09:45 (ET)"). The
+  key-interest-rate page has past dates only. The full year's schedule is
+  published as a press release, not read.
+- **The RBA**: `schedules-events/board-meeting-schedules.html`, a table per
+  year, a row per month (`<th scope="row">`), the Monetary Policy Board in
+  the first cell ("2&ndash;3 February").
+- **The SNB**'s decisions page lists past assessments only; its future dates
+  were not found. **The National Bank of Kazakhstan**'s schedule page changes
+  its address every year. The People's Bank of China has no fixed schedule.
+
+Only the Bank of Canada states a time. The others' times are their usual
+practice, said with "usually": the FOMC at 14:00 New York, the ECB at 14:15
+Frankfurt, the Bank of England at 12:00 London, the RBA at 14:30 Sydney. The
+Bank of Japan sets no time.
+
+**A decision does not show in the store on its day.** Read off each bank's own
+series (every change from 2024 to 2026): the New York Fed's target and the
+Bank of Canada's overnight target change the day after the decision (the
+Fed's decision of 2025-12-10 is the 2025-12-11 row); the Bank of England's
+Bank Rate changes on the day; the ECB's rates are dated from the following
+Wednesday (decided 2024-10-17, dated 2024-10-23). That is `reflected_days`
+in `core/releases.py`. The BIS month-end rows show a decision only once the
+month is over, so the Bank of Japan and the RBA are dates only.
+
+**A hold is invisible in a series that only records changes.** The ECB's two
+rates (and Kazakhstan's base rate) gain a row only when they change, so after
+a hold the store looks exactly as it did before anyone fetched. The server's
+record of attempts lives in memory and is lost on restart. So the store keeps
+`series_checks` (series, last fetch without error), written by `sync_macro`,
+and an `event` series counts a hold as shown once it has been fetched on or
+after the day the decision takes effect.
+
+**A bank's page drops its past.** The ECB's and the Bank of Canada's pages
+list only what is ahead, and a policy rate is due after the bank's last
+decision, so `sync_feed` keeps a meeting feed's dates before now and replaces
+everything ahead. Keeping "everything before the first fetched date" was the
+first version, and it left a meeting's old date behind when the meeting moved
+later.
+
 **A calendar without reference periods must be matched from the rule's own
 window, not from the period's end.** Taking "the first date after the period
 ends" picked the previous week's H.8 every week, because the H.8 comes nine

@@ -9,7 +9,7 @@ from __future__ import annotations
 import importlib
 import os
 import time
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 import pandas as pd
 import requests
@@ -721,6 +721,7 @@ def sync_macro(con, incremental=False, only=None, prime=True) -> list[tuple]:
             else:
                 detail = f"{store.upsert_macro_series(con, sid, df)} rows"
             report.append((sid, "ok", detail))
+            store.record_check(con, sid, datetime.now(timezone.utc).replace(tzinfo=None))
             _record_next_release(con, sid, row)
         except MissingKey as e:
             report.append((sid, "skip", str(e)))
