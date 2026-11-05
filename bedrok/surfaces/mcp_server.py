@@ -12,7 +12,8 @@ Ten tools, each answering a question the model would otherwise guess at:
   get_series        observations, optionally transformed (yoy, 3m annualised, rebased)
   chart_series      the same data with a chart recipe in the house style
   percentile        where a value sits in its own history — with the sample, always
-  release_calendar  when official numbers come out: one series' next, or the week's
+  release_calendar  when official numbers come out, and central banks decide: one
+                    series' next, or the week's
   query             read-only SQL over the store
   refresh           bring stored series up to date (named ones now, or all in the background)
 
@@ -97,7 +98,8 @@ level in money terms (a deficit in dollars, M2) grows with the economy, so rank
 its ratio to GDP or its growth instead, or say so beside its percentile.
 
 Freshness says when the next period is usually out (`next_release`); for
-"when is the next CPI?" or "what is out this week?", use release_calendar. When its
+"when is the next CPI?", "what is out this week?" or "when does the FOMC meet?",
+use release_calendar (six central banks' decisions are on it). When its
 status is `due` (inside that window, and a fetch found nothing yet) or `late`
 (past it), say which period is the latest held and give
 `next_release.message`; never present the latest held period as the newest
@@ -1280,7 +1282,14 @@ def release_calendar(
     the publisher's own date, named in `calendar`. `local` is the same moment
     on the reader's clock. Listing never fetches a series; asking for one with
     get_series fetches it when it is due. Only series with a release rule are
-    known here (bedrok://releases lists them); the rest are judged by age."""
+    known here (bedrok://releases lists them); the rest are judged by age.
+
+    Central banks' decisions are listed too, from each bank's own schedule:
+    the FOMC, the ECB, the Bank of England, the Bank of Japan, the Bank of
+    Canada and the RBA. The day is the bank's; the time is its usual practice
+    (`approximate: true`) except the Bank of Canada's, which it states. A
+    policy rate is `due` once its bank has decided and the store does not
+    show the decision yet. Never say what a bank is expected to decide."""
     for feed in calendars.FETCHERS:
         _ensure_feed(feed)
     now = datetime.now(timezone.utc)
@@ -1307,6 +1316,14 @@ def release_calendar(
             else:
                 item["note"] = ("no release rule: Bedrok judges this series by the age of its "
                                 "newest observation only (bedrok://releases lists the rules).")
+                bank = next((f for f in releases.MEETING_FEEDS
+                             if releases.FEEDS[f].get("related") == row["series_id"]), None)
+                if bank:
+                    with _store() as con:
+                        later = _dates_only_decisions(con, now, now + timedelta(days=400))
+                    mine = [g for g in later if g["name"] == releases.FEEDS[bank]["decision"]]
+                    if mine:
+                        item["next_decision"] = mine[0]["message"]
             out.append(item)
         return {"now": now.astimezone().isoformat(timespec="minutes"), "series": out}
 
@@ -1328,6 +1345,9 @@ def release_calendar(
             if got:                                  # the freshest member speaks for the family
                 picks.append((got[0], fam_label.get(r["prefix"], r["prefix"] + "…"),
                               f"{r['prefix']}… ({got[1]} series)"))
+        for feed in releases.MEETING_FEEDS:          # the policy rates, by their banks' decisions
+            for sid in releases.meeting_series(feed):
+                picks.append((sid, releases.FEEDS[feed]["decision"], None))
         for sid, label, members in picks:
             try:
                 row = _catalog_row(con, sid)
@@ -1350,13 +1370,48 @@ def release_calendar(
                 "publisher": pubs.get(row["source"], {}).get("name", row["source"]),
                 "name": label or row["name"], "series": [], "message": nr["message"]})
             g["series"].append(members or sid)
+        for g in _dates_only_decisions(con, now, end):
+            groups[("upcoming", g["period"], g["when"], g["by"], g["publisher"])] = g
     order = {"late": 0, "due": 1, "upcoming": 2}
     rows = sorted(groups.values(), key=lambda g: (order[g["status"]], g["when"], g["name"]))
     return {"now": now.astimezone().isoformat(timespec="minutes"),
             "to": end.astimezone().isoformat(timespec="minutes"),
             "releases": rows,
             "not_listed": "Series without a release rule (JOLTS, PPI, the OECD, the IMF and "
-                          "others) are judged by age alone; bedrok://releases lists the rules."}
+                          "others) are judged by age alone; bedrok://releases lists the rules. "
+                          "Central banks whose schedule Bedrok does not read (the SNB, the "
+                          "People's Bank of China, the National Bank of Kazakhstan and others) "
+                          "are not listed."}
+
+
+def _dates_only_decisions(con, now: datetime, end: datetime) -> list[dict]:
+    """A central bank's decisions with no Bedrok series that shows them on the
+    day (the Bank of Japan's and the RBA's rates are the BIS month-end rows):
+    listed as dates, with the series that will show them later."""
+    out = []
+    for feed in releases.MEETING_FEEDS:
+        meta = releases.FEEDS[feed]
+        if releases.meeting_series(feed):
+            continue
+        try:
+            dues = con.execute(
+                "SELECT due_at FROM release_calendar WHERE feed = ? AND release_name = ? "
+                "AND due_at > ? AND due_at <= ? ORDER BY due_at",
+                [feed, meta["decision"], now.astimezone(timezone.utc).replace(tzinfo=None),
+                 end.astimezone(timezone.utc).replace(tzinfo=None)]).fetchall()
+        except duckdb.CatalogException:
+            continue
+        for (due,) in dues:
+            nr = releases.describe_meeting(releases.meeting_window(feed, due), "fresh")
+            related = meta.get("related")
+            out.append({"status": "upcoming", "period": nr["period"], "when": nr["due_at"],
+                        "by": nr["expected_by"], "local": _local(nr["due_at"]),
+                        "approximate": nr["approximate"], "calendar": nr["calendar"],
+                        "publisher": nr["publisher"], "name": meta["decision"], "series": [],
+                        "message": nr["message"] + (
+                            f" A date only: {related} is the BIS month-end rate, so the "
+                            "decision shows in it after the month is out." if related else "")})
+    return out
 
 
 _SQL_START = ("select", "with", "describe", "show", "summarize", "pragma show", "from")

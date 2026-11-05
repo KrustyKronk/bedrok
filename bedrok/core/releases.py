@@ -134,7 +134,53 @@ FEEDS = {
     "bns_calendar": {"publisher": "Bureau of National Statistics of Kazakhstan",
                      "tz": "Asia/Almaty", "fetched": True,
                      "label": "the Bureau of National Statistics' release calendar"},
+    # Central banks' policy decisions (session I). A meeting is not a period of
+    # a series: it is an event on the bank's own schedule, and the series that
+    # shows its outcome is due once the decision has been taken. Every page
+    # gives the day; only the Bank of Canada also gives the time, so the
+    # others' `time` is the bank's usual practice, said with "usually".
+    # `reflected_days` is how many days after the decision day the store first
+    # shows it, read off each bank's own series (2024-26 changes in the store):
+    # the New York Fed and the Bank of Canada date a new target from the next
+    # day, the Bank of England's Bank Rate changes on the day, and the ECB's
+    # rates take effect the following Wednesday. None: no Bedrok series shows
+    # the decision on its day (the BIS month-end rows), so it is a date only.
+    "fomc_calendar": {"publisher": "Federal Reserve Board", "tz": "America/New_York",
+                      "fetched": True, "meetings": True, "time": time(14, 0),
+                      "time_stated": False, "reflected_days": 1, "decision": "FOMC decision",
+                      "effect": "the New York Fed dates a new target from the day after the decision",
+                      "label": "the Fed's FOMC meeting calendar"},
+    "ecb_meetings": {"publisher": "ECB", "tz": "Europe/Berlin", "fetched": True,
+                     "meetings": True, "time": time(14, 15), "time_stated": False,
+                     "reflected_days": 6,
+                     "decision": "ECB monetary policy decision",
+                     "effect": "new rates take effect the following Wednesday",
+                     "label": "the ECB's Governing Council meeting schedule"},
+    "boe_mpc": {"publisher": "Bank of England", "tz": "Europe/London", "fetched": True,
+                "meetings": True, "time": time(12, 0), "time_stated": False,
+                "reflected_days": 0,
+                "decision": "Bank of England MPC decision",
+                "effect": "Bank Rate changes on the day of the decision",
+                "label": "the Bank of England's MPC dates"},
+    "boj_mpm": {"publisher": "Bank of Japan", "tz": "Asia/Tokyo", "fetched": True,
+                "meetings": True, "time": time(12, 0), "time_stated": False,
+                "time_note": "the Bank of Japan sets no time; around midday Tokyo is usual",
+                "reflected_days": None,
+                "decision": "Bank of Japan policy decision", "related": "jp_policy_rate",
+                "label": "the Bank of Japan's monetary policy meeting schedule"},
+    "boc_rate": {"publisher": "Bank of Canada", "tz": "America/Toronto", "fetched": True,
+                 "meetings": True, "time": time(9, 45), "time_stated": True,
+                 "reflected_days": 1,
+                 "decision": "Bank of Canada rate announcement",
+                 "effect": "a new target is dated from the day after the announcement",
+                 "label": "the Bank of Canada's upcoming events"},
+    "rba_board": {"publisher": "Reserve Bank of Australia", "tz": "Australia/Sydney",
+                  "fetched": True, "meetings": True, "time": time(14, 30),
+                  "time_stated": False, "reflected_days": None,
+                  "decision": "RBA monetary policy decision", "related": "au_policy_rate",
+                  "label": "the Reserve Bank of Australia's board meeting schedule"},
 }
+MEETING_FEEDS = tuple(f for f, m in FEEDS.items() if m.get("meetings"))
 # An exact date has no window to wait through: the period is late a day after
 # it, which is long enough for a publisher's API to catch up with its website.
 CALENDAR_GRACE = timedelta(days=1)
@@ -158,6 +204,17 @@ def load_calendar() -> dict[str, tuple[str, str]]:
 
 def calendar_key(series_id: str) -> tuple[str, str] | None:
     return load_calendar().get(series_id)
+
+
+def meeting_feed(series_id: str) -> str | None:
+    """The central bank's meeting feed whose decisions this series shows, if any."""
+    key = calendar_key(series_id)
+    return key[0] if key and key[0] in MEETING_FEEDS else None
+
+
+def meeting_series(feed: str) -> list[str]:
+    """The series that show a bank's decisions, in seed order."""
+    return [sid for sid, (f, _) in load_calendar().items() if f == feed]
 
 
 def calendar_window(feed: str, label: date, due_at: datetime) -> dict:
@@ -335,3 +392,63 @@ def describe(w: dict, frequency: str, state: str, latest: date | None) -> dict:
             **({"publisher": FEEDS[w["feed"]]["publisher"],
                 "calendar": FEEDS[w["feed"]]["label"]} if exact else {}),
             "message": message}
+
+
+# ---- central banks' decisions ------------------------------------------------
+# How far back a decision still makes its series due. Past this, staleness
+# speaks: a decision a month old that never reached the store is a broken feed.
+MEETING_LOOKBACK = timedelta(days=30)
+
+
+def meeting_window(feed: str, decision_at: datetime) -> dict:
+    """The window of one decision. `decision_at` is aware or UTC-naive. The
+    outcome is expected in the store the day after it is first dated (data for
+    a day are published the next), and late two days after that."""
+    meta = FEEDS[feed]
+    if decision_at.tzinfo is None:
+        decision_at = decision_at.replace(tzinfo=ZoneInfo("UTC"))
+    due = decision_at.astimezone(ZoneInfo(meta["tz"]))
+    lag = timedelta(days=(meta.get("reflected_days") or 0) + 1)
+    return {"label": due.date(), "due_at": due, "expected_by": due + lag,
+            "late_after": due + lag + GRACE, "source": "meetings", "feed": feed}
+
+
+def reflected_on(feed: str, decision_day: date) -> date | None:
+    """The first day the store can show a decision, or None for a dates-only feed."""
+    days = FEEDS[feed].get("reflected_days")
+    return None if days is None else decision_day + timedelta(days=days)
+
+
+def describe_meeting(w: dict, state: str, latest: date | None = None,
+                     frequency: str = "daily") -> dict:
+    """The `next_release` of a policy-rate series, or a dates-only decision:
+    the same keys as `describe`, so an answer reads one shape. The day is the
+    bank's own; the time is its usual practice unless the bank states it."""
+    meta = FEEDS[w["feed"]]
+    d = w["due_at"]
+    day = _day(d)
+    if meta.get("time_stated"):
+        at = f"{day}, {_clock(d)} ({meta['label']})"
+    elif meta.get("time_note"):
+        at = f"{day} ({meta['label']}); {meta['time_note']}"
+    else:
+        at = f"{day}, usually {_clock(d)} ({meta['label']})"
+    period = f"{meta['decision']} of {day}"
+    if latest is None:
+        held = ""
+    elif frequency == "event":
+        held = f"; the latest rate held dates from {_day(latest)}"
+    else:
+        held = f"; data to {_day(latest)} is the latest held"
+    effect = f" ({meta['effect']})" if meta.get("effect") else ""
+    if state == "due":
+        message = f"The {period} is not in the store yet{effect}{held}."
+    elif state == "late":
+        message = f"The {period} has not reached Bedrok{effect}{held}."
+    else:
+        message = f"Next: {meta['decision']}, {at}."
+    return {"period": period, "due_at": d.isoformat(),
+            "expected_by": w["expected_by"].isoformat(),
+            "late_after": w["late_after"].isoformat(), "source": "meetings",
+            "approximate": not meta.get("time_stated", False), "date_exact": True,
+            "publisher": meta["publisher"], "calendar": meta["label"], "message": message}

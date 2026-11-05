@@ -20,16 +20,21 @@ run from a shared runner address stays polite.
 
 Bulk stages have no per-series path, so World Bank, CFTC and Eurostat's
 multi-geo download keep checks of their own.
+
+The six central banks' meeting schedules are HTML pages read with a pattern
+(ingest/calendars.py), so each is checked too: a page that moves, or changes
+shape so that no decision ahead can be read from it, is a FAIL the week it
+happens, not a schedule that quietly stops.
 """
 from __future__ import annotations
 
 import sys
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 import pandas as pd
 
-from bedrok.core import sources
-from bedrok.ingest import pipeline
+from bedrok.core import releases, sources
+from bedrok.ingest import calendars, pipeline
 from bedrok.ingest.adapters import cftc, eurostat, fedboard, worldbank
 from bedrok.ops import freshness
 
@@ -74,7 +79,20 @@ def checks(keyless: bool = False) -> list[tuple[str, str, int | None, callable]]
         ("cftc", "COT gold positioning", None,
          lambda: cftc.fetch_cot([date.today().year])[0]["cot_gold_net_noncomm"]),
     ]
+    out += [("calendar", f"{f} schedule", None,
+             lambda f=f: _schedule(f)) for f in releases.MEETING_FEEDS]
     return out
+
+
+def _schedule(feed: str) -> pd.DataFrame:
+    """A bank's schedule as one row: its furthest decision and how many are
+    ahead. None ahead is a failure: the page answered but says nothing usable."""
+    df = calendars.FETCHERS[feed]()
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    ahead = df[df["due_at"] > now] if not df.empty else df
+    if ahead.empty:
+        raise RuntimeError("no decision ahead could be read from the page")
+    return pd.DataFrame({"date": [ahead["due_at"].max().date()], "value": [float(len(ahead))]})
 
 
 def _age(when) -> int:

@@ -50,3 +50,9 @@ kz_cpi_yoy,bns_calendar,Inflation
 kz_cpi_mom,bns_calendar,Inflation
 kz_industrial_production_yoy,bns_calendar,Industry
 kz_wage_nominal,bns_calendar,Wages
+us_fed_target_lower,fomc_calendar,FOMC decision
+us_fed_target_upper,fomc_calendar,FOMC decision
+ecb_deposit_rate,ecb_meetings,ECB monetary policy decision
+ecb_mro_rate,ecb_meetings,ECB monetary policy decision
+uk_boe_bank_rate,boe_mpc,Bank of England MPC decision
+ca_overnight_target_boc,boc_rate,Bank of Canada rate announcement

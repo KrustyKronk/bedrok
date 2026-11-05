@@ -3,8 +3,8 @@
 Every writer is an UPSERT keyed on the table's primary key, so backfill and
 refresh can be re-run any number of times without duplicating rows.
 
-One file, four tables — macro_catalog, macro_series, fx_rates and
-release_calendar — plus the persisted `all_series` view over macro ∪ fx. Since session 2 of the rethink
+One file, five tables — macro_catalog, macro_series, fx_rates,
+release_calendar and series_checks — plus the persisted `all_series` view over macro ∪ fx. Since session 2 of the rethink
 there is no market pack, no personal layer and no price data: every install
 fetches each series from its publisher into this one store.
 """
@@ -54,6 +54,15 @@ CREATE TABLE IF NOT EXISTS release_calendar (
     period       DATE,
     fetched_at   TIMESTAMP NOT NULL,
     PRIMARY KEY (feed, release_name, due_at)
+);
+
+-- When each series was last fetched without error (pipeline.sync_macro), UTC
+-- without a zone. A series that only gains a row when its value changes (the
+-- ECB's policy rates) looks the same after a hold as before a fetch; this is
+-- how freshness tells "the bank held" from "Bedrok has not looked".
+CREATE TABLE IF NOT EXISTS series_checks (
+    series_id  TEXT PRIMARY KEY,
+    checked_at TIMESTAMP NOT NULL
 );
 """
 
@@ -105,7 +114,7 @@ def _all_series_view(con) -> None:
 
 
 def init_db(con: duckdb.DuckDBPyConnection) -> None:
-    """Create the four tables (idempotent), migrate the catalog, and (re)create
+    """Create the five tables (idempotent), migrate the catalog, and (re)create
     the all_series view."""
     con.execute(SCHEMA)
     _migrate_macro_catalog(con)
@@ -247,14 +256,26 @@ def table_range(con, table: str, date_col: str = "date"):
     ).fetchone()
 
 
+def record_check(con, series_id: str, at) -> None:
+    """Note that a series was just fetched without error (UTC, naive)."""
+    con.execute("INSERT INTO series_checks VALUES (?, ?) "
+                "ON CONFLICT (series_id) DO UPDATE SET checked_at = excluded.checked_at",
+                [series_id, at])
+
+
 def replace_release_calendar(con, feed: str, df: pd.DataFrame,
-                             release_names: list[str] | None = None) -> int:
+                             release_names: list[str] | None = None,
+                             keep_before=None) -> int:
     """Swap a feed's dates (or only those of `release_names`) for df's, in one
     transaction: a publisher that moves a date drops the old one, and a stale
-    date left behind would read as the next release."""
+    date left behind would read as the next release. With `keep_before`, dates
+    before it stay (a central bank's past decisions, which its page drops)."""
     con.execute("BEGIN TRANSACTION")
     try:
-        if release_names is None:
+        if keep_before is not None:
+            con.execute("DELETE FROM release_calendar WHERE feed = ? AND due_at >= ?",
+                        [feed, keep_before])
+        elif release_names is None:
             con.execute("DELETE FROM release_calendar WHERE feed = ?", [feed])
         else:
             ph = ", ".join("?" for _ in release_names)

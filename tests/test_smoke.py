@@ -59,6 +59,7 @@ def world(tmp_path, monkeypatch):
     monkeypatch.setattr(smoke.cftc, "fetch_cot",
                         lambda years: ({"cot_gold_net_noncomm": _frame(3)}, []))
     monkeypatch.setattr(smoke.fedboard, "release_status", lambda rel: _frame(3))
+    monkeypatch.setattr(smoke, "_schedule", lambda feed: _frame(-30))
     paced = []
     monkeypatch.setattr(pipeline, "_pace", paced.append)
     return paced
@@ -125,6 +126,7 @@ def test_every_fed_board_release_file_gets_its_own_check(tmp_path, monkeypatch, 
     monkeypatch.setattr(smoke.eurostat, "fetch_multi_geo", lambda code: ({"DE": _frame(2)}, {}))
     monkeypatch.setattr(smoke.cftc, "fetch_cot", lambda years: ({"cot_gold_net_noncomm": _frame(3)}, []))
     monkeypatch.setattr(pipeline, "_pace", lambda s: None)
+    monkeypatch.setattr(smoke, "_schedule", lambda feed: _frame(-30))
     seen = []
 
     def status(rel):
@@ -139,3 +141,18 @@ def test_every_fed_board_release_file_gets_its_own_check(tmp_path, monkeypatch, 
     assert seen == ["H15", "H6"]                    # SLOOS is the smoke series itself
     assert "H15 release zip" in out and "PASS" in out.split("H15 release zip")[1].split("\n")[0]
     assert "FAIL" in out.split("H6 release zip")[1].split("\n")[0] and code == 1
+
+
+def test_every_central_bank_schedule_gets_a_check(world, monkeypatch):
+    """Session I: the meeting schedules are scraped pages, so a page that moves
+    or loses its dates must fail the weekly run, not go quiet."""
+    descs = [d for source, d, *_ in smoke.checks() if source == "calendar"]
+    assert len(descs) == 6 and all(len(f"{d}") <= 28 for d in descs)
+
+
+def test_a_schedule_with_nothing_ahead_fails(monkeypatch):
+    past = pd.DataFrame({"release_name": ["FOMC decision"],
+                         "due_at": [pd.Timestamp("2021-01-27 19:00")], "period": [None]})
+    monkeypatch.setitem(smoke.calendars.FETCHERS, "fomc_calendar", lambda: past)
+    with pytest.raises(RuntimeError, match="no decision ahead"):
+        smoke._schedule("fomc_calendar")

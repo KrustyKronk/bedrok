@@ -157,8 +157,14 @@ def test_every_calendar_series_has_a_rule_and_a_known_feed():
         rows = list(reader)
     assert len(rows) == len({r["series_id"] for r in rows})
     for r in rows:
-        assert releases.rule_for(r["series_id"]), f"{r['series_id']}: a calendar needs a rule to bound it"
         assert r["feed"] in releases.FEEDS
+        if r["feed"] in releases.MEETING_FEEDS:
+            # A policy rate is bounded by its bank's decisions, not by a rule;
+            # a rule as well would judge it twice.
+            assert not releases.rule_for(r["series_id"]), r["series_id"]
+            assert r["release_name"] == releases.FEEDS[r["feed"]]["decision"], r["series_id"]
+            continue
+        assert releases.rule_for(r["series_id"]), f"{r['series_id']}: a calendar needs a rule to bound it"
         meta = releases.FEEDS[r["feed"]]
         assert meta["fetched"] == (r["feed"] in calendars.FETCHERS), r["feed"]
         if meta["fetched"]:

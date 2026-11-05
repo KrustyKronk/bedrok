@@ -110,3 +110,16 @@ Statuses: `fresh` (the next period is not due yet), `due` (inside its window: fe
 - **The Bureau of National Statistics' release calendar** (`bns_calendar`): 5 series; fetched at most once a day.
 
 The BLS publishes a calendar file, but its website refuses automated retrieval, so BLS series stay on their rules.
+
+## Central banks' decisions
+
+Six banks' meeting schedules are read from their own pages, at most once a day. The day is the bank's; the time is its usual practice, said with "usually", except where the bank states it. A policy rate is `due` once its bank has decided and the store does not show the decision yet, and `late` two days after the day the decision should first show. A rate that only gains a row when it changes counts a hold as shown once it has been fetched on or after that day. Past decisions are kept when a page drops them. Bedrok never says what a bank is expected to decide.
+
+| Bank | Decision time | Shows in | Shows from |
+|---|---|---|---|
+| The Fed's FOMC meeting calendar (`fomc_calendar`) | 14:00 America/New_York, usually | `us_fed_target_lower`, `us_fed_target_upper` | the next day |
+| The ECB's Governing Council meeting schedule (`ecb_meetings`) | 14:15 Europe/Berlin, usually | `ecb_deposit_rate`, `ecb_mro_rate` | 6 days after the decision |
+| The Bank of England's MPC dates (`boe_mpc`) | 12:00 Europe/London, usually | `uk_boe_bank_rate` | the decision day |
+| The Bank of Japan's monetary policy meeting schedule (`boj_mpm`) | no set time | dates only (`jp_policy_rate` is the BIS month-end rate) |  |
+| The Bank of Canada's upcoming events (`boc_rate`) | 09:45 America/Toronto, stated | `ca_overnight_target_boc` | the next day |
+| The Reserve Bank of Australia's board meeting schedule (`rba_board`) | 14:30 Australia/Sydney, usually | dates only (`au_policy_rate` is the BIS month-end rate) |  |
