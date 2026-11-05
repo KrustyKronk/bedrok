@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-11-05: Bedrok has a logo, merged but not yet released (item 18). 0.3.5 is released, carrying the eight US series for the AI capex cycle (item 17), on top of 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed neither in Claude Desktop yet.** Bedrok is a local MCP server and store of
+**Updated 2026-11-05: Bedrok has a logo, and 0.3.6 is cut to carry it but not yet released (item 18). 0.3.5 is released, carrying the eight US series for the AI capex cycle (item 17), on top of 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed neither in Claude Desktop yet.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -74,7 +74,7 @@ shows it from `raw.githubusercontent.com` on `main`, because PyPI does not
 resolve a relative image. `tests/test_install.py` checks that the manifest
 path exists and that the server sends exactly that file.
 
-**Next:** release the logo as 0.3.6 (item 18), then install it in Claude
+**Next:** merge PR #34 and `gh release create v0.3.6` (item 18), then install it in Claude
 Desktop, which also brings 0.3.5's series, and ask about Kazakhstan and the
 Z.1 financing gap (items 16 and 17); then a cold question on a release
 morning (item 1), then whichever open item the owner picks.
@@ -901,8 +901,9 @@ Owner-side items are in `profile/STATE-private.md`.
       parsed again for each; a refresh fetches it once. Not looked into;
       worth it only if a cold session asking four Z.1 series feels slow.
 
-18. **The logo is merged, not released** (2026-11-05). Nobody sees it until a
-    release carries it: bump to 0.3.6 and `gh release create v0.3.6`. Then,
+18. **The logo is versioned 0.3.6, not released** (2026-11-05). PR #34
+    carries the logo and the bump together; nobody sees it until it is merged
+    and `gh release create v0.3.6` has run `publish.yml`. Then,
     in Claude Desktop, install the new bundle over the old one; the extension
     list draws the manifest's icon, which an installed 0.3.5 does not have.
     Not yet seen in any host: whether Desktop's list draws it at small sizes
