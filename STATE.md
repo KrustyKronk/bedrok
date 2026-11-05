@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-11-05: session I puts six central banks' decisions on the release calendar (item 19), on a branch and not yet released; 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
+**Updated 2026-11-05: session I puts six central banks' decisions on the release calendar (item 19), merged and cut as 0.3.7 but not yet released; 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -113,8 +113,9 @@ calendar listed Bank Rate as due, data to 28 Oct; the refresh brought the
 live store every linked rate now names its bank's next decision (the FOMC and
 the Bank of Canada on 9 Dec, the ECB and the Bank of England on 17 Dec).
 
-**Next:** install 0.3.6 in Claude Desktop over the old extension (item 18),
-which also brings 0.3.4's and 0.3.5's series, and ask about Kazakhstan and the
+**Next:** `gh release create v0.3.7` (item 19), then install 0.3.7 in Claude
+Desktop over the old extension, which also brings 0.3.6's logo and 0.3.4's and
+0.3.5's series, and ask about Kazakhstan and the
 Z.1 financing gap (items 16 and 17); then a cold question on a release
 morning (item 1), then whichever open item the owner picks.
 
@@ -953,8 +954,9 @@ Owner-side items are in `profile/STATE-private.md`.
     install (`uvx … bedrok serve`) picks it up on its next start from PyPI.
 
 19. **Central banks' decisions are on the calendar** (session I, 2026-11-05),
-    on a branch, not released. What stays open:
-    - **Release it as 0.3.7**, then install it in Claude Desktop and ask
+    merged (PR #36) and versioned 0.3.7, not released. What stays open:
+    - **Release 0.3.7** with `gh release create v0.3.7`, which runs
+      `publish.yml`; then install it in Claude Desktop and ask
       "when does the FOMC meet next?" and, the day after a decision, for the
       rate.
     - **Banks not read yet.** The SNB (its decisions page lists past
