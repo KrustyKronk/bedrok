@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/KrustyKronk/bedrok/main/bedrok/surfaces/icon.png" alt="Bedrok" width="96" align="right">
+
 # Bedrok
 
 **Public macroeconomic data, in your AI assistant.**

@@ -20,8 +20,9 @@ def test_the_seeds_live_inside_the_package():
 
 def test_pyproject_ships_the_seeds_as_package_data():
     text = (REPO / "pyproject.toml").read_text()
-    # The csv seeds, and gaps.md, which the server serves as bedrok://gaps.
-    assert 'bedrok = ["seeds/*.csv", "seeds/*.md"]' in text
+    # The csv seeds, gaps.md, which the server serves as bedrok://gaps, and
+    # the logo the server sends when a host connects.
+    assert 'bedrok = ["seeds/*.csv", "seeds/*.md", "surfaces/icon.png"]' in text
 
 
 @pytest.mark.parametrize("value, unset", [
@@ -72,6 +73,31 @@ def test_the_bundle_manifest_matches_the_package():
     env = manifest["server"]["mcp_config"]["env"]
     keyed = {r["key_env"] for r in sources.load().values() if r["key_env"]}
     assert keyed <= set(env), "every API key needs a field in the bundle"
+
+
+def test_the_bundle_and_the_server_carry_the_logo():
+    """Desktop draws the manifest's icon in its extension list; any other host
+    draws serverInfo.icons. Both are the one PNG inside the package."""
+    import base64
+    import json
+
+    import anyio
+    from mcp import Client
+
+    from bedrok.surfaces import mcp_server
+    manifest = json.loads((REPO / "packaging" / "mcpb" / "manifest.json").read_text())
+    png = REPO / manifest["icon"]
+    assert png.is_file() and png.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+    assert all((REPO / i["src"]).is_file() for i in manifest["icons"])
+
+    async def go():
+        async with Client(mcp_server.server) as c:
+            return c.server_info
+    info = anyio.run(go)
+    assert info.title == "Bedrok"
+    (icon,) = info.icons
+    assert icon.mime_type == "image/png"
+    assert base64.b64decode(icon.src.split(",", 1)[1]) == png.read_bytes()
 
 
 def test_the_bundle_lists_every_tool_the_server_has():

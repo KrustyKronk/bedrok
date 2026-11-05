@@ -8,6 +8,8 @@
   "author": {
     "name": "Andreu Paddack"
   },
+  "icon": "bedrok/surfaces/icon.png",
+  "icons": [{"src": "bedrok/surfaces/icon.png", "size": "512x512"}],
   "server": {
     "type": "uv",
     "entry_point": "bedrok/__main__.py",

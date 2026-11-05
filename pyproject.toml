@@ -66,5 +66,6 @@ include = ["bedrok*"]
 
 # The source list, the catalog, the warnings and the gaps note ship inside the
 # package: an installed wheel has no repo around it (core/config.SEEDS_DIR).
+# So does the logo the server sends hosts when they connect (surfaces/icon.png).
 [tool.setuptools.package-data]
-bedrok = ["seeds/*.csv", "seeds/*.md"]
+bedrok = ["seeds/*.csv", "seeds/*.md", "surfaces/icon.png"]
