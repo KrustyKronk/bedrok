@@ -38,6 +38,7 @@ How it behaves, and why:
 """
 from __future__ import annotations
 
+import base64
 import logging
 import re
 import sys
@@ -45,13 +46,14 @@ import threading
 import time
 from contextlib import contextmanager
 from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 from typing import Annotated, Any, Literal
 
 import duckdb
 import pandas as pd
 from mcp.server import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
-from mcp.types import ToolAnnotations
+from mcp.types import Icon, ToolAnnotations
 from pydantic import BaseModel, Field
 
 from bedrok.core import aliases, charting, config, dates, licensing, releases, sources, store, warnings
@@ -124,7 +126,24 @@ def _version() -> str:
         return "0"
 
 
-server = MCPServer(name="bedrok", instructions=INSTRUCTIONS, version=_version())
+def _icons() -> list[Icon]:
+    """The logo, sent with the server's name when a host connects (MCP
+    serverInfo.icons). Inline as a data URI rather than a URL: the server is
+    local, works offline, and a host should not have to fetch anything to draw
+    it. PNG because the spec requires hosts to read PNG; SVG is only a SHOULD.
+    The same file is the Desktop bundle's icon (packaging/mcpb/manifest.json);
+    the source artwork is packaging/mcpb/icon.svg."""
+    png = Path(__file__).with_name("icon.png")
+    try:
+        data = base64.b64encode(png.read_bytes()).decode("ascii")
+    except OSError:  # a broken install should still serve data, just plainly
+        return []
+    return [Icon(src=f"data:image/png;base64,{data}", mime_type="image/png", sizes=["512x512"])]
+
+
+server = MCPServer(name="bedrok", title="Bedrok", instructions=INSTRUCTIONS,
+                   version=_version(), website_url="https://github.com/KrustyKronk/bedrok",
+                   icons=_icons())
 
 MAX_ROWS = 1000
 _TRANSFORMS = Literal["level", "yoy", "mom3_ann", "index_to"]

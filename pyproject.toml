@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bedrok"
-version = "0.3.5"
+version = "0.3.6"
 description = "Public macroeconomic data from central banks, statistics offices and international organisations, in your AI assistant: a local MCP server and store. No keys needed to start. Not financial advice."
 readme = "README.md"
 license = "MIT"
@@ -66,5 +66,6 @@ include = ["bedrok*"]
 
 # The source list, the catalog, the warnings and the gaps note ship inside the
 # package: an installed wheel has no repo around it (core/config.SEEDS_DIR).
+# So does the logo the server sends hosts when they connect (surfaces/icon.png).
 [tool.setuptools.package-data]
-bedrok = ["seeds/*.csv", "seeds/*.md"]
+bedrok = ["seeds/*.csv", "seeds/*.md", "surfaces/icon.png"]
