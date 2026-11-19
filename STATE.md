@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-11-05: 0.3.7 is released, carrying session I's six central banks' decisions on the release calendar (item 19); 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
+**Updated 2026-11-19: Bedrok gets a public website, built in its own private repository (item 21); this repository stays public and stays the MCP. 0.3.7 is released, carrying session I's six central banks' decisions on the release calendar (item 19); 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -121,8 +121,10 @@ calendar listed Bank Rate as due, data to 28 Oct; the refresh brought the
 live store every linked rate now names its bank's next decision (the FOMC and
 the Bank of Canada on 9 Dec, the ECB and the Bank of England on 17 Dec).
 
-**Next:** install 0.3.7 in Claude Desktop over the old extension (item 19), which also brings 0.3.6's logo and 0.3.4's and
-0.3.5's series, and ask about Kazakhstan and the
+**Next:** the public website (item 21, decided 2026-11-19), built in its own
+private repository beside this one. Also still pending: install 0.3.7 in Claude
+Desktop over the old extension (item 19), which also brings 0.3.6's logo and
+0.3.4's and 0.3.5's series, and ask about Kazakhstan and the
 Z.1 financing gap (items 16 and 17); then a cold question on a release
 morning (item 1), then whichever open item the owner picks.
 
@@ -722,6 +724,16 @@ None holds a secret.
 
 ## Decisions in force
 
+- **Bedrok gets a public website** (the owner, 2026-11-19). Free to browse,
+  chart and download every series; it is the hook for a paid API later
+  (pricing deferred). Hosting is fine, which reverses "nothing hosted" for the
+  website; the running cost is accepted. **FRED data goes on the site**, the
+  owner accepting the risk under FRED's terms for now; the local MCP and its
+  package keep FRED session-only, still guarded by `test_macro_seed.py`. **The
+  hosted store refreshes on a schedule** from the release rules and calendars;
+  the local install keeps no clock. Detail in `docs/rebuild-plan.md`,
+  "Decisions of 2026-11-19". **It is built in a separate private repository**
+  (same day); this one stays public and stays the MCP. Item 21.
 - **Bedrok answers what it can, and does not stand in the way of the rest**
   (the owner, 2026-10-12). A question Bedrok can answer should be answered
   from Bedrok: it is purpose-built for it, and a bug that sends Claude
@@ -731,7 +743,7 @@ None holds a secret.
   Whenever outside data sits beside Bedrok's, in a chart or a sentence, the
   answer says which part did not come through Bedrok.
 - **The rethink decisions of 2026-10-09** are in `docs/rebuild-plan.md`: local
-  MCP, FRED as an optional extra held only for the conversation, equity prices
+  MCP (still the product; the website is added beside it on 2026-11-19), FRED as an optional extra held only for the conversation, equity prices
   out of the core, Python with `uv`, a fresh public repository, about thirty
   publishers for v1, no pack, the name Bedrok.
 - **Fresh build, not a fork of World Monitor.** It is AGPL-3.0-only; Bedrok is MIT.
@@ -984,3 +996,18 @@ Owner-side items are in `profile/STATE-private.md`.
     CPI (`us_sticky_core_cpi`) now redirects to a 404 page. That last one
     may be a moved file: look before the next release.
 
+21. **The public website** (decided 2026-11-19; session 15 in the plan) is
+    built in the private repository `KrustyKronk/bedrok-web`, created
+    2026-11-19. Its open questions (mockup, hosting, which rows, the
+    country-then-topic layer, the API) live in that repository's `STATE.md`,
+    not here. It depends on this package (`bedrok>=0.3.7`); nothing here
+    depends on it. What stays open on this side:
+    - **The package is now a dependency.** Whatever the website reads through
+      (series with transforms, freshness, warnings, the release calendar)
+      becomes a contract. When the website starts relying on a call, say so
+      here and test it as a public API.
+    - **October 2026's US CPI annual rate cannot be computed.** The October
+      2026 index is held, but October 2025 was never published (the shutdown
+      gap), so `get_series(transform="yoy")` stops at September 2026, while
+      `freshness.last_date` says 2026-10-01. Check what the BLS itself
+      published for October 2026's annual rate and decide what the MCP says.

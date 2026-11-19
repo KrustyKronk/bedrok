@@ -35,6 +35,8 @@ Taken by the owner on 2026-10-09.
   app. Nothing hosted: a hosted Bedrok would make its operator the
   redistributor, and a key-holding website would make its operator the custodian of
   other people's accounts.
+  *Reversed for a public website on 2026-11-19 (below): the local MCP stays as
+  it is, and Bedrok also gets a hosted store and site.*
 - **FRED is an optional extra**, used under the user's own key and held only
   for the conversation, never saved. Its terms forbid storing its content in a
   database and using it in connection with building AI systems. The same US
@@ -48,8 +50,38 @@ Taken by the owner on 2026-10-09.
   long tail.
 - **No pack.** Each install fetches a series from its publisher the first time
   it is asked for and re-fetches only when a newer release should exist.
-  Nobody runs a schedule.
+  Nobody runs a schedule. *(True of the local install; the website's hosted store
+  runs on a schedule from 2026-11-19, below.)*
 - **The name stays: Bedrok.** Free on the Python package index on 2026-10-09.
+
+## Decisions of 2026-11-19: a public website
+
+Taken by the owner after comparing Bedrok's pricing position with Trading
+Economics, EODHD, FXMacroData, QVeris, Haver, Macrobond and Econ Toolkit
+(econtoolkit.com, a free site that already does a version of this for 42
+economies).
+
+- **Bedrok gets a public website.** Every series it carries, free to browse,
+  chart and download, organised for people (country, then topic) rather than
+  by series id. It is the hook: people who use the free site come to want the
+  same data through an API, and that API is what will be paid for. Pricing
+  the API is deferred; the website comes first.
+- **Hosting is fine.** This reverses "nothing hosted" for the website. The
+  operator of the hosted store is the redistributor of what it serves; the
+  owner accepts that, and accepts the running cost.
+- **FRED data goes on the website.** The owner accepts the risk under FRED's
+  terms for now. This applies to the hosted store only: the local MCP and its
+  published package keep FRED rows session-only, and `test_macro_seed.py`
+  still guards that.
+- **The hosted store runs on a clock.** It refreshes on a schedule driven by
+  the release rules and publisher calendars (session 13a), so the site is
+  current without anyone asking. The local install still has no clock.
+- **The website lives in its own private repository** (the owner, same day).
+  The hosted store, its clock, the FRED rows it serves and the API to come may
+  stay private for good, and keeping them out of this repository leaves the
+  published package's storage rules untouched. This repository stays public
+  and stays the MCP. The website depends on the `bedrok` package; nothing here
+  depends on the website.
 
 ## The sessions
 
@@ -200,6 +232,13 @@ tool for "when is the next CPI?". Where it stands is in `STATE.md`.
 agencies' own archives, so the assistant can say "this was revised" rather
 than quietly using today's figure.
 
+**15 — The public website** (decided 2026-11-19, not yet planned). A hosted
+store on a schedule, a site of country and topic pages built from it, and
+downloads, built in its own private repository (above). A design mockup
+comes first; the paid API after. What this repository owes it is only what
+the package should carry anyway: a stable API to read the store and the
+release calendar.
+
 **Later, 14 — The maintenance loop.** Source requests triaged from the issue
 form (added in 12), stale publishers retired, and a second pass over the register for the
 next thirty.
@@ -217,5 +256,7 @@ next thirty.
 
 ## Deliberately deferred
 
-A downloadable starter bundle; equity prices as an optional add-on; anything
-hosted, including a remote MCP endpoint; any paid data.
+A downloadable starter bundle; equity prices as an optional add-on; a remote
+MCP endpoint; any paid data. The paid API is decided in principle
+(2026-11-19) and priced later. Hosting itself is no longer deferred: the
+website is (session 15).
