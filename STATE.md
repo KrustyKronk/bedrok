@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-11-19: Bedrok gets a public website, built in its own private repository and now built from all of this store (item 21); this repository stays public and stays the MCP. 0.3.8 is released (2026-11-19): the Fed Board zip fix (item 20), nothing else; not installed in Claude Desktop. 0.3.7 is released, carrying session I's six central banks' decisions on the release calendar (item 19); 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
+**Updated 2026-11-19: every Eurostat family now carries every country it publishes, about 1,000 series where there were 330 (item 22, 0.3.9). Bedrok gets a public website, built in its own private repository and now built from all of this store (item 21); this repository stays public and stays the MCP. 0.3.8 is released (2026-11-19): the Fed Board zip fix (item 20), nothing else; not installed in Claude Desktop. 0.3.7 is released, carrying session I's six central banks' decisions on the release calendar (item 19); 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -1033,3 +1033,32 @@ Owner-side items are in `profile/STATE-private.md`.
       gap), so `get_series(transform="yoy")` stops at September 2026, while
       `freshness.last_date` says 2026-10-01. Check what the BLS itself
       published for October 2026's annual rate and decide what the MCP says.
+22. **Every Eurostat family carries every country it publishes** (2026-11-19,
+    0.3.9). The 30 multi-geo families (yields, sentiment, production, retail,
+    GDP and its parts, house prices, labour costs, debt, HICP components,
+    youth unemployment) kept eleven countries and threw the rest of each
+    download away; they now keep every country inside the reuse grant that
+    is still publishing: about 1,000 series where there were 330, from the
+    same downloads. Which countries each family publishes is a seed,
+    `seeds/eurostat_geos.csv`, written by `scripts/eurostat_geos.py` and held
+    inside `pipeline.REUSE_GEOS` by a test and by the sync, which refuses a
+    family whose seed strays outside it. Net trade is derived for every
+    country with both parts. The sovereign spreads stay at the four euro
+    members: a Hungarian or Polish yield minus the Bund mixes currencies.
+    Bosnia, Moldova and Ukraine became searchable places. Refreshed end to
+    end against the real store and repaired (see the notes entry on the
+    incremental start): every family series has its full history, 691 of
+    the 701 new series are fresh. What stays open:
+    - **Ten new series are genuinely behind, and say so:** Estonia and
+      Malta's sentiment surveys stop at April 2026, Albania's production and
+      retail at June, youth unemployment for Bosnia, Switzerland and Romania
+      at June. If any is still frozen in three months, drop it from the seed
+      rather than carry a stale line.
+    - **Re-run `scripts/eurostat_geos.py` when Eurostat adds or drops a
+      country.** A seeded country that stops publishing altogether makes
+      its family download the whole history on every refresh until then.
+    - **Unscoped MCP searches are now longer** (36 countries for "industrial
+      production"). Searches that name a place filter by it; not yet tried
+      in Claude Desktop.
+    - **The website names places itself**: `bedrok-web`'s `places.py` needs
+      Bosnia, Moldova and Ukraine, or their series land under "world".

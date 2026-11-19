@@ -1,10 +1,10 @@
-"""Eurostat multi-geo bulk sync: curation, licensing, and the non-EU carve-out."""
+"""Eurostat multi-geo bulk sync: the country seed, licensing, and the non-EU carve-out."""
 import duckdb
 import pandas as pd
 import pytest
 
 from bedrok.core import licensing, store
-from bedrok.ingest import pipeline
+from bedrok.ingest import eurostat_geos, pipeline
 
 
 @pytest.fixture
@@ -28,6 +28,7 @@ def fake_fetch(monkeypatch):
         "US": _frame(fresh, [7.0, 8.0, 9.0]),    # non-EU: never packable
         "JP": _frame(fresh, [1.0, 1.0, 1.0]),    # non-EU: never packable
         "UK": _frame(["2019-01-01"], [2.0]),     # legacy geo, long dead
+        "PL": _frame(["2019-01-01"], [2.0]),     # inside the grant, stopped publishing
         "AL": _frame(fresh, [3.0, 3.0, 3.0]),    # real geo, just not curated
         # EL deliberately absent — mirrors prc_hpi_q having no Greek HPI
     }
@@ -49,10 +50,17 @@ def one_set(monkeypatch):
             "frequency": "monthly", "units": "percent", "staleness_days": 110,
             "name_tmpl": "Test indicator — {geo}", "notes": "a note"}
     monkeypatch.setattr(pipeline, "EUROSTAT_BULK_SETS", [spec])
+    # EL is in the seed but not the payload: a country that drops out of a
+    # dataset between seed and sync.
+    _seed_countries(monkeypatch, {"testind_": ["DE", "IT", "EL"]})
     return spec
 
 
-def test_only_curated_geos_are_stored(con, fake_fetch, one_set):
+def _seed_countries(monkeypatch, countries):
+    monkeypatch.setattr(eurostat_geos, "COUNTRIES", countries)
+
+
+def test_only_seeded_geos_are_stored(con, fake_fetch, one_set):
     pipeline.sync_eurostat_multi(con)
     got = {r[0] for r in con.execute(
         "SELECT DISTINCT series_id FROM macro_series").fetchall()}
@@ -70,11 +78,34 @@ def test_non_eu_geos_never_enter_the_pack(con, fake_fetch, one_set):
 
 
 def test_dead_geo_is_skipped_not_stored(con, fake_fetch, one_set, monkeypatch):
-    monkeypatch.setattr(pipeline, "EU_CORE_GEOS", ["DE", "UK"])
+    _seed_countries(monkeypatch, {"testind_": ["DE", "PL"]})
     report = pipeline.sync_eurostat_multi(con)
-    assert ("testind_uk", "skip", "dead/stale geo") in report
-    assert con.execute("SELECT count(*) FROM macro_series WHERE series_id='testind_uk'"
+    assert ("testind_pl", "skip", "dead/stale geo") in report
+    assert con.execute("SELECT count(*) FROM macro_series WHERE series_id='testind_pl'"
                        ).fetchone()[0] == 0
+
+
+def test_a_seed_country_outside_the_reuse_grant_stops_the_sync(con, fake_fetch, one_set,
+                                                                 monkeypatch):
+    """The seed is an allowlist inside the grant; a US row in it is a bug, not data."""
+    _seed_countries(monkeypatch, {"testind_": ["DE", "US"]})
+    report = pipeline.sync_eurostat_multi(con)
+    assert report[0][1] == "FAIL" and "outside Eurostat's reuse grant" in report[0][2]
+    assert con.execute("SELECT count(*) FROM macro_series WHERE series_id='testind_us'"
+                       ).fetchone()[0] == 0
+
+
+def test_the_seed_stays_inside_the_reuse_grant_and_names_real_families():
+    """Every seeded country is an EU, EFTA or candidate country (never the
+    aggregates, which each family names itself), and every seeded prefix is a
+    family. Kosovo, a potential candidate only, is never seeded (2026-10-12)."""
+    prefixes = {s["prefix"] for s in pipeline.EUROSTAT_BULK_SETS}
+    aggregates = {"EA", "EA19", "EA20", "EA21", "EU", "EU27_2020", "EEA"}
+    for prefix, geos in eurostat_geos.load().items():
+        assert prefix in prefixes
+        assert set(geos) <= pipeline.REUSE_GEOS - aggregates, prefix
+        assert len(geos) == len(set(geos)) and "XK" not in geos
+    assert set(eurostat_geos.load()) == prefixes
 
 
 def test_catalog_rows_carry_licence_and_metadata(con, fake_fetch, one_set):
@@ -98,7 +129,10 @@ def test_missing_geo_is_silent(con, fake_fetch, one_set):
     assert ("Test indicator", "ok", "2 geos") in report
 
 
-def test_incremental_start_uses_oldest_member(con, fake_fetch, one_set):
+def test_incremental_start_uses_oldest_member(con, fake_fetch, one_set, monkeypatch):
+    # Every seeded country held: a seeded one never stored (EL in one_set)
+    # would make every refresh fetch the whole history.
+    _seed_countries(monkeypatch, {"testind_": ["DE", "IT"]})
     pipeline.sync_eurostat_multi(con)                       # full pull first
     # IT lags DE by a month; the family must re-fetch from the OLDER edge
     con.execute("DELETE FROM macro_series WHERE series_id='testind_it' AND date='2026-06-01'")
@@ -107,12 +141,30 @@ def test_incremental_start_uses_oldest_member(con, fake_fetch, one_set):
     assert fake_fetch[0][1] == "2026-05"
 
 
+def test_a_country_new_to_the_seed_gets_its_whole_history(con, fake_fetch, one_set,
+                                                          monkeypatch):
+    """2026-11-19: the first incremental refresh after widening the families
+    asked only for the periods since the others' latest, so every new country
+    arrived with one or two rows. A seeded country the store does not hold
+    yet makes the family fetch everything; once held, increments resume."""
+    _seed_countries(monkeypatch, {"testind_": ["DE"]})
+    pipeline.sync_eurostat_multi(con)
+    _seed_countries(monkeypatch, {"testind_": ["DE", "IT"]})
+    fake_fetch.clear()
+    pipeline.sync_eurostat_multi(con, incremental=True)
+    assert fake_fetch[0][1] is None
+    fake_fetch.clear()
+    pipeline.sync_eurostat_multi(con, incremental=True)
+    assert fake_fetch[0][1] == "2026-06"
+
+
 def test_a_failing_set_does_not_abort_the_others(con, monkeypatch):
     good = {"prefix": "good_", "code": "g", "label": "Good", "frequency": "monthly",
             "units": "percent", "name_tmpl": "Good — {geo}", "notes": ""}
     bad = {"prefix": "bad_", "code": "b", "label": "Bad", "frequency": "monthly",
            "units": "percent", "name_tmpl": "Bad — {geo}", "notes": ""}
     monkeypatch.setattr(pipeline, "EUROSTAT_BULK_SETS", [bad, good])
+    _seed_countries(monkeypatch, {"good_": ["DE"], "bad_": ["DE"]})
 
     def _fake(code, start=None):
         if code == "b":
@@ -157,6 +209,7 @@ def test_an_annual_family_is_not_mistaken_for_a_dead_geography(con, monkeypatch)
             "frequency": "annual", "units": "percent", "staleness_days": 800,
             "ea_codes": ["EA21"], "name_tmpl": "Annual test — {geo}", "notes": "n"}
     monkeypatch.setattr(pipeline, "EUROSTAT_BULK_SETS", [spec])
+    _seed_countries(monkeypatch, {"testann_": ["DE", "FR"]})
     year = pd.Timestamp.today().year - 1
     payload = {"EA21": _frame([f"{year}-01-01"], [1.2]), "DE": _frame([f"{year}-01-01"], [0.2]),
                "FR": _frame(["2019-01-01"], [1.0])}          # FR: really stopped

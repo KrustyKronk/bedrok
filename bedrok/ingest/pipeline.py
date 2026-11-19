@@ -15,13 +15,14 @@ import pandas as pd
 import requests
 
 from bedrok.core import config
+from bedrok.core import geography
 from bedrok.core import licensing
 from bedrok.core import releases
 from bedrok.core import sources
 from bedrok.core import store
 from bedrok.core import units
 from bedrok.core.aliases import ALIASES
-from bedrok.ingest import calendars
+from bedrok.ingest import calendars, eurostat_geos
 from bedrok.ingest.adapters import cftc, eurostat, nbk, ons, pxweb, sdmx, worldbank
 
 # FX pairs come from the profile's base currency (config.fx_pairs()); pairs with
@@ -266,25 +267,24 @@ def sync_hicp_europe(con, incremental=False) -> list[tuple]:
 # ---- Eurostat multi-geo bulk sets ------------------------------------------
 #
 # One geo-unfiltered API call per indicator, split per geo — the same trick
-# sync_hicp_europe uses. Unlike HICP (deliberately full-geo, as a breadth set),
-# these are CURATED: 11 indicators × 40-odd geos would add ~450 series, most of
-# them Albanian retail trade nobody will ever query, and every one of them a
-# line in the staleness report. The core list is the euro-area aggregates plus
-# the countries whose divergence actually matters to a EUR-based investor.
+# sync_hicp_europe uses. Until 2026-11-19 these families kept eleven countries
+# (the large euro members) and threw the rest of each download away, on the
+# argument that Albanian retail trade was noise. The owner reversed that when
+# the public website was built from all of Bedrok: every family now carries
+# every country inside the reuse grant that it publishes (about 1,000 series
+# where there were 330), from the same downloads, so at no network cost.
 #
-# Both 'EA' and 'EA20' appear because the datasets disagree: irt_lt_mcby_m and
-# une_rt_m carry 'EA', the STS/national-accounts sets carry 'EA20'. A geo a
-# dataset does not publish is skipped silently (prc_hpi_q has no Greece).
-EU_CORE_GEOS = ["EA", "EA20", "EU27_2020", "DE", "FR", "IT", "ES", "NL", "BE",
-                "AT", "PT", "IE", "EL", "FI"]
-
+# Which countries each family publishes is a seed (eurostat_geos.py), not a
+# loop over the response, so a fresh store can find them before a refresh and
+# no family registers a country its dataset does not fill (prc_hpi_q has no
+# Greece; Belgium's labour cost index stopped; no seasonally adjusted yoy GDP
+# contributions for Germany or the Netherlands).
+#
 # Eurostat's copyright notice grants CC BY 4.0 reuse, commercial included,
 # except for data on countries other than EU members, EFTA members and official
-# candidate countries (its examples: US, Japan, China). une_rt_m carries US and
-# JP geos. These curated families iterate their own list, never the API
-# response — do not "simplify" this into a loop over per_geo. The broad HICP
-# set does loop over the response, as a breadth set, and keeps only REUSE_GEOS.
-_NON_EU_GEOS = {"US", "JP", "CN"}
+# candidate countries (its examples: US, Japan, China; une_rt_m carries US and
+# JP). REUSE_GEOS below is that grant as an allowlist: a seed country outside
+# it stops the sync, and tests/test_eurostat_bulk.py holds the seed inside it.
 
 # Inside the grant: the aggregates, the EU 27, EFTA, and the official candidate
 # countries (Georgia since December 2023). Kosovo is a potential candidate only
@@ -300,17 +300,24 @@ REUSE_GEOS = frozenset({
 # The euro area under each code a dataset may use: EA (changing composition),
 # EA20 and, since Bulgaria joined in 2026, EA21. Datasets disagree and move, so
 # each family names the codes its dataset fills (`ea_codes`, default EA and
-# EA20) and the curated countries it lacks (`missing`). Registering a code a
-# dataset does not fill leaves an empty catalog row that search finds and
-# describe reports empty: eleven of them by 2026-10.
+# EA20). Registering a code a dataset does not fill leaves an empty catalog
+# row that search finds and describe reports empty: eleven of them by 2026-10.
 _EA_CODES = ("EA", "EA20", "EA21")
 
 
 def family_geos(spec: dict) -> list[str]:
-    """The geographies one Eurostat family is registered and fetched for."""
-    countries = [g for g in spec.get("geos", EU_CORE_GEOS)
-                 if g not in _EA_CODES and g not in spec.get("missing", ())]
-    return list(spec.get("ea_codes", ["EA", "EA20"])) + countries
+    """The geographies one Eurostat family is registered and fetched for: its
+    euro-area codes, the EU 27, and the countries its seed row names."""
+    countries = eurostat_geos.COUNTRIES.get(spec["prefix"], [])
+    return list(spec.get("ea_codes", ["EA", "EA20"])) + ["EU27_2020"] + countries
+
+
+def dead_geo_cutoff(spec: dict) -> date:
+    """A geography whose latest value is older than this has stopped publishing.
+
+    400 days; an annual value is dated to its year's first day and is already
+    ~650 days old when the next one arrives, so annual families get 800."""
+    return date.today() - timedelta(days=800 if spec["frequency"] == "annual" else 400)
 
 
 DG_ECFIN_NOTE = ("European Commission DG ECFIN Business and Consumer Surveys "
@@ -359,17 +366,18 @@ EUROSTAT_BULK_SETS = [
      "name_tmpl": "Real GDP QoQ — {geo}",
      "notes": "chain-linked volumes, seasonally and calendar adjusted; the annual "
               "rate is gdp_yoy_ for the same geography"},
-    {"prefix": "hpi_yoy_", "missing": ["EL"], "code": "prc_hpi_q?purchase=TOTAL&unit=RCH_A",
+    {"prefix": "hpi_yoy_", "code": "prc_hpi_q?purchase=TOTAL&unit=RCH_A",
      "label": "House price index YoY", "frequency": "quarterly", "units": "percent",
      "staleness_days": 260,
      "name_tmpl": "House price index YoY — {geo}",
-     "notes": "total purchases; Eurostat carries no Greek HPI"},
-    {"prefix": "lci_yoy_", "missing": ["BE"],
+     "notes": "total purchases. Eurostat carries no Greek or Turkish house price index"},
+    {"prefix": "lci_yoy_",
      "code": "lc_lci_r2_q?lcstruct=D1_D4_MD5&nace_r2=B-S&unit=PCH_SM&s_adj=CA",
      "label": "Labour cost index YoY", "frequency": "quarterly", "units": "percent",
      "staleness_days": 260,
      "name_tmpl": "Labour cost index YoY — {geo}",
-     "notes": "business economy (B-S); the euro-area wage-pressure read"},
+     "notes": "business economy (B-S); the euro-area wage-pressure read. Belgium "
+              "stopped publishing it to Eurostat and is not carried"},
     {"prefix": "govdebt_gdp_", "ea_codes": ["EA20"],
      "code": "gov_10q_ggdebt?na_item=GD&sector=S13&unit=PC_GDP",
      "label": "Government debt/GDP", "frequency": "quarterly", "units": "percent of GDP",
@@ -432,7 +440,6 @@ GDP_PARTS = [  # (part, Eurostat item, words in the name)
     ("exp", "P6", "exports"),
     ("imp", "P7", "imports"),
 ]
-GDP_CONTRIB_MISSING_Q = ["DE", "NL"]
 # A year is dated to its first day and the next one arrives about fifteen
 # months after it ends: 2025 (dated 2025-01-01) lands in early 2027.
 _ANNUAL_STALENESS = 800
@@ -460,7 +467,6 @@ def _gdp_breakdown_sets() -> list[dict]:
                      "gdp_annual_ for the same geography; net trade is gdp_contrib_net_"})
         out.append({
             "prefix": f"gdp_contrib_q_{part}_", "ea_codes": ["EA21"],
-            "missing": GDP_CONTRIB_MISSING_Q,
             "code": f"namq_10_gdp?na_item={item}&unit=CON_PPCH_SM&s_adj=SCA",
             "label": f"GDP contribution, {words}, quarterly", "frequency": "quarterly",
             "units": "percentage points", "staleness_days": 260,
@@ -486,12 +492,30 @@ EUROSTAT_BULK_SETS[EUROSTAT_BULK_SETS.index(next(s for s in EUROSTAT_BULK_SETS
 BULK_PREFIXES = [HICP_PREFIX] + [s["prefix"] for s in EUROSTAT_BULK_SETS]
 
 
-def _bulk_incremental_start(con, prefix: str) -> str | None:
-    """Oldest 'latest date' across a bulk family, as YYYY-MM.
+def _bulk_incremental_start(con, prefix: str, geos: list[str] | None = None) -> str | None:
+    """Oldest 'latest date' across a bulk family, as YYYY-MM, or None (the
+    whole history) when one of `geos` (the seeded countries, which are known
+    to publish; never the aggregates, which a dataset may not fill) has no
+    rows in the store yet.
+
+    Without that, a country added to a family arrives with only the periods
+    since the others' latest: on 2026-11-19 an incremental refresh gave every
+    newly seeded country one or two rows, and exited 0. The cost: a seeded
+    country Eurostat stops publishing altogether makes every refresh of its
+    family a full download until scripts/eurostat_geos.py is run again.
 
     Eurostat accepts YYYY-MM for quarterly and annual datasets as happily as for
     monthly ones (verified against namq_10_gdp, prc_hpi_q and, for annual,
     nama_10_gdp on 2026-10-12), so one format covers every set."""
+    if geos:
+        ids = [f"{prefix}{g.lower()}" for g in geos]
+        ids = [sid for sid in ids if sid not in ALIASES]
+        if ids:
+            ph = ", ".join("?" for _ in ids)
+            held = con.execute(f"SELECT count(DISTINCT series_id) FROM macro_series "
+                               f"WHERE series_id IN ({ph})", ids).fetchone()[0]
+            if held < len(ids):
+                return None
     last = con.execute(
         "SELECT min(hi) FROM (SELECT max(date) hi FROM macro_series "
         "WHERE series_id LIKE ? GROUP BY series_id)", [prefix + "%"]).fetchone()[0]
@@ -501,17 +525,20 @@ def _bulk_incremental_start(con, prefix: str) -> str | None:
 def sync_eurostat_multi(con, incremental=False, prefixes=None) -> list[tuple]:
     """Sync every curated Eurostat multi-geo set (one API call per indicator),
     or only the sets whose series_id prefix is in `prefixes`."""
-    from datetime import date as _date, timedelta as _td
     report = []
     for spec in EUROSTAT_BULK_SETS:
-        # A geography that stopped publishing is dead after 400 days; an annual
-        # value is dated to its year's first day and is already ~650 days old
-        # when the next one arrives, so annual families get twice the room.
-        cutoff = _date.today() - _td(days=800 if spec["frequency"] == "annual" else 400)
+        cutoff = dead_geo_cutoff(spec)
         if prefixes is not None and spec["prefix"] not in prefixes:
             continue
         prefix, label = spec["prefix"], spec["label"]
-        start = _bulk_incremental_start(con, prefix) if incremental else None
+        outside = [g for g in family_geos(spec) if g not in REUSE_GEOS]
+        if outside:
+            # The seed is an allowlist inside the grant; a row outside it is a
+            # bug, so the family stores nothing until the seed is fixed.
+            report.append((label, "FAIL", f"{', '.join(outside)} outside Eurostat's reuse grant"))
+            continue
+        start = (_bulk_incremental_start(con, prefix, eurostat_geos.COUNTRIES.get(prefix))
+                 if incremental else None)
         try:
             per_geo, geo_labels = eurostat.fetch_multi_geo(spec["code"], start=start)
         except Exception as e:  # noqa: BLE001
@@ -522,7 +549,6 @@ def sync_eurostat_multi(con, incremental=False, prefixes=None) -> list[tuple]:
 
         cat_rows, n_geo = [], 0
         for geo in family_geos(spec):
-            assert geo not in _NON_EU_GEOS, f"{geo} is outside Eurostat's reuse grant"
             df = per_geo.get(geo)
             if df is None or df.empty:
                 continue                      # dataset doesn't publish this geo
@@ -751,13 +777,11 @@ def _record_next_release(con, sid: str, row) -> None:
         pass
 
 
-# Names for the curated Eurostat geographies, so a series is findable before its
-# set has been downloaded; the download replaces them with Eurostat's own labels.
-GEO_NAMES = {"EA": "Euro area", "EA20": "Euro area (20)", "EA21": "Euro area (21)",
-             "EU27_2020": "European Union (27)",
-             "DE": "Germany", "FR": "France", "IT": "Italy", "ES": "Spain",
-             "NL": "Netherlands", "BE": "Belgium", "AT": "Austria", "PT": "Portugal",
-             "IE": "Ireland", "EL": "Greece", "FI": "Finland"}
+# Names for the Eurostat geographies, so a series is findable before its set
+# has been downloaded; the download replaces them with Eurostat's own labels.
+GEO_NAMES = {**{c.upper(): n for c, n in {**geography.CODES, **geography.FAMILY_CODES}.items()},
+             "EA": "Euro area", "EA20": "Euro area (20)", "EA21": "Euro area (21)",
+             "EU27_2020": "European Union (27)"}
 
 
 def static_catalog_rows() -> pd.DataFrame:
