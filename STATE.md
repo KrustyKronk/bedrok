@@ -996,18 +996,18 @@ Owner-side items are in `profile/STATE-private.md`.
     CPI (`us_sticky_core_cpi`) now redirects to a 404 page. That last one
     may be a moved file: look before the next release.
 
-21. **The public website** (decided 2026-11-19; session 15 in the plan).
-    It is built in a **separate private repository**, not here (decided
-    2026-11-19): the hosted store, the clock and FRED-on-the-site are the
-    parts that may stay private for good, and keeping them out leaves this
-    package's storage rules and `test_macro_seed.py` untouched. This repo
-    stays public. First step: a simple design mockup of the layout (the owner's, in his
-    Claude Design canvas, not in this repo), then a richer one. Still to
-    design: where the hosted store runs and how often it refreshes; which
-    rows the site shows (FRED is in by decision; the Philadelphia Fed's
-    personal-use rows and the regional Feds' noncommercial rows are not yet
-    decided); the country-then-topic layer over the catalog, which is new
-    curation; downloads and per-chart sharing. Econ Toolkit (econtoolkit.com)
-    is the nearest existing site: 42 economies, seven topics per country,
-    weekday refresh, PNG and Excel downloads, no API, no warnings, no release
-    dates.
+21. **The public website** (decided 2026-11-19; session 15 in the plan) is
+    built in the private repository `KrustyKronk/bedrok-web`, created
+    2026-11-19. Its open questions (mockup, hosting, which rows, the
+    country-then-topic layer, the API) live in that repository's `STATE.md`,
+    not here. It depends on this package (`bedrok>=0.3.7`); nothing here
+    depends on it. What stays open on this side:
+    - **The package is now a dependency.** Whatever the website reads through
+      (series with transforms, freshness, warnings, the release calendar)
+      becomes a contract. When the website starts relying on a call, say so
+      here and test it as a public API.
+    - **October 2026's US CPI annual rate cannot be computed.** The October
+      2026 index is held, but October 2025 was never published (the shutdown
+      gap), so `get_series(transform="yoy")` stops at September 2026, while
+      `freshness.last_date` says 2026-10-01. Check what the BLS itself
+      published for October 2026's annual rate and decide what the MCP says.
