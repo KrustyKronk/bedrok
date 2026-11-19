@@ -121,8 +121,10 @@ calendar listed Bank Rate as due, data to 28 Oct; the refresh brought the
 live store every linked rate now names its bank's next decision (the FOMC and
 the Bank of Canada on 9 Dec, the ECB and the Bank of England on 17 Dec).
 
-**Next:** install 0.3.7 in Claude Desktop over the old extension (item 19), which also brings 0.3.6's logo and 0.3.4's and
-0.3.5's series, and ask about Kazakhstan and the
+**Next:** the public website (item 21, decided 2026-11-19), built in its own
+private repository beside this one. Also still pending: install 0.3.7 in Claude
+Desktop over the old extension (item 19), which also brings 0.3.6's logo and
+0.3.4's and 0.3.5's series, and ask about Kazakhstan and the
 Z.1 financing gap (items 16 and 17); then a cold question on a release
 morning (item 1), then whichever open item the owner picks.
 
@@ -722,6 +724,16 @@ None holds a secret.
 
 ## Decisions in force
 
+- **Bedrok gets a public website** (the owner, 2026-11-19). Free to browse,
+  chart and download every series; it is the hook for a paid API later
+  (pricing deferred). Hosting is fine, which reverses "nothing hosted" for the
+  website; the running cost is accepted. **FRED data goes on the site**, the
+  owner accepting the risk under FRED's terms for now; the local MCP and its
+  package keep FRED session-only, still guarded by `test_macro_seed.py`. **The
+  hosted store refreshes on a schedule** from the release rules and calendars;
+  the local install keeps no clock. Detail in `docs/rebuild-plan.md`,
+  "Decisions of 2026-11-19". **It is built in a separate private repository**
+  (same day); this one stays public and stays the MCP. Item 21.
 - **Bedrok answers what it can, and does not stand in the way of the rest**
   (the owner, 2026-10-12). A question Bedrok can answer should be answered
   from Bedrok: it is purpose-built for it, and a bug that sends Claude
@@ -731,7 +743,7 @@ None holds a secret.
   Whenever outside data sits beside Bedrok's, in a chart or a sentence, the
   answer says which part did not come through Bedrok.
 - **The rethink decisions of 2026-10-09** are in `docs/rebuild-plan.md`: local
-  MCP, FRED as an optional extra held only for the conversation, equity prices
+  MCP (still the product; the website is added beside it on 2026-11-19), FRED as an optional extra held only for the conversation, equity prices
   out of the core, Python with `uv`, a fresh public repository, about thirty
   publishers for v1, no pack, the name Bedrok.
 - **Fresh build, not a fork of World Monitor.** It is AGPL-3.0-only; Bedrok is MIT.
@@ -984,3 +996,18 @@ Owner-side items are in `profile/STATE-private.md`.
     CPI (`us_sticky_core_cpi`) now redirects to a 404 page. That last one
     may be a moved file: look before the next release.
 
+21. **The public website** (decided 2026-11-19; session 15 in the plan).
+    It is built in a **separate private repository**, not here (decided
+    2026-11-19): the hosted store, the clock and FRED-on-the-site are the
+    parts that may stay private for good, and keeping them out leaves this
+    package's storage rules and `test_macro_seed.py` untouched. This repo
+    stays public. First step: a simple design mockup of the layout (the owner's, in his
+    Claude Design canvas, not in this repo), then a richer one. Still to
+    design: where the hosted store runs and how often it refreshes; which
+    rows the site shows (FRED is in by decision; the Philadelphia Fed's
+    personal-use rows and the regional Feds' noncommercial rows are not yet
+    decided); the country-then-topic layer over the catalog, which is new
+    curation; downloads and per-chart sharing. Econ Toolkit (econtoolkit.com)
+    is the nearest existing site: 42 economies, seven topics per country,
+    weekday refresh, PNG and Excel downloads, no API, no warnings, no release
+    dates.
