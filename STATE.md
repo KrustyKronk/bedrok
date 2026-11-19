@@ -994,7 +994,18 @@ Owner-side items are in `profile/STATE-private.md`.
     twelve euro-area series and EURUSD, which looked like an outage; Destatis
     refused `de_industrial_production` again; and the Atlanta Fed's sticky
     CPI (`us_sticky_core_cpi`) now redirects to a 404 page. That last one
-    may be a moved file: look before the next release.
+    may be a moved file: look before the next release. Still a 404 on
+    2026-11-19.
+
+    **And in the 2026-11-19 refresh** (run by `bedrok-web update`): the eight
+    SLOOS and Z.1 series failed because the Fed Board renamed the data files
+    inside those two zips to lower case on 2026-11-12. Fixed the same day
+    (`fedboard.data_member`; notes, "Ingest and vendors"); the fix is on
+    `main`, not yet in a release, so the PyPI package and the website's
+    environment still fail on them until the next one. The OECD (11 series)
+    and Statistics Canada (3 series and its calendar) answered 403 that
+    morning, the bot checks the notes describe: re-run another day before
+    treating either as gone.
 
 21. **The public website** (decided 2026-11-19; session 15 in the plan) is
     built in the private repository `KrustyKronk/bedrok-web`, created

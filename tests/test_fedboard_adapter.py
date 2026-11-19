@@ -76,6 +76,38 @@ def test_fetch_downloads_each_release_once_for_every_primed_series(monkeypatch):
         fedboard.fetch("H15:NOPE")
 
 
+def test_the_data_file_is_found_whatever_its_case(monkeypatch):
+    """2026-11-12: the Board renamed SLOOS_data.xml and Z1_data.xml to lower
+    case and kept H15_data.xml as it was. Every refresh of those eight series
+    failed with a KeyError the next morning."""
+    import zipfile
+    members = ["frb_common.xsd", "z1_data.xml", "Z1_struct.xml", "Z1_Z1.xsd"]
+    assert fedboard.data_member(members, "Z1") == "z1_data.xml"
+    assert fedboard.data_member(["H15_data.xml", "H15_H15.xsd"], "H15") == "H15_data.xml"
+    with pytest.raises(ValueError, match="no data file"):
+        fedboard.data_member(["SLOOS_struct.xml"], "SLOOS")
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr("h15_data.xml", XML)
+    monkeypatch.setattr(fedboard, "_download", lambda rel: buf.getvalue())
+    fedboard.prime(["H15:RIFLGFCY10_N.B"])
+    assert not fedboard.fetch("H15:RIFLGFCY10_N.B").empty
+
+
+def test_sloos_falls_back_when_its_zip_has_no_data_file(monkeypatch):
+    """A zip that downloads but holds no data file is as gone as a 404: the
+    survey's own chart-data page carries the same numbers."""
+    import zipfile
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr("SLOOS_struct.xml", "<x/>")
+    monkeypatch.setattr(fedboard, "_download", lambda rel: buf.getvalue())
+    monkeypatch.setattr(fedboard, "_sloos_chart_data", lambda: SLOOS_HTML)
+    fedboard.prime(["SLOOS:SUBLPDCILS_N.Q"])
+    df = fedboard.fetch("SLOOS:SUBLPDCILS_N.Q", start="2026-01-01")
+    assert df["value"].tolist() == [0.0] and "fallback" in df.attrs
+
+
 SLOOS_HTML = """
 <table title="Figure 1"><tr><th rowspan="2">Period</th>
 <th colspan="2">Panel 1: Net Percentage of Domestic Respondents Tightening Standards for C&amp;I Loans</th>
