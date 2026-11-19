@@ -21,7 +21,7 @@ Bedrok is wired to 35 publishers. 29 need no key at all; the others take a free 
 | **Federal Reserve Bank of New York — Markets Data and surveys** (`nyfed`) | 6 curated | none | reuse with attribution | yes | [terms](https://www.newyorkfed.org/privacy/termsofuse) |
 | **The World Bank — Commodity Markets (Pink Sheet)** (`worldbank`) | 1 family | none | reuse with attribution | yes | [terms](https://data.worldbank.org/summary-terms-of-use) |
 | **U.S. Commodity Futures Trading Commission — Commitments of Traders** (`cftc`) | 1 family | none | public domain | yes | [terms](https://www.cftc.gov/) |
-| **Bedrok (computed from stored series)** (`derived`) | 36 families | none | reuse with attribution | yes |  |
+| **Bedrok (computed from stored series)** (`derived`) | 86 families | none | reuse with attribution | yes |  |
 | **Bank for International Settlements** (`bis`) | 17 curated | none | reuse with attribution | yes | [terms](https://data.bis.org/help/legal) |
 | **International Monetary Fund** (`imf`) | 16 curated | none | reuse with attribution | yes | [terms](https://www.imf.org/en/About/copyright-and-terms) |
 | **Istituto Nazionale di Statistica (Istat)** (`istat`) | 1 curated | none | reuse with attribution | yes | [terms](https://www.istat.it/note-legali/) |
@@ -95,36 +95,36 @@ Bedrok is wired to 35 publishers. 29 need no key at all; the others take a free 
 - `kz_eu_exports` — Kazakhstan goods imports from the EU, as EU exports (Eurostat)
 - `kz_eu_imports` — Kazakhstan goods exports to the EU, as EU imports (Eurostat)
 - Broad-Europe HICP annual rates (hicp_yoy_*)
-- EMU 10y govt bond yields (ltgov_yield_*, 13 geographies)
-- Economic Sentiment Indicator (esi_*, 13 geographies)
-- Industrial confidence (ind_conf_*, 13 geographies)
-- Consumer confidence (cons_conf_*, 13 geographies)
-- Industrial production YoY (indprod_yoy_*, 13 geographies)
-- Retail trade volume YoY (retail_yoy_*, 13 geographies)
-- Real GDP YoY (gdp_yoy_*, 14 geographies)
-- Real GDP QoQ (gdp_qoq_*, 14 geographies)
-- House price index YoY (hpi_yoy_*, 13 geographies)
-- Labour cost index YoY (lci_yoy_*, 13 geographies)
-- Government debt/GDP (govdebt_gdp_*, 13 geographies)
-- HICP core annual rate (hicp_core_*, 14 geographies)
-- HICP energy annual rate (hicp_energy_*, 14 geographies)
-- HICP food annual rate (hicp_food_*, 14 geographies)
-- HICP goods annual rate (hicp_goods_*, 14 geographies)
-- HICP services annual rate (hicp_services_*, 14 geographies)
-- Real GDP growth, annual (gdp_annual_*, 13 geographies)
-- GDP contribution, household consumption, annual (gdp_contrib_hh_*, 13 geographies)
-- GDP contribution, household consumption, quarterly (gdp_contrib_q_hh_*, 11 geographies)
-- GDP contribution, government consumption, annual (gdp_contrib_gov_*, 13 geographies)
-- GDP contribution, government consumption, quarterly (gdp_contrib_q_gov_*, 11 geographies)
-- GDP contribution, fixed investment, annual (gdp_contrib_gfcf_*, 13 geographies)
-- GDP contribution, fixed investment, quarterly (gdp_contrib_q_gfcf_*, 11 geographies)
-- GDP contribution, inventories and valuables, annual (gdp_contrib_inv_*, 13 geographies)
-- GDP contribution, inventories and valuables, quarterly (gdp_contrib_q_inv_*, 11 geographies)
-- GDP contribution, exports, annual (gdp_contrib_exp_*, 13 geographies)
-- GDP contribution, exports, quarterly (gdp_contrib_q_exp_*, 11 geographies)
-- GDP contribution, imports, annual (gdp_contrib_imp_*, 13 geographies)
-- GDP contribution, imports, quarterly (gdp_contrib_q_imp_*, 11 geographies)
-- Youth unemployment (youth_unemp_*, 13 geographies)
+- EMU 10y govt bond yields (ltgov_yield_*, 29 geographies)
+- Economic Sentiment Indicator (esi_*, 34 geographies)
+- Industrial confidence (ind_conf_*, 34 geographies)
+- Consumer confidence (cons_conf_*, 34 geographies)
+- Industrial production YoY (indprod_yoy_*, 38 geographies)
+- Retail trade volume YoY (retail_yoy_*, 37 geographies)
+- Real GDP YoY (gdp_yoy_*, 39 geographies)
+- Real GDP QoQ (gdp_qoq_*, 39 geographies)
+- House price index YoY (hpi_yoy_*, 32 geographies)
+- Labour cost index YoY (lci_yoy_*, 32 geographies)
+- Government debt/GDP (govdebt_gdp_*, 30 geographies)
+- HICP core annual rate (hicp_core_*, 39 geographies)
+- HICP energy annual rate (hicp_energy_*, 39 geographies)
+- HICP food annual rate (hicp_food_*, 39 geographies)
+- HICP goods annual rate (hicp_goods_*, 39 geographies)
+- HICP services annual rate (hicp_services_*, 39 geographies)
+- Real GDP growth, annual (gdp_annual_*, 37 geographies)
+- GDP contribution, household consumption, annual (gdp_contrib_hh_*, 38 geographies)
+- GDP contribution, household consumption, quarterly (gdp_contrib_q_hh_*, 36 geographies)
+- GDP contribution, government consumption, annual (gdp_contrib_gov_*, 38 geographies)
+- GDP contribution, government consumption, quarterly (gdp_contrib_q_gov_*, 36 geographies)
+- GDP contribution, fixed investment, annual (gdp_contrib_gfcf_*, 38 geographies)
+- GDP contribution, fixed investment, quarterly (gdp_contrib_q_gfcf_*, 35 geographies)
+- GDP contribution, inventories and valuables, annual (gdp_contrib_inv_*, 37 geographies)
+- GDP contribution, inventories and valuables, quarterly (gdp_contrib_q_inv_*, 35 geographies)
+- GDP contribution, exports, annual (gdp_contrib_exp_*, 38 geographies)
+- GDP contribution, exports, quarterly (gdp_contrib_q_exp_*, 36 geographies)
+- GDP contribution, imports, annual (gdp_contrib_imp_*, 38 geographies)
+- GDP contribution, imports, quarterly (gdp_contrib_q_imp_*, 36 geographies)
+- Youth unemployment (youth_unemp_*, 35 geographies)
 
 ### U.S. Energy Information Administration
 
@@ -305,28 +305,78 @@ Bedrok is wired to 35 publishers. 29 need no key at all; the others take a free 
 - us_recession — US recession indicator (NBER)
 - gdp_contrib_net_ea21 — Contribution of net trade to annual GDP growth — EA21
 - gdp_contrib_net_eu27_2020 — Contribution of net trade to annual GDP growth — EU27_2020
-- gdp_contrib_net_de — Contribution of net trade to annual GDP growth — DE
-- gdp_contrib_net_fr — Contribution of net trade to annual GDP growth — FR
-- gdp_contrib_net_it — Contribution of net trade to annual GDP growth — IT
-- gdp_contrib_net_es — Contribution of net trade to annual GDP growth — ES
-- gdp_contrib_net_nl — Contribution of net trade to annual GDP growth — NL
-- gdp_contrib_net_be — Contribution of net trade to annual GDP growth — BE
+- gdp_contrib_net_al — Contribution of net trade to annual GDP growth — AL
 - gdp_contrib_net_at — Contribution of net trade to annual GDP growth — AT
-- gdp_contrib_net_pt — Contribution of net trade to annual GDP growth — PT
-- gdp_contrib_net_ie — Contribution of net trade to annual GDP growth — IE
+- gdp_contrib_net_ba — Contribution of net trade to annual GDP growth — BA
+- gdp_contrib_net_be — Contribution of net trade to annual GDP growth — BE
+- gdp_contrib_net_bg — Contribution of net trade to annual GDP growth — BG
+- gdp_contrib_net_ch — Contribution of net trade to annual GDP growth — CH
+- gdp_contrib_net_cy — Contribution of net trade to annual GDP growth — CY
+- gdp_contrib_net_cz — Contribution of net trade to annual GDP growth — CZ
+- gdp_contrib_net_de — Contribution of net trade to annual GDP growth — DE
+- gdp_contrib_net_dk — Contribution of net trade to annual GDP growth — DK
+- gdp_contrib_net_ee — Contribution of net trade to annual GDP growth — EE
 - gdp_contrib_net_el — Contribution of net trade to annual GDP growth — EL
+- gdp_contrib_net_es — Contribution of net trade to annual GDP growth — ES
 - gdp_contrib_net_fi — Contribution of net trade to annual GDP growth — FI
+- gdp_contrib_net_fr — Contribution of net trade to annual GDP growth — FR
+- gdp_contrib_net_hr — Contribution of net trade to annual GDP growth — HR
+- gdp_contrib_net_hu — Contribution of net trade to annual GDP growth — HU
+- gdp_contrib_net_ie — Contribution of net trade to annual GDP growth — IE
+- gdp_contrib_net_is — Contribution of net trade to annual GDP growth — IS
+- gdp_contrib_net_it — Contribution of net trade to annual GDP growth — IT
+- gdp_contrib_net_lt — Contribution of net trade to annual GDP growth — LT
+- gdp_contrib_net_lu — Contribution of net trade to annual GDP growth — LU
+- gdp_contrib_net_lv — Contribution of net trade to annual GDP growth — LV
+- gdp_contrib_net_md — Contribution of net trade to annual GDP growth — MD
+- gdp_contrib_net_me — Contribution of net trade to annual GDP growth — ME
+- gdp_contrib_net_mk — Contribution of net trade to annual GDP growth — MK
+- gdp_contrib_net_mt — Contribution of net trade to annual GDP growth — MT
+- gdp_contrib_net_nl — Contribution of net trade to annual GDP growth — NL
+- gdp_contrib_net_no — Contribution of net trade to annual GDP growth — NO
+- gdp_contrib_net_pl — Contribution of net trade to annual GDP growth — PL
+- gdp_contrib_net_pt — Contribution of net trade to annual GDP growth — PT
+- gdp_contrib_net_ro — Contribution of net trade to annual GDP growth — RO
+- gdp_contrib_net_rs — Contribution of net trade to annual GDP growth — RS
+- gdp_contrib_net_se — Contribution of net trade to annual GDP growth — SE
+- gdp_contrib_net_si — Contribution of net trade to annual GDP growth — SI
+- gdp_contrib_net_sk — Contribution of net trade to annual GDP growth — SK
 - gdp_contrib_q_net_ea21 — Contribution of net trade to GDP growth on a year earlier — EA21
 - gdp_contrib_q_net_eu27_2020 — Contribution of net trade to GDP growth on a year earlier — EU27_2020
-- gdp_contrib_q_net_fr — Contribution of net trade to GDP growth on a year earlier — FR
-- gdp_contrib_q_net_it — Contribution of net trade to GDP growth on a year earlier — IT
-- gdp_contrib_q_net_es — Contribution of net trade to GDP growth on a year earlier — ES
-- gdp_contrib_q_net_be — Contribution of net trade to GDP growth on a year earlier — BE
+- gdp_contrib_q_net_al — Contribution of net trade to GDP growth on a year earlier — AL
 - gdp_contrib_q_net_at — Contribution of net trade to GDP growth on a year earlier — AT
-- gdp_contrib_q_net_pt — Contribution of net trade to GDP growth on a year earlier — PT
-- gdp_contrib_q_net_ie — Contribution of net trade to GDP growth on a year earlier — IE
+- gdp_contrib_q_net_ba — Contribution of net trade to GDP growth on a year earlier — BA
+- gdp_contrib_q_net_be — Contribution of net trade to GDP growth on a year earlier — BE
+- gdp_contrib_q_net_bg — Contribution of net trade to GDP growth on a year earlier — BG
+- gdp_contrib_q_net_ch — Contribution of net trade to GDP growth on a year earlier — CH
+- gdp_contrib_q_net_cy — Contribution of net trade to GDP growth on a year earlier — CY
+- gdp_contrib_q_net_cz — Contribution of net trade to GDP growth on a year earlier — CZ
+- gdp_contrib_q_net_dk — Contribution of net trade to GDP growth on a year earlier — DK
+- gdp_contrib_q_net_ee — Contribution of net trade to GDP growth on a year earlier — EE
 - gdp_contrib_q_net_el — Contribution of net trade to GDP growth on a year earlier — EL
+- gdp_contrib_q_net_es — Contribution of net trade to GDP growth on a year earlier — ES
 - gdp_contrib_q_net_fi — Contribution of net trade to GDP growth on a year earlier — FI
+- gdp_contrib_q_net_fr — Contribution of net trade to GDP growth on a year earlier — FR
+- gdp_contrib_q_net_hr — Contribution of net trade to GDP growth on a year earlier — HR
+- gdp_contrib_q_net_hu — Contribution of net trade to GDP growth on a year earlier — HU
+- gdp_contrib_q_net_ie — Contribution of net trade to GDP growth on a year earlier — IE
+- gdp_contrib_q_net_is — Contribution of net trade to GDP growth on a year earlier — IS
+- gdp_contrib_q_net_it — Contribution of net trade to GDP growth on a year earlier — IT
+- gdp_contrib_q_net_lt — Contribution of net trade to GDP growth on a year earlier — LT
+- gdp_contrib_q_net_lu — Contribution of net trade to GDP growth on a year earlier — LU
+- gdp_contrib_q_net_lv — Contribution of net trade to GDP growth on a year earlier — LV
+- gdp_contrib_q_net_me — Contribution of net trade to GDP growth on a year earlier — ME
+- gdp_contrib_q_net_mk — Contribution of net trade to GDP growth on a year earlier — MK
+- gdp_contrib_q_net_mt — Contribution of net trade to GDP growth on a year earlier — MT
+- gdp_contrib_q_net_no — Contribution of net trade to GDP growth on a year earlier — NO
+- gdp_contrib_q_net_pl — Contribution of net trade to GDP growth on a year earlier — PL
+- gdp_contrib_q_net_pt — Contribution of net trade to GDP growth on a year earlier — PT
+- gdp_contrib_q_net_ro — Contribution of net trade to GDP growth on a year earlier — RO
+- gdp_contrib_q_net_rs — Contribution of net trade to GDP growth on a year earlier — RS
+- gdp_contrib_q_net_se — Contribution of net trade to GDP growth on a year earlier — SE
+- gdp_contrib_q_net_si — Contribution of net trade to GDP growth on a year earlier — SI
+- gdp_contrib_q_net_sk — Contribution of net trade to GDP growth on a year earlier — SK
+- gdp_contrib_q_net_tr — Contribution of net trade to GDP growth on a year earlier — TR
 
 ### Bank for International Settlements
 

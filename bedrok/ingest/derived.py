@@ -23,7 +23,7 @@ from datetime import date
 import pandas as pd
 
 from bedrok.core import licensing, store
-from bedrok.ingest import transforms
+from bedrok.ingest import eurostat_geos, transforms
 from bedrok.ingest.adapters import nber
 
 # Since session 3b the US spreads, breakevens and the recession flag are here
@@ -126,12 +126,20 @@ DERIVED: list[dict] = [
 ]
 
 # Net trade per geography (session C): exports plus imports, because Eurostat
-# publishes the imports contribution already negative. The geographies are the
-# GDP breakdown families' own (pipeline.family_geos on gdp_contrib_*; a test
-# pins the match, since pipeline cannot be imported here without a cycle).
-GDP_NET_GEOS = ["ea21", "eu27_2020", "de", "fr", "it", "es", "nl", "be", "at", "pt",
-                "ie", "el", "fi"]
-GDP_NET_GEOS_Q = [g for g in GDP_NET_GEOS if g not in ("de", "nl")]
+# publishes the imports contribution already negative. The geographies are
+# those both parts are built for (the euro area, the EU and every country the
+# eurostat_geos seed gives both; a test pins the match against pipeline's
+# family_geos, which cannot be imported here without a cycle).
+
+
+def _both(exp: str, imp: str) -> list[str]:
+    imports = set(eurostat_geos.COUNTRIES.get(imp, []))
+    return ["ea21", "eu27_2020"] + [g.lower() for g in eurostat_geos.COUNTRIES.get(exp, [])
+                                    if g in imports]
+
+
+GDP_NET_GEOS = _both("gdp_contrib_exp_", "gdp_contrib_imp_")
+GDP_NET_GEOS_Q = _both("gdp_contrib_q_exp_", "gdp_contrib_q_imp_")
 _NET_NOTE = ("imports are published as a negative contribution, so net trade is "
              "exports plus imports. One of the parts that add up to GDP growth")
 DERIVED += [

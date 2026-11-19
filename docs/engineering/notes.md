@@ -929,6 +929,18 @@ the data file without regard to case (`fedboard.data_member`) and turns a zip
 with no data file into a `ValueError`. When a release zip fails, list its
 members before suspecting the release itself.
 
+**Widening a bulk family: an incremental refresh gives the new members one
+row (2026-11-19).** A Eurostat family's incremental start is the oldest
+"latest date" among the series it already holds, so a country added to the
+family is asked only for the last period or two. The first refresh after the
+seed went from 11 to ~35 countries stored one or two rows for each new one,
+reported every family `ok`, and the series looked present. Only counting rows
+showed it. `_bulk_incremental_start` now fetches the whole history when a
+seeded country is not held yet; but a store already damaged this way holds
+those rows, so it needs one non-incremental
+`pipeline.sync_eurostat_multi(con)` to repair. After any change that adds
+members to a family, count rows per new series, not families.
+
 **OECD and CFTC behind Cloudflare (2026-10-11).** Both answered 403 with a
 Cloudflare challenge page ("Just a moment…", "Attention Required") to every
 request from the Mac, home pages included, while other publishers answered.

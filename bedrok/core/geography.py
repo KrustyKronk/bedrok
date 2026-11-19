@@ -57,7 +57,8 @@ FAMILY_CODES = {
     "ge": "Georgia", "hr": "Croatia", "hu": "Hungary", "is": "Iceland", "lt": "Lithuania",
     "lu": "Luxembourg", "lv": "Latvia", "me": "Montenegro", "mk": "North Macedonia",
     "mt": "Malta", "pl": "Poland", "ro": "Romania", "rs": "Serbia", "si": "Slovenia",
-    "sk": "Slovakia", "tr": "Türkiye",
+    "sk": "Slovakia", "tr": "Türkiye", "ba": "Bosnia and Herzegovina", "md": "Moldova",
+    "ua": "Ukraine",
 }
 
 # Their names. Never the bare codes: "is" and "me" are words. Georgia is left
@@ -72,7 +73,9 @@ NAMES.update({
     "malta": "mt", "maltese": "mt", "poland": "pl", "polish": "pl", "romania": "ro",
     "romanian": "ro", "serbia": "rs", "serbian": "rs", "slovenia": "si",
     "slovenian": "si", "slovakia": "sk", "slovak": "sk", "turkey": "tr",
-    "turkish": "tr", "turkiye": "tr",
+    "turkish": "tr", "turkiye": "tr", "bosnia": "ba", "bosnian": "ba",
+    "moldova": "md", "moldovan": "md",
+    "ukraine": "ua", "ukrainian": "ua",
 })
 
 # Where an id suffix spells a place differently: OECD's ISO-3 codes and
