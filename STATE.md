@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-11-19: every Eurostat family now carries every country it publishes, about 1,000 series where there were 330 (item 22, 0.3.9). Bedrok gets a public website, built in its own private repository and now built from all of this store (item 21); this repository stays public and stays the MCP. 0.3.8 is released (2026-11-19): the Fed Board zip fix (item 20), nothing else; not installed in Claude Desktop. 0.3.7 is released, carrying session I's six central banks' decisions on the release calendar (item 19); 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
+**Updated 2026-11-19: every Eurostat family now carries every country it publishes, about 1,000 series where there were 330 (item 22). 0.3.9 carrying it is released (2026-11-19): `publish.yml`'s build, publish and bundle jobs passed, and from PyPI an empty folder and an empty home answered all ten smoke calls in 35 seconds, its catalog listing 1,135 Eurostat series before any refresh; not installed in Claude Desktop. Bedrok gets a public website, built in its own private repository and now built from all of this store (item 21); this repository stays public and stays the MCP. 0.3.8 is released (2026-11-19): the Fed Board zip fix (item 20), nothing else; not installed in Claude Desktop. 0.3.7 is released, carrying session I's six central banks' decisions on the release calendar (item 19); 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -1034,7 +1034,7 @@ Owner-side items are in `profile/STATE-private.md`.
       `freshness.last_date` says 2026-10-01. Check what the BLS itself
       published for October 2026's annual rate and decide what the MCP says.
 22. **Every Eurostat family carries every country it publishes** (2026-11-19,
-    0.3.9). The 30 multi-geo families (yields, sentiment, production, retail,
+    released as 0.3.9). The 30 multi-geo families (yields, sentiment, production, retail,
     GDP and its parts, house prices, labour costs, debt, HICP components,
     youth unemployment) kept eleven countries and threw the rest of each
     download away; they now keep every country inside the reuse grant that
