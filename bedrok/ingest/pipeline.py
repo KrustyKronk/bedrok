@@ -22,7 +22,7 @@ from bedrok.core import sources
 from bedrok.core import store
 from bedrok.core import units
 from bedrok.core.aliases import ALIASES
-from bedrok.ingest import calendars, eurostat_geos
+from bedrok.ingest import calendars, eurostat_geos, world
 from bedrok.ingest.adapters import cftc, eurostat, nbk, ons, pxweb, sdmx, worldbank
 
 # FX pairs come from the profile's base currency (config.fx_pairs()); pairs with
@@ -575,6 +575,102 @@ def sync_eurostat_multi(con, incremental=False, prefixes=None) -> list[tuple]:
     return report
 
 
+# ---- The world layer: IMF, BIS and OECD, every country ---------------------
+#
+# The families are defined in world.py, their countries in seeds/world_geos.csv.
+# One request per family with the country left open; a country is stored under
+# Bedrok's own code. A family id that a seed row answers is not built here: a
+# seed row with the same id (weo_gdp_growth_kz, with its own notes) stays a
+# per-series row, and an alias (bis_reer_us is us_reer_bis) answers as its target.
+
+def _seed_ids() -> frozenset[str]:
+    return frozenset(pd.read_csv(CATALOG_CSV, dtype=str, usecols=["series_id"])["series_id"])
+
+
+SEED_IDS = _seed_ids()
+
+
+def world_owned(ids: pd.Series) -> pd.Series:
+    """True for an id the world stage owns: a family id no seed row answers."""
+    return ids.str.startswith(world.PREFIXES) & ~ids.isin(SEED_IDS)
+
+
+def world_family_ids(spec: dict) -> list[tuple[str, str]]:
+    """(publisher code, Bedrok id) for every country a world family builds."""
+    out = []
+    for area in world.AREAS.get(spec["prefix"], []):
+        cc = world.to_code(spec, area)
+        sid = f"{spec['prefix']}{cc}"
+        if cc and sid not in ALIASES and sid not in SEED_IDS:
+            out.append((area, sid))
+    return out
+
+
+def _world_row(spec: dict, area: str, sid: str, name: str) -> dict:
+    return {"series_id": sid, "source": spec["source"],
+            "source_code": spec["code"].format(area),
+            "name": spec["name_tmpl"].format(geo=name),
+            "frequency": spec["frequency"], "units": spec["units"],
+            "notes": spec["notes"], "staleness_days": spec.get("staleness_days"),
+            "license": sources.load()[spec["source"]]["license"], "cache": licensing.STORE}
+
+
+def _ids_incremental_start(con, ids: list[str]) -> str | None:
+    """Oldest latest date among `ids`, as YYYY-MM, or None (the whole history)
+    when one of them holds nothing yet: the 0.3.9 lesson, that a member new to
+    a family must not arrive with only the last period."""
+    ph = ", ".join("?" for _ in ids)
+    held, last = con.execute(
+        f"SELECT count(*), min(hi) FROM (SELECT max(date) hi FROM macro_series "
+        f"WHERE series_id IN ({ph}) GROUP BY series_id)", ids).fetchone()
+    if held < len(ids) or last is None:
+        return None
+    return f"{last.year}-{last.month:02d}"
+
+
+def place_name(cc: str) -> str:
+    return {"world": "World"}.get(cc) or geography.CODES.get(cc) or geography.FAMILY_CODES.get(cc, cc.upper())
+
+
+def sync_world(con, incremental=False, prefixes=None) -> list[tuple]:
+    """Sync every world family (one request each), or only those whose prefix
+    is in `prefixes`. An annual family (the WEO) is always fetched whole: its
+    rows run five years into the future, so "since the latest" asks for
+    nothing, and each April and October edition revises the past."""
+    report, publishers = [], sources.load()
+    for spec in world.WORLD_SETS:
+        if prefixes is not None and spec["prefix"] not in prefixes:
+            continue
+        members = world_family_ids(spec)
+        if not members:
+            continue
+        cutoff = dead_geo_cutoff(spec)
+        start = None
+        if incremental and not spec.get("full"):
+            start = _ids_incremental_start(con, [sid for _, sid in members])
+        try:
+            per_area = sdmx.fetch_by(publishers[spec["source"]], spec["code"].format(""),
+                                     spec["by"], start=start)
+        except Exception as e:  # noqa: BLE001
+            report.append((spec["label"], "FAIL", error_detail(e, 60)))
+            _pace(spec["source"])
+            continue
+        n = 0
+        for area, sid in members:
+            df = per_area.get(area)
+            if df is None or df.empty:
+                continue
+            past = df[df["date"] <= date.today()]
+            if not incremental and (past.empty or past["date"].max() < cutoff):
+                report.append((sid, "skip", "dead/stale geo"))
+                continue
+            store.upsert_macro_series(con, sid, df)
+            n += 1
+        report.append((spec["label"], "ok", f"{n} countries"))
+        _pace(spec["source"])
+    return report
+
+
 def bulk_summary_specs() -> list[tuple[str, str, int]]:
     """(label, series_id prefix, staleness allowance in days) per bulk family.
 
@@ -583,7 +679,7 @@ def bulk_summary_specs() -> list[tuple[str, str, int]]:
     out = [("broad-Europe HICP", HICP_PREFIX, 90),
            ("World Bank commodities", WB_PREFIX, 90),
            ("CFTC positioning", COT_PREFIX, 30)]
-    for s in EUROSTAT_BULK_SETS:
+    for s in EUROSTAT_BULK_SETS + world.WORLD_SETS:
         out.append((s["label"], s["prefix"],
                     s.get("staleness_days") or (220 if s["frequency"] == "quarterly" else 90)))
     return out
@@ -718,6 +814,7 @@ def sync_macro(con, incremental=False, only=None, prime=True) -> list[tuple]:
         f"WHERE source NOT IN ({src_ph}){pfx_clause}{_NOT_FX} ORDER BY series_id",
         list(BULK_SOURCES) + [p + "%" for p in BULK_PREFIXES]
     ).fetch_df()
+    cat = cat[~world_owned(cat["series_id"])]
     if only is not None:
         cat = cat[cat["series_id"].isin(only)]
     for sid in cat.loc[cat["cache"] == licensing.SESSION, "series_id"]:
@@ -804,6 +901,9 @@ def static_catalog_rows() -> pd.DataFrame:
                 "notes": spec["notes"], "staleness_days": spec.get("staleness_days"),
                 "license": licensing.ATTRIBUTION, "cache": licensing.STORE,
             })
+    for spec in world.WORLD_SETS:
+        for area, sid in world_family_ids(spec):
+            rows.append(_world_row(spec, area, sid, place_name(world.to_code(spec, area))))
     return pd.DataFrame(rows + fx_catalog_rows())
 
 
@@ -836,6 +936,7 @@ def per_series_catalog(con, only=None) -> pd.DataFrame:
         f"WHERE source NOT IN ({src_ph}){pfx_clause}{_NOT_FX} "
         f"AND coalesce(cache, 'store') = 'store' ORDER BY series_id",
         list(BULK_SOURCES) + [p + "%" for p in BULK_PREFIXES]).fetch_df()
+    cat = cat[~world_owned(cat["series_id"])]
     return cat if only is None else cat[cat["series_id"].isin(only)]
 
 
@@ -988,6 +1089,7 @@ REFRESH_STAGES: list[tuple[str, str, callable]] = [
     ("macro", "Macro", sync_macro),
     ("hicp", "HICP Europe", sync_hicp_europe),
     ("eurostat", "Eurostat multi-geo", sync_eurostat_multi),
+    ("world", "World (IMF, BIS, OECD)", sync_world),
     ("pinksheet", "Commodities (Pink Sheet)", sync_pink_sheet),
     ("cot", "CFTC positioning", sync_cot),
     ("derived", "Derived series", _derived_stage),
@@ -1040,6 +1142,9 @@ def refresh_series(con, series_id: str) -> tuple[str, list[tuple]]:
         return "derived", rows + _derived_stage(con)
     if series_id.startswith(HICP_PREFIX):
         return "hicp", sync_hicp_europe(con, incremental=True)
+    if world_owned(pd.Series([series_id])).iloc[0]:
+        spec = next(s for s in world.WORLD_SETS if series_id.startswith(s["prefix"]))
+        return "world", sync_world(con, incremental=True, prefixes={spec["prefix"]})
     for spec in EUROSTAT_BULK_SETS:
         if series_id.startswith(spec["prefix"]):
             return "eurostat", sync_eurostat_multi(con, incremental=True,

@@ -130,8 +130,9 @@ def test_a_place_bedrok_covers_also_needs_the_words_to_be_about_the_warning():
     assert ids("us") == set()
     assert ids("us cpi") == {"us_cpi_oct2025_gap", "us_cpi_sample_cuts_2025"}
     assert {"us_cps_oct2025_gap", "us_cps_response_rates"} <= ids("us unemployment rate")
-    # where Bedrok carries nothing, the place alone still answers
-    assert "ar_indec_cpi_2007" in ids("argentina")
+    # Argentina became a covered place with the world layer (2026-11-19): its
+    # INDEC warning now needs an inflation question, as Kazakhstan's oil one does.
+    assert "ar_indec_cpi_2007" not in ids("argentina")
     assert "ar_indec_cpi_2007" in ids("argentina inflation")
     # Kazakhstan became a covered place in session K1: its oil warning now
     # needs an oil question, and no longer rides along with "inflation".

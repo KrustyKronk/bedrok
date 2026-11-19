@@ -29,7 +29,7 @@ def main() -> int:
     ap.add_argument("--only", default=None,
                     help="comma-separated catalog series_ids to backfill")
     ap.add_argument("--stage", action="append", default=None,
-                    choices=["macro", "hicp", "eurostat", "pinksheet", "cot",
+                    choices=["macro", "hicp", "eurostat", "world", "pinksheet", "cot",
                              "derived", "fx"],
                     help="run only these stage(s); repeatable. --only targets "
                          "individual series, --stage targets whole bulk stages")
@@ -58,6 +58,7 @@ def main() -> int:
             fails += run("macro", "Macro series", pipeline.sync_macro)
             fails += run("hicp", "HICP Europe (bulk)", pipeline.sync_hicp_europe)
             fails += run("eurostat", "Eurostat multi-geo (bulk)", pipeline.sync_eurostat_multi)
+            fails += run("world", "World: IMF, BIS, OECD (bulk)", pipeline.sync_world)
             fails += run("pinksheet", "Commodities (Pink Sheet)", pipeline.sync_pink_sheet)
             fails += run("cot", "CFTC positioning (bulk)", pipeline.sync_cot)
             # Derived series read the store, so they must follow every fetch stage.

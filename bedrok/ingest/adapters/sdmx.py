@@ -103,6 +103,72 @@ def parse_csv(text: str, latest_of: str | None = None) -> pd.DataFrame:
     return _finish(raw)
 
 
+def parse_csv_by(text: str, by: str) -> dict[str, pd.DataFrame]:
+    """Pure: an SDMX-CSV body whose key leaves one dimension open (`by`, the
+    country) → {that dimension's code: [date, value]}.
+
+    Every other dimension must still be pinned: within each country the same
+    one-series rule as parse_csv applies, so an answer that interleaves two
+    definitions for one country raises instead of being stored."""
+    text = text.lstrip("\ufeff")
+    if not text.strip():
+        return {}
+    first = text.split("\n", 1)[0]
+    sep = ";" if first.count(";") > first.count(",") else ","
+    raw = pd.read_csv(io.StringIO(text), sep=sep, dtype=str)
+    raw.columns = [c.strip() for c in raw.columns]
+    if "TIME_PERIOD" not in raw.columns or "OBS_VALUE" not in raw.columns:
+        return {}
+    if by not in raw.columns:
+        raise ValueError(f"no {by} column to split by (columns: {', '.join(raw.columns)})")
+    lead = list(raw.columns[:list(raw.columns).index("TIME_PERIOD")])
+    dims = [c for c in lead if c not in _NOT_DIMENSIONS and c != by]
+    out = {}
+    for area, part in raw.groupby(by, sort=True):
+        if dims and len(part[dims].drop_duplicates()) > 1:
+            sample = part[dims].drop_duplicates().head(3).to_dict("records")
+            raise UnpinnedKey(f"{area}: key matches {len(part[dims].drop_duplicates())} "
+                              f"series, e.g. {sample}: pin every dimension but {by}")
+        df = _finish(part)
+        if not df.empty:
+            out[str(area)] = df
+    return out
+
+
+def fetch_by(spec: dict, code: str, by: str, start: str | None = None) -> dict[str, pd.DataFrame]:
+    """Fetch every country of one indicator in one request: `code` leaves the
+    `by` dimension empty ("WS_CBPOL/M."). Returns {country code: [date, value]}.
+
+    CSV publishers only (format `accept` or `csvdata`); a start date that finds
+    nothing answers {} as fetch does."""
+    code, scale = _split_scale(code)
+    fmt = spec.get("format") or "accept"
+    if fmt == "xml":
+        raise ValueError("fetch_by reads SDMX-CSV; this publisher serves only XML")
+    headers = dict(BROWSER_UA) if spec.get("user_agent") == "browser" else {}
+    params = {}
+    if fmt == "accept":
+        headers["Accept"] = CSV_ACCEPT
+    else:
+        params["format"] = "csvdata"
+    if start:
+        day = spec.get("start_period") == "day"
+        params["startPeriod"] = str(start)[:10] if day else str(start)[:7]
+    r = requests.get(f"{spec['base_url'].rstrip('/')}/data/{code}",
+                     params=params, headers=headers, timeout=180)
+    if r.status_code in (400, 404) and start:
+        return {}
+    r.raise_for_status()
+    out = parse_csv_by(r.text, by)
+    for area, df in list(out.items()):
+        if start:
+            df = df[df["date"] >= pd.Timestamp(start).date()].reset_index(drop=True)
+        if scale != 1.0 and not df.empty:
+            df["value"] = df["value"] * scale
+        out[area] = df
+    return out
+
+
 def parse_xml(stream) -> pd.DataFrame:
     """Pure: an SDMX-ML (StructureSpecific or Generic-compact) body → [date, value]."""
     rows, series = [], 0

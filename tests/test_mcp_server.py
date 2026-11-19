@@ -271,12 +271,14 @@ def test_warnings_ride_on_answers_by_severity_and_period(srv, monkeypatch):
 
 def test_search_answers_with_warnings_for_a_country_bedrok_does_not_carry(srv, monkeypatch):
     from bedrok.core import warnings
-    row = {**{c: "" for c in warnings.COLUMNS}, "warning_id": "ar_cpi", "country": "Argentina",
-           "severity": "disqualifying", "concept": "cpi inflation", "period_start": "2007",
-           "period_end": "2015", "series_ids": ()}
+    # Cuba: outside even the IMF's World Economic Outlook, so a place Bedrok
+    # does not carry (Argentina was the example until the world layer).
+    row = {**{c: "" for c in warnings.COLUMNS}, "warning_id": "cu_cpi", "country": "Cuba",
+           "severity": "disqualifying", "concept": "cpi inflation", "period_start": "2021",
+           "period_end": "2024", "series_ids": ()}
     monkeypatch.setattr(warnings, "load", lambda: (row,))
-    r = _call("search_series", {"text": "argentina inflation"}).structured_content
-    assert r["matches"] == [] and [w["warning_id"] for w in r["warnings"]] == ["ar_cpi"]
+    r = _call("search_series", {"text": "cuba inflation"}).structured_content
+    assert r["matches"] == [] and [w["warning_id"] for w in r["warnings"]] == ["cu_cpi"]
 
 
 def test_ordinary_words_and_family_countries_find_their_series(srv):
@@ -459,11 +461,14 @@ def test_parts_of_growth_show_only_when_the_words_ask_for_parts(srv):
     assert "gdp_contrib_exp_es" in ids("what is driving spain gdp growth")
 
 
-def test_an_empty_search_names_the_nearest_series(srv):
+def test_an_empty_search_names_the_nearest_series(srv, monkeypatch):
     """The 2026-10-12 logs: an empty list read as "Bedrok has nothing"."""
     r = _call("search_series", {"text": "japan cpi"}).structured_content
     assert r["matches"] == [] and r["nearest"][0] == "us_cpi" and "elsewhere" in r["note"]
-    r = _call("search_series", {"text": "argentina inflation"}).structured_content
+    from bedrok.core import warnings
+    monkeypatch.setattr(warnings, "search", lambda text, limit=5: [
+        {"country": "Cuba", "official_series": "Consumer Price Index, ONEI", "warning_id": "cu"}])
+    r = _call("search_series", {"text": "cuba inflation"}).structured_content
     assert "nearest" not in r                      # the warning is the answer there
 
 
@@ -672,10 +677,10 @@ def test_a_place_that_finds_nothing_says_why(srv, monkeypatch):
     assert r["matches"] == [] and "1 series for that place, none from ecb" in r["note"]
     from bedrok.core import warnings
     monkeypatch.setattr(warnings, "search", lambda text, limit=5: [
-        {"country": "Argentina", "official_series": "Consumer Price Index, INDEC",
-         "warning_id": "ar"}])
-    r = _call("search_series", {"text": "argentina"}).structured_content
-    assert "no series for Argentina" in r["note"] and "INDEC" in r["note"]
+        {"country": "Cuba", "official_series": "Consumer Price Index, ONEI",
+         "warning_id": "cu"}])
+    r = _call("search_series", {"text": "cuba"}).structured_content
+    assert "no series for Cuba" in r["note"] and "ONEI" in r["note"]
 
 
 # ---- release rules: a due series is fetched, and says so ------------------------------
@@ -839,3 +844,22 @@ def test_a_fresh_install_finds_the_bulk_families_by_words(tmp_path, monkeypatch)
     assert "wb_gold" in ids("gold")
     assert "wb_copper" in ids("copper price")
     assert "hicp_yoy_tr" in ids("turkey inflation")
+
+
+def test_a_country_s_inflation_outranks_its_house_prices(srv):
+    """2026-11-19: "prices" is a synonym of "inflation", so the BIS's real
+    house prices (in 54 countries with the world layer) led "brazil inflation".
+    A word that names many measures now only hints."""
+    _add_rows([
+        {"series_id": "bis_real_house_prices_br", "source": "bis", "source_code": "WS_SPP/Q.BR.R.628",
+         "name": "Brazil real residential property prices (BIS)", "notes": "CPI-deflated",
+         "license": "attribution"},
+        {"series_id": "weo_inflation_br", "source": "imf", "source_code": "IMF.RES,WEO,9.0.0/BRA.PCPIPCH.A",
+         "name": "Brazil consumer price inflation, IMF World Economic Outlook", "license": "attribution"},
+        {"series_id": "bis_cpi_yoy_br", "source": "bis", "source_code": "WS_LONG_CPI/M.BR.771",
+         "name": "Brazil consumer price inflation, annual rate (BIS)", "license": "attribution"},
+    ])
+    ids = [m["series_id"] for m in
+           _call("search_series", {"text": "brazil inflation"}).structured_content["matches"]]
+    assert ids.index("bis_real_house_prices_br") > max(ids.index("weo_inflation_br"),
+                                                       ids.index("bis_cpi_yoy_br"))

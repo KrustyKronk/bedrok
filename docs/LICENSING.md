@@ -115,7 +115,7 @@ and `tests/test_macro_seed.py` fails if one is not.
 
 | publisher | terms | what it means here |
 |---|---|---|
-| BIS | Terms of permitted use of BIS statistics: unrestricted provided the BIS is cited and, in a commercial product, the statistics add nothing to its price. "No other use is permissible." | Stored; cite the BIS. Most BIS series are compiled from national central banks, whose own terms can be tighter — the BIS copy does not relicense them. |
+| BIS | Terms of permitted use of BIS statistics: unrestricted provided the BIS is cited and, in a commercial product, the statistics add nothing to its price. "No other use is permissible." | Stored; cite the BIS. Most BIS series are compiled from national central banks, whose own terms can be tighter — the BIS copy does not relicense them. The world layer (2026-11-19) carries six BIS families for every country; a paid product built on Bedrok must leave them out of what it charges for, or charge nothing for them. |
 | IMF | Copyright and Usage: data may be downloaded, used and redistributed with attribution, but "the IMF does not permit use of its Content or Sites for the training of large language models … without explicit permission". | Stored (the owner's call, 2026-10-10): Bedrok keeps the numbers and an assistant reads them when asked, which is retrieval, not training. Every IMF row and its attribution carry the clause so it travels with the number. |
 | Istat | CC BY 4.0. | Stored; credit Istat and state changes. |
 | INSEE | Licence Ouverte / Open Licence 2.0 (Etalab). | Stored; "Source : Insee". |
