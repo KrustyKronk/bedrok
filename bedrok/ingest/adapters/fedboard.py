@@ -158,11 +158,27 @@ def release_status(rel: str) -> pd.DataFrame:
                          "value": [float(size or 0)]})
 
 
+def data_member(members: list[str], rel: str) -> str:
+    """The data file inside a release zip. Its name is not stable: on
+    2026-11-12 the Board renamed SLOOS_data.xml and Z1_data.xml to lower case
+    while H15_data.xml kept its capitals, so match without case. A zip with no
+    data file is a missing release, a ValueError, which is what the SLOOS
+    fallback and the refresh report both expect."""
+    want = f"{rel.lower()}_data.xml"
+    exact = [m for m in members if m.lower() == want]
+    if exact:
+        return exact[0]
+    loose = [m for m in members if m.lower().endswith("_data.xml")]
+    if len(loose) == 1:
+        return loose[0]
+    raise ValueError(f"the {rel} release zip holds no data file (it has: {', '.join(sorted(members))})")
+
+
 def _release(rel: str, names: frozenset[str]) -> dict:
     key = (rel, names)
     if key not in _parsed:
         with zipfile.ZipFile(io.BytesIO(_download(rel))) as z:
-            with z.open(f"{rel.upper()}_data.xml") as f:
+            with z.open(data_member(z.namelist(), rel)) as f:
                 _parsed[key] = parse(f, names)
     return _parsed[key]
 

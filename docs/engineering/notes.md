@@ -918,6 +918,17 @@ not modify), on the "Terms of use" page under User information, not the
 imprint. The TLS handshake that failed on 2026-10-11 was the service's; on
 2026-10-16 it answered in a quarter of a second.
 
+**The Fed Board renames files inside its release zips (2026-11-12).** The
+zips stayed at the same addresses, but `SLOOS_data.xml` became
+`sloos_data.xml` and `Z1_data.xml` became `z1_data.xml`, while
+`H15_data.xml` kept its capitals. `smoke` stayed green, because it only
+checks that each zip is there; the next refresh failed all eight SLOOS and
+Z.1 series with a `KeyError` from `zipfile`, and the SLOOS fallback did not
+fire because it catches `ValueError`, not `KeyError`. The adapter now finds
+the data file without regard to case (`fedboard.data_member`) and turns a zip
+with no data file into a `ValueError`. When a release zip fails, list its
+members before suspecting the release itself.
+
 **OECD and CFTC behind Cloudflare (2026-10-11).** Both answered 403 with a
 Cloudflare challenge page ("Just a moment…", "Attention Required") to every
 request from the Mac, home pages included, while other publishers answered.
