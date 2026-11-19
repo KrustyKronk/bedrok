@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-11-19: Bedrok gets a public website, built in its own private repository (item 21); this repository stays public and stays the MCP. 0.3.8 is being released: the Fed Board zip fix (item 20), nothing else. 0.3.7 is released, carrying session I's six central banks' decisions on the release calendar (item 19); 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
+**Updated 2026-11-19: Bedrok gets a public website, built in its own private repository (item 21); this repository stays public and stays the MCP. 0.3.8 is released (2026-11-19): the Fed Board zip fix (item 20), nothing else; not installed in Claude Desktop. 0.3.7 is released, carrying session I's six central banks' decisions on the release calendar (item 19); 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -1000,9 +1000,12 @@ Owner-side items are in `profile/STATE-private.md`.
     **And in the 2026-11-19 refresh** (run by `bedrok-web update`): the eight
     SLOOS and Z.1 series failed because the Fed Board renamed the data files
     inside those two zips to lower case on 2026-11-12. Fixed the same day
-    (`fedboard.data_member`; notes, "Ingest and vendors"); the fix is on
-    `main`, not yet in a release, so the PyPI package and the website's
-    environment still fail on them until the next one. The OECD (11 series)
+    (`fedboard.data_member`; notes, "Ingest and vendors"); released as
+    0.3.8 the same day. `publish.yml`'s build, publish and bundle jobs all
+    passed and `bedrok-0.3.8.mcpb` is on the release. Proven from PyPI: an
+    empty folder and an empty home answered all ten smoke calls in 30
+    seconds (the first try raced PyPI's index), and the installed 0.3.8 read
+    a Z.1 and a SLOOS series from their zips. bedrok-web now requires 0.3.8. The OECD (11 series)
     and Statistics Canada (3 series and its calendar) answered 403 that
     morning, the bot checks the notes describe: re-run another day before
     treating either as gone.
