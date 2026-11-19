@@ -12,7 +12,7 @@ Bedrok is wired to 35 publishers. 29 need no key at all; the others take a free 
 | **U.S. Energy Information Administration** (`eia`) | 8 curated | [`EIA_API_KEY`](https://www.eia.gov/opendata/register.php) | public domain | yes | [terms](https://www.eia.gov/about/copyrights_reuse.php) |
 | **Office for National Statistics** (`ons`) | 10 curated | none | reuse with attribution | yes | [terms](https://www.ons.gov.uk/help/termsandconditions) |
 | **Bank of England** (`boe`) | 9 curated | none | reuse with attribution | yes | [terms](https://www.bankofengland.co.uk/legal) |
-| **OECD** (`oecd`) | 11 curated | none | reuse with attribution | yes | [terms](https://www.oecd.org/en/about/terms-conditions.html) |
+| **OECD** (`oecd`) | 11 curated + 4 families | none | reuse with attribution | yes | [terms](https://www.oecd.org/en/about/terms-conditions.html) |
 | **Federal Reserve Banks' research files and FHFA** (`fedfiles`) | 15 curated | none | reuse with attribution | yes | [terms](https://www.newyorkfed.org/privacy/termsofuse) |
 | **Board of Governors of the Federal Reserve System** (`fedboard`) | 26 curated | none | public domain | yes | [terms](https://www.federalreserve.gov/disclaimer.htm) |
 | **U.S. Bureau of Labor Statistics** (`bls`) | 18 curated | [`BLS_API_KEY`](https://data.bls.gov/registrationEngine/) (optional) | public domain | yes | [terms](https://www.bls.gov/opub/copyright-information.htm) |
@@ -22,8 +22,8 @@ Bedrok is wired to 35 publishers. 29 need no key at all; the others take a free 
 | **The World Bank — Commodity Markets (Pink Sheet)** (`worldbank`) | 1 family | none | reuse with attribution | yes | [terms](https://data.worldbank.org/summary-terms-of-use) |
 | **U.S. Commodity Futures Trading Commission — Commitments of Traders** (`cftc`) | 1 family | none | public domain | yes | [terms](https://www.cftc.gov/) |
 | **Bedrok (computed from stored series)** (`derived`) | 86 families | none | reuse with attribution | yes |  |
-| **Bank for International Settlements** (`bis`) | 17 curated | none | reuse with attribution | yes | [terms](https://data.bis.org/help/legal) |
-| **International Monetary Fund** (`imf`) | 16 curated | none | reuse with attribution | yes | [terms](https://www.imf.org/en/About/copyright-and-terms) |
+| **Bank for International Settlements** (`bis`) | 17 curated + 6 families | none | reuse with attribution | yes | [terms](https://data.bis.org/help/legal) |
+| **International Monetary Fund** (`imf`) | 16 curated + 6 families | none | reuse with attribution | yes | [terms](https://www.imf.org/en/About/copyright-and-terms) |
 | **Istituto Nazionale di Statistica (Istat)** (`istat`) | 1 curated | none | reuse with attribution | yes | [terms](https://www.istat.it/note-legali/) |
 | **Institut national de la statistique et des études économiques (INSEE)** (`insee`) | 3 curated | none | reuse with attribution | yes | [terms](https://www.insee.fr/fr/information/2008466) |
 | **Australian Bureau of Statistics** (`abs`) | 2 curated | none | reuse with attribution | yes | [terms](https://www.abs.gov.au/website-privacy-copyright-and-disclaimer) |
@@ -175,6 +175,10 @@ Bedrok is wired to 35 publishers. 29 need no key at all; the others take a free 
 - `oecd_cci_usa` — OECD consumer confidence — United States
 - `oecd_cci_ea20` — OECD consumer confidence — euro area
 - `oecd_bci_usa` — OECD business confidence — United States
+- OECD unemployment rates (oecd_unemployment_*, 26 countries)
+- OECD long-term interest rates (oecd_10y_*, 14 countries)
+- OECD short-term interest rates (oecd_3m_*, 43 countries)
+- OECD real GDP growth, quarterly (oecd_gdp_qoq_*, 17 countries)
 
 ### Federal Reserve Banks' research files and FHFA
 
@@ -397,6 +401,12 @@ Bedrok is wired to 35 publishers. 29 need no key at all; the others take a free 
 - `us_real_house_prices_bis` — US real residential property prices (BIS)
 - `ea_real_house_prices_bis` — Euro area real residential property prices (BIS)
 - `uk_real_house_prices_bis` — UK real residential property prices (BIS)
+- BIS central bank policy rates (bis_policy_rate_*, 30 countries)
+- BIS consumer price inflation (bis_cpi_yoy_*, 24 countries)
+- BIS real effective exchange rates (bis_reer_*, 59 countries)
+- BIS real house prices (bis_real_house_prices_*, 54 countries)
+- BIS credit to the private sector (bis_credit_gdp_*, 44 countries)
+- BIS credit-to-GDP gaps (bis_credit_gap_*, 40 countries)
 
 ### International Monetary Fund
 
@@ -416,6 +426,12 @@ Bedrok is wired to 35 publishers. 29 need no key at all; the others take a free 
 - `mcdreo_nonoil_gdp_growth_kz` — Kazakhstan non-oil real GDP growth, IMF Regional Economic Outlook
 - `mcdreo_oil_gdp_growth_kz` — Kazakhstan oil GDP growth, IMF Regional Economic Outlook
 - `mcdreo_nonoil_balance_kz` — Kazakhstan non-oil fiscal balance, IMF Regional Economic Outlook
+- IMF WEO real GDP growth (weo_gdp_growth_*, 191 countries)
+- IMF WEO inflation (weo_inflation_*, 196 countries)
+- IMF WEO unemployment (weo_unemployment_*, 109 countries)
+- IMF WEO government debt (weo_gov_debt_*, 191 countries)
+- IMF WEO government balance (weo_gov_balance_*, 196 countries)
+- IMF WEO current account (weo_current_account_*, 194 countries)
 
 ### Istituto Nazionale di Statistica (Istat)
 
@@ -537,6 +553,23 @@ These ids still answer, with `alias_of` naming the one Bedrok keeps: the same nu
 - `USDEUR` → `usdeur`
 - `USDGBP` → `usdgbp`
 - `USDKZT` → `usdkzt`
+- `bis_credit_gap_cn` → `cn_credit_gap`
+- `bis_credit_gap_ea` → `ea_credit_gap`
+- `bis_credit_gap_uk` → `uk_credit_gap`
+- `bis_credit_gap_us` → `us_credit_gap`
+- `bis_policy_rate_au` → `au_policy_rate`
+- `bis_policy_rate_ca` → `ca_policy_rate`
+- `bis_policy_rate_ch` → `ch_policy_rate`
+- `bis_policy_rate_cn` → `cn_policy_rate`
+- `bis_policy_rate_jp` → `jp_policy_rate`
+- `bis_real_house_prices_ea` → `ea_real_house_prices_bis`
+- `bis_real_house_prices_uk` → `uk_real_house_prices_bis`
+- `bis_real_house_prices_us` → `us_real_house_prices_bis`
+- `bis_reer_cn` → `cn_reer_bis`
+- `bis_reer_ea` → `ea_reer_bis`
+- `bis_reer_jp` → `jp_reer_bis`
+- `bis_reer_uk` → `uk_reer_bis`
+- `bis_reer_us` → `us_reer_bis`
 - `cons_conf_ea20` → `cons_conf_ea21`
 - `esi_ea20` → `esi_ea21`
 - `gdp_annual_uk` → `uk_gdp_annual`

@@ -941,6 +941,16 @@ those rows, so it needs one non-incremental
 `pipeline.sync_eurostat_multi(con)` to repair. After any change that adds
 members to a family, count rows per new series, not families.
 
+**Adding places can move series you did not touch (2026-11-19).** A
+series' place is read from its id: the first token if it is a country code,
+else the last. The world layer added 151 two-letter codes, any of which could
+have turned an id ending `_in`, `_id`, `_is` or `_no` into India, Indonesia,
+Iceland or Norway. Before adding codes, compare `geography.of_series` on
+every catalog id under the old module (`git show HEAD:...`, exec'd) and the
+new one; on 2026-11-19 none of 1,528 changed. Adding names is the same risk in
+search: Chad, Jordan, Guinea and Niger are words or first names, so they are
+places by code only.
+
 **OECD and CFTC behind Cloudflare (2026-10-11).** Both answered 403 with a
 Cloudflare challenge page ("Just a moment…", "Attention Required") to every
 request from the Mac, home pages included, while other publishers answered.

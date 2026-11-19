@@ -29,6 +29,12 @@ ALIASES: dict[str, str] = {
     # the family ids a cross-country question naturally tries (session C).
     "gdp_yoy_uk": "uk_gdp_yoy",
     "gdp_annual_uk": "uk_gdp_annual",
+    # The world layer's BIS families (2026-11-19) name these countries by
+    # family; the seed named them first, from the same BIS datasets.
+    **{f"bis_policy_rate_{c}": f"{c}_policy_rate" for c in ("jp", "ch", "ca", "au", "cn")},
+    **{f"bis_reer_{c}": f"{c}_reer_bis" for c in ("us", "ea", "jp", "uk", "cn")},
+    **{f"bis_credit_gap_{c}": f"{c}_credit_gap" for c in ("us", "ea", "uk", "cn")},
+    **{f"bis_real_house_prices_{c}": f"{c}_real_house_prices_bis" for c in ("us", "ea", "uk")},
     # The FX pairs are spelled in capitals in fx_rates, the all_series view and
     # the CLI; as series they are lower case (session D2). Both answer.
     **{p: p.lower() for p in ("EURUSD", "EURGBP", "GBPUSD", "USDEUR", "GBPEUR", "USDGBP",

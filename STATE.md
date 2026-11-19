@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-11-19: every Eurostat family now carries every country it publishes, about 1,000 series where there were 330 (item 22). 0.3.9 carrying it is released (2026-11-19): `publish.yml`'s build, publish and bundle jobs passed, and from PyPI an empty folder and an empty home answered all ten smoke calls in 35 seconds, its catalog listing 1,135 Eurostat series before any refresh; not installed in Claude Desktop. Bedrok gets a public website, built in its own private repository and now built from all of this store (item 21); this repository stays public and stays the MCP. 0.3.8 is released (2026-11-19): the Fed Board zip fix (item 20), nothing else; not installed in Claude Desktop. 0.3.7 is released, carrying session I's six central banks' decisions on the release calendar (item 19); 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
+**Updated 2026-11-19: the world layer adds the IMF, BIS and OECD for every country they cover, 1,428 series and 151 new places (item 23, 0.3.10). Every Eurostat family carries every country it publishes, about 1,000 series where there were 330 (item 22). 0.3.9 carrying it is released (2026-11-19): `publish.yml`'s build, publish and bundle jobs passed, and from PyPI an empty folder and an empty home answered all ten smoke calls in 35 seconds, its catalog listing 1,135 Eurostat series before any refresh; not installed in Claude Desktop. Bedrok gets a public website, built in its own private repository and now built from all of this store (item 21); this repository stays public and stays the MCP. 0.3.8 is released (2026-11-19): the Fed Board zip fix (item 20), nothing else; not installed in Claude Desktop. 0.3.7 is released, carrying session I's six central banks' decisions on the release calendar (item 19); 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -1062,3 +1062,43 @@ Owner-side items are in `profile/STATE-private.md`.
       in Claude Desktop.
     - **The website names places itself**: `bedrok-web`'s `places.py` needs
       Bosnia, Moldova and Ukraine, or their series land under "world".
+23. **The world layer: the IMF, BIS and OECD for every country they cover**
+    (2026-11-19, 0.3.10; the owner chose all IMF economies). Sixteen families,
+    one request each with the country left open (`sdmx.fetch_by`, which
+    keeps the one-series rule within each country): six from the IMF World
+    Economic Outlook for about 195 economies (growth, inflation,
+    unemployment, debt, budget balance, current account, all with IMF
+    forecasts to 2031 labelled as such), six from the BIS (policy rates,
+    CPI, real effective exchange rates, real house prices, credit to GDP,
+    credit gaps; 24 to 59 countries) and four from the OECD (unemployment,
+    10-year and 3-month rates, quarterly GDP; 14 to 43). 1,428 new series.
+    Defined in `ingest/world.py`; which countries each carries is
+    `seeds/world_geos.csv`, written by `scripts/world_geos.py`, which skips
+    a country where Bedrok already holds the same measure from a closer
+    source (HICP or a national CPI, Eurostat's or a national 10-year, the
+    ECB's or a national policy rate). Seed rows with a family id
+    (`weo_gdp_growth_kz`) stay per-series with their own notes; older BIS
+    ids (`us_reer_bis`, `jp_policy_rate`) answer the family ids as aliases.
+    151 economies became places (`geography.py`, with search names, leaving
+    out Chad, Jordan, Guinea and Niger, which are words first); no existing
+    id changed place. Search counts "price"/"prices" as only a hint for
+    "inflation", or the BIS's house prices led every country's inflation
+    question. Refreshed end to end against the real store: all 1,428 filled
+    with history, 1,391 fresh. What stays open:
+    - **37 world series are stale, truthfully:** the October 2026 WEO has no
+      2026 figures for Afghanistan, Lebanon, Senegal or the West Bank and
+      Gaza, and a few BIS and OECD series lag (UAE and Singapore CPI, the
+      UK and Indonesia 3-month rates).
+    - **No release dates yet for the IMF, BIS or OECD families.** Their
+      freshness runs on staleness allowances; the WEO's April and October
+      editions and the BIS's monthly cycle could be release rules.
+    - **The BIS condition binds the paid API:** BIS statistics must add
+      nothing to a commercial product's price (`docs/LICENSING.md`).
+    - **The OECD sits behind a bot check that comes and goes.** A blocked
+      refresh keeps its last values; it carries only what the IMF and BIS
+      lack.
+    - **Small economies have only the WEO:** about 130 places hold six
+      annual series whose latest values include the IMF's projection for
+      the current year.
+    - **Re-run `scripts/world_geos.py`** when a publisher adds or drops a
+      country, as for Eurostat.

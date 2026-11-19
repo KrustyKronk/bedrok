@@ -497,6 +497,11 @@ _SYNONYMS = {
     "jobless": {"unemployment"},
     "jobs": {"payrolls", "employment", "unemployment"},
 }
+# Synonyms that only hint: "inflation" may be a series named for prices, but a
+# word that names many other measures ("house prices") must not outrank the
+# series named for inflation. They count one point at most (2026-11-19: with
+# the BIS's real house prices in 54 countries, "brazil inflation" led with them).
+_WEAK = {"prices", "price"}
 
 
 @server.tool(annotations=READ)
@@ -566,7 +571,8 @@ def search_series(
         total = 0
         for w in words:
             # "inflation" finds the series named CPI or HICP that measure it.
-            total += max(one(c) for c in {w} | _SYNONYMS.get(w, set()))
+            total += max([one(w)] + [min(one(c), 1) if c in _WEAK else one(c)
+                                     for c in _SYNONYMS.get(w, set())])
         # Adjacent words found together in the name ("high yield", "policy rate")
         # outrank the same words scattered across a different series.
         total += sum(3 for a, b in zip(words, words[1:]) if f"{a} {b}" in name)
