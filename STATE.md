@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-11-19: Bedrok gets a public website, built in its own private repository (item 21); this repository stays public and stays the MCP. 0.3.8 is released (2026-11-19): the Fed Board zip fix (item 20), nothing else; not installed in Claude Desktop. 0.3.7 is released, carrying session I's six central banks' decisions on the release calendar (item 19); 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
+**Updated 2026-11-19: Bedrok gets a public website, built in its own private repository and now built from all of this store (item 21); this repository stays public and stays the MCP. 0.3.8 is released (2026-11-19): the Fed Board zip fix (item 20), nothing else; not installed in Claude Desktop. 0.3.7 is released, carrying session I's six central banks' decisions on the release calendar (item 19); 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -1016,10 +1016,18 @@ Owner-side items are in `profile/STATE-private.md`.
     country-then-topic layer, the API) live in that repository's `STATE.md`,
     not here. It depends on this package (`bedrok>=0.3.7`); nothing here
     depends on it. What stays open on this side:
-    - **The package is now a dependency.** Whatever the website reads through
-      (series with transforms, freshness, warnings, the release calendar)
-      becomes a contract. When the website starts relying on a call, say so
-      here and test it as a public API.
+    - **The package is now a dependency, and the site relies on these**
+      (bedrok-web, 2026-11-19). Changing one of them changes the website:
+      `core.config.set_profile` and `connect(read_only=True)`; the
+      `macro_catalog` and `macro_series` tables; `core.sources.load` and
+      `attribution`; `core.warnings.load` (its `series_ids`, `severity`,
+      `period_start`, `period_end`); `core.geography.of_series`;
+      `core.units.is_money_level`; `ops.freshness.assess` (its
+      `latest_period`, `status`, `next_release`); `engines.pctile.compute`
+      with `frame=`; `ingest.transforms.to_frequency` and `yoy`;
+      `ingest.live.fetch` for the FRED-channel rows; `core.store.init_db` and
+      the upserts (its tests); the seed catalogs; and
+      `bedrok/surfaces/icon.png`. None has a test here as a public API yet.
     - **October 2026's US CPI annual rate cannot be computed.** The October
       2026 index is held, but October 2025 was never published (the shutdown
       gap), so `get_series(transform="yoy")` stops at September 2026, while
