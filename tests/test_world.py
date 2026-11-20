@@ -3,7 +3,7 @@ import duckdb
 import pandas as pd
 import pytest
 
-from bedrok.core import geography, licensing, store
+from bedrok.core import geography, licensing, store, units
 from bedrok.core.aliases import ALIASES
 from bedrok.ingest import pipeline, world
 from bedrok.ingest.adapters import sdmx
@@ -149,3 +149,43 @@ def test_the_weo_is_always_fetched_whole(con, monkeypatch):
     assert calls == [None, None]
     assert con.execute("SELECT max(date) FROM macro_series WHERE series_id='weo_gdp_growth_br'"
                        ).fetchone()[0] == pd.Timestamp("2030-01-01").date()
+
+
+def test_an_exchange_rate_names_its_currency_as_the_publisher_gives_it(monkeypatch):
+    """Rule 5: currency is a column, never an inference from the country. The
+    BIS's CURRENCY dimension is read into the seed, and the catalog carries it."""
+    body = ("DATAFLOW,FREQ,REF_AREA,CURRENCY,COLLECTION,TIME_PERIOD,OBS_VALUE\n"
+            "BIS:WS_XRU(1.0),M,BR,BRL,A,2026-09,5.4\nBIS:WS_XRU(1.0),M,KR,KRW,A,2026-09,1390\n")
+    monkeypatch.setattr(sdmx, "_csv", lambda spec, code, start: body)
+    assert sdmx.dimension_by({}, "WS_XRU/M...A", "REF_AREA", "CURRENCY") == {"BR": "BRL", "KR": "KRW"}
+    rows = pipeline.static_catalog_rows().set_index("series_id")
+    assert rows.loc["bis_usd_rate_br", "units"] == "BRL per USD"
+    usd = rows[rows.index.str.startswith("bis_usd_rate_")]
+    assert len(usd) > 100 and usd["units"].map(units.valid).all()
+    assert not usd["units"].isin(["USD per USD", "EUR per USD", "GBP per USD", "KZT per USD"]).any()
+    assert "bis_usd_rate_de" not in rows.index and "bis_usd_rate_us" not in rows.index
+
+
+def test_the_headline_unemployment_family_answers_through_the_older_rows():
+    rows = pipeline.static_catalog_rows().set_index("series_id")
+    assert rows.loc["unemp_rate_pl", "units"] == "percent"
+    assert ALIASES["unemp_rate_de"] == "de_unemployment"
+    assert "unemp_rate_de" not in rows.index
+    oecd = {sid for _, sid in pipeline.world_family_ids(
+        next(s for s in world.WORLD_SETS if s["prefix"] == "oecd_unemployment_"))}
+    assert "oecd_unemployment_pl" not in oecd          # Eurostat carries Poland
+
+
+def test_a_sync_refreshes_the_family_s_catalog_rows(con, monkeypatch):
+    """A changed allowance or unit must reach a store that already has the row."""
+    spec = next(s for s in world.WORLD_SETS if s["prefix"] == "bis_policy_rate_")
+    monkeypatch.setattr(world, "WORLD_SETS", [spec])
+    monkeypatch.setattr(world, "AREAS", {"bis_policy_rate_": ["KR"]})
+    monkeypatch.setenv("BEDROK_PACE_BIS", "0")
+    store.upsert_macro_catalog(con, pd.DataFrame([{**pipeline._world_row(spec, "KR", "bis_policy_rate_kr", "South Korea"),
+                                                    "staleness_days": 1}]))
+    fresh = [pd.Timestamp.today().normalize() - pd.DateOffset(months=1)]
+    monkeypatch.setattr(pipeline.sdmx, "fetch_by", lambda *a, **k: {"KR": _frame(fresh, [2.5])})
+    pipeline.sync_world(con)
+    assert con.execute("SELECT staleness_days FROM macro_catalog WHERE series_id='bis_policy_rate_kr'"
+                       ).fetchone()[0] == spec["staleness_days"]

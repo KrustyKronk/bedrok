@@ -110,6 +110,19 @@ WORLD_SETS: list[dict] = [
               "400,000), the Basel III countercyclical-buffer guide; publishes about two "
               "quarters behind. " + BIS_NOTE},
 
+    {"prefix": "bis_usd_rate_", "source": "bis", "by": "REF_AREA", "codes": "iso2",
+     "code": "WS_XRU/M.{}..A", "label": "BIS exchange rates against the US dollar",
+     "frequency": "monthly", "units_dim": "CURRENCY", "units_tmpl": "{dim} per USD",
+     # The BIS collects the smaller economies' rates two to three months
+     # behind (August's still the latest in late November 2026).
+     "staleness_days": 150,
+     "name_tmpl": "{geo} exchange rate against the US dollar (BIS)",
+     "notes": "national currency per US dollar, monthly average, as the BIS collects it from "
+              "central banks; a rise is a weaker national currency. " + BIS_NOTE,
+     # The dollar, the euro, sterling and the tenge are held from the ECB and the
+     # National Bank of Kazakhstan (usdeur, usdgbp, usdkzt); a dollarised
+     # country's rate against the dollar is 1.
+     "skip_units": ["USD per USD", "EUR per USD", "GBP per USD", "KZT per USD"]},
     {"prefix": "oecd_unemployment_", "source": "oecd", "by": "REF_AREA", "codes": "iso3",
      "code": "OECD.SDD.TPS,DSD_LFS@DF_IALFS_UNE_M,1.0/{}.UNE_LF_M.PT_LF_SUB._Z.Y._T.Y_GE15._Z.M",
      "label": "OECD unemployment rates", "frequency": "monthly",
@@ -118,7 +131,7 @@ WORLD_SETS: list[dict] = [
      "notes": "harmonised unemployment rate, aged 15 and over, seasonally adjusted, monthly "
               "(OECD Infra-annual labour statistics)",
      "skip_held": ["{cc}_unemployment", "{cc}_unemployment_rate", "{cc}_unemployment_insee",
-                   "{cc}_unemployment_epa"]},
+                   "{cc}_unemployment_epa", "unemp_rate_{cc}"]},
     {"prefix": "oecd_10y_", "source": "oecd", "by": "REF_AREA", "codes": "iso3",
      "code": "OECD.SDD.STES,DSD_STES@DF_FINMARK,4.0/{}.M.IRLT.PA._Z._Z._Z._Z.N",
      "label": "OECD long-term interest rates", "frequency": "monthly", "units": "percent",
@@ -135,6 +148,15 @@ WORLD_SETS: list[dict] = [
      "notes": "short-term interest rate, usually the 3-month interbank rate, monthly average "
               "(OECD Main Economic Indicators)",
      "skip_held": ["{cc}_3m"]},
+    {"prefix": "oecd_gdp_yoy_", "source": "oecd", "by": "REF_AREA", "codes": "iso3",
+     "code": "OECD.SDD.NAD,DSD_NAMAIN1@DF_QNA_EXPENDITURE_GROWTH_OECD,1.1/"
+             "Q.Y.{}.S1.S1.B1GQ._Z._Z._Z.PC.L.GY.T0102",
+     "label": "OECD real GDP growth, on a year earlier", "frequency": "quarterly",
+     "units": "percent", "staleness_days": 260,
+     "name_tmpl": "{geo} real GDP growth on the same quarter a year earlier (OECD)",
+     "notes": "real GDP, chain-linked volumes, seasonally adjusted, percent change on the "
+              "same quarter a year earlier (OECD Quarterly National Accounts)",
+     "skip_held": ["gdp_yoy_{cc}", "{cc}_gdp_yoy", "{cc}_real_gdp"]},
     {"prefix": "oecd_gdp_qoq_", "source": "oecd", "by": "REF_AREA", "codes": "iso3",
      "code": "OECD.SDD.NAD,DSD_NAMAIN1@DF_QNA_EXPENDITURE_GROWTH_OECD,1.1/"
              "Q.Y.{}.S1.S1.B1GQ._Z._Z._Z.PC.L.G1.T0102",
@@ -162,13 +184,22 @@ def to_code(spec: dict, area: str) -> str | None:
     return cc if cc in geography.CODES or cc in geography.FAMILY_CODES else None
 
 
-def load() -> dict[str, list[str]]:
-    """Family prefix → its publisher country codes, in seed order."""
-    out: dict[str, list[str]] = {}
+def load() -> tuple[dict[str, list[str]], dict[tuple[str, str], str]]:
+    """(family prefix → its publisher country codes, in seed order;
+    (prefix, area) → that country's units, where a family's units differ by
+    country, as an exchange rate's currency does)."""
+    areas: dict[str, list[str]] = {}
+    units: dict[tuple[str, str], str] = {}
     with SEED.open(newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
-            out.setdefault(row["prefix"], []).append(row["area"])
-    return out
+            areas.setdefault(row["prefix"], []).append(row["area"])
+            if row.get("units"):
+                units[(row["prefix"], row["area"])] = row["units"]
+    return areas, units
 
 
-AREAS = load() if SEED.exists() else {}
+AREAS, UNITS = load() if SEED.exists() else ({}, {})
+
+
+def units_of(spec: dict, area: str) -> str:
+    return UNITS.get((spec["prefix"], area)) or spec["units"]

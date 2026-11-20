@@ -3,8 +3,10 @@
 For every world family (bedrok/ingest/world.py), one request with the country
 left open, kept to the countries Bedrok places (geography.py) whose series is
 still current by the rule the sync uses to call a geography dead, less those
-the family skips: `skip_codes`, and any country for which Bedrok already holds
-one of the family's `skip_held` ids (the same measure from a closer source).
+the family skips: `skip_codes`, any country for which Bedrok already holds
+one of the family's `skip_held` ids (the same measure from a closer source),
+and, for a family whose units differ by country (`units_dim`: an exchange
+rate's currency, read from the publisher), any listed in `skip_units`.
 
 Run it when a publisher adds or drops a country, then review the diff:
 
@@ -45,6 +47,11 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001
             failed.append(f"{spec['prefix']}: {pipeline.error_detail(e, 80)}")
             continue
+        units = {}
+        if spec.get("units_dim"):
+            dims = sdmx.dimension_by(publishers[spec["source"]], spec["code"].format(""),
+                                     spec["by"], spec["units_dim"], start=start)
+            units = {a: spec["units_tmpl"].format(dim=v) for a, v in dims.items()}
         kept, skipped = [], []
         for area, df in sorted(per_area.items()):
             cc = world.to_code(spec, area)
@@ -54,11 +61,12 @@ def main() -> int:
             if past.empty or past["date"].max() < cutoff:
                 continue
             if cc in spec.get("skip_codes", ()) or any(
-                    t.format(cc=cc) in held for t in spec.get("skip_held", ())):
+                    t.format(cc=cc) in held for t in spec.get("skip_held", ())) or \
+                    units.get(area) in spec.get("skip_units", ()):
                 skipped.append(cc)
                 continue
             kept.append(area)
-        rows += [{"prefix": spec["prefix"], "area": a} for a in kept]
+        rows += [{"prefix": spec["prefix"], "area": a, "units": units.get(a, "")} for a in kept]
         print(f"{spec['prefix']:<24} {len(kept):>3} countries"
               + (f"; already held: {' '.join(skipped)}" if skipped else ""))
         time.sleep(1.5)
@@ -68,7 +76,7 @@ def main() -> int:
         print("not written; failed:\n  " + "\n  ".join(failed))
         return 1
     with world.SEED.open("w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=["prefix", "area"])
+        w = csv.DictWriter(f, fieldnames=["prefix", "area", "units"])
         w.writeheader()
         w.writerows(rows)
     print(f"wrote {len(rows)} rows to {world.SEED}")

@@ -33,7 +33,7 @@ GRAMMAR = [
     r"standard deviations from (mean|trend)",
     r"binary 0 or 1",
     r"contracts",
-    rf"{CURRENCIES} per {CURRENCIES}",               # an exchange rate
+    r"[A-Z]{3} per [A-Z]{3}",                         # an exchange rate, ISO 4217 codes
     rf"{CURRENCIES} per [a-z][A-Za-z ]*",            # a price: USD per million Btu
     r"US cents per [a-z][A-Za-z ]*",
     rf"{SCALES} {CURRENCIES}(, [A-Za-z0-9 ,]+)?",    # millions CAD, chained 2017, SAAR

@@ -410,6 +410,17 @@ EUROSTAT_BULK_SETS = [
      "name_tmpl": "HICP services annual rate — {geo}",
      "notes": "services. A component of headline HICP (hicp_yoy_ for the same geography); "
               "annual rate, ECOICOP v2 dataset"},
+    # The headline rate, every country (2026-11-20): the website's standard
+    # unemployment row. Germany's, Spain's and the EU's seed rows are the same
+    # Eurostat series and answer these ids (core/aliases.py).
+    {"prefix": "unemp_rate_", "ea_codes": ["EA21"],
+     "code": "une_rt_m?s_adj=SA&age=TOTAL&unit=PC_ACT&sex=T",
+     "label": "Unemployment rate", "frequency": "monthly", "units": "percent",
+     "name_tmpl": "Unemployment rate — {geo}",
+     "notes": "seasonally adjusted, percent of the labour force, ILO definition; Eurostat's "
+              "harmonised monthly series. The under-25 rate is youth_unemp_ for the same "
+              "geography; the US and JP geos in this dataset are not fetched, under "
+              "Eurostat's non-EU reuse carve-out"},
     {"prefix": "youth_unemp_", "ea_codes": ["EA21"],
      "code": "une_rt_m?s_adj=SA&age=Y_LT25&unit=PC_ACT&sex=T",
      "label": "Youth unemployment", "frequency": "monthly", "units": "percent",
@@ -610,7 +621,7 @@ def _world_row(spec: dict, area: str, sid: str, name: str) -> dict:
     return {"series_id": sid, "source": spec["source"],
             "source_code": spec["code"].format(area),
             "name": spec["name_tmpl"].format(geo=name),
-            "frequency": spec["frequency"], "units": spec["units"],
+            "frequency": spec["frequency"], "units": world.units_of(spec, area),
             "notes": spec["notes"], "staleness_days": spec.get("staleness_days"),
             "license": sources.load()[spec["source"]]["license"], "cache": licensing.STORE}
 
@@ -655,7 +666,7 @@ def sync_world(con, incremental=False, prefixes=None) -> list[tuple]:
             report.append((spec["label"], "FAIL", error_detail(e, 60)))
             _pace(spec["source"])
             continue
-        n = 0
+        n, rows = 0, []
         for area, sid in members:
             df = per_area.get(area)
             if df is None or df.empty:
@@ -665,7 +676,12 @@ def sync_world(con, incremental=False, prefixes=None) -> list[tuple]:
                 report.append((sid, "skip", "dead/stale geo"))
                 continue
             store.upsert_macro_series(con, sid, df)
+            rows.append(_world_row(spec, area, sid, place_name(world.to_code(spec, area))))
             n += 1
+        # Re-registered on every sync, as the Eurostat stage does: a row only
+        # added when missing would keep yesterday's allowance, notes or units.
+        if rows:
+            store.upsert_macro_catalog(con, pd.DataFrame(rows))
         report.append((spec["label"], "ok", f"{n} countries"))
         _pace(spec["source"])
     return report

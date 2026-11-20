@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-11-19: the world layer adds the IMF, BIS and OECD for every country they cover, 1,428 series and 151 new places (item 23). 0.3.10 carrying it is released (2026-11-19): `publish.yml`'s build, publish and bundle jobs passed, and from PyPI an empty folder and an empty home answered all ten smoke calls in 36 seconds, its catalog listing 2,956 series before any refresh; not installed in Claude Desktop. Every Eurostat family carries every country it publishes, about 1,000 series where there were 330 (item 22). 0.3.9 carrying it is released (2026-11-19): `publish.yml`'s build, publish and bundle jobs passed, and from PyPI an empty folder and an empty home answered all ten smoke calls in 35 seconds, its catalog listing 1,135 Eurostat series before any refresh; not installed in Claude Desktop. Bedrok gets a public website, built in its own private repository and now built from all of this store (item 21); this repository stays public and stays the MCP. 0.3.8 is released (2026-11-19): the Fed Board zip fix (item 20), nothing else; not installed in Claude Desktop. 0.3.7 is released, carrying session I's six central banks' decisions on the release calendar (item 19); 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
+**Updated 2026-11-20: three families for the website's standard indicators, Eurostat unemployment, OECD year-on-year GDP and BIS dollar exchange rates (item 24, 0.3.11). The world layer adds the IMF, BIS and OECD for every country they cover, 1,428 series and 151 new places (item 23). 0.3.10 carrying it is released (2026-11-19): `publish.yml`'s build, publish and bundle jobs passed, and from PyPI an empty folder and an empty home answered all ten smoke calls in 36 seconds, its catalog listing 2,956 series before any refresh; not installed in Claude Desktop. Every Eurostat family carries every country it publishes, about 1,000 series where there were 330 (item 22). 0.3.9 carrying it is released (2026-11-19): `publish.yml`'s build, publish and bundle jobs passed, and from PyPI an empty folder and an empty home answered all ten smoke calls in 35 seconds, its catalog listing 1,135 Eurostat series before any refresh; not installed in Claude Desktop. Bedrok gets a public website, built in its own private repository and now built from all of this store (item 21); this repository stays public and stays the MCP. 0.3.8 is released (2026-11-19): the Fed Board zip fix (item 20), nothing else; not installed in Claude Desktop. 0.3.7 is released, carrying session I's six central banks' decisions on the release calendar (item 19); 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -1102,3 +1102,27 @@ Owner-side items are in `profile/STATE-private.md`.
       the current year.
     - **Re-run `scripts/world_geos.py`** when a publisher adds or drops a
       country, as for Eurostat.
+24. **Three families for the website's standard indicators** (2026-11-20,
+    0.3.11). The website now shows every country the same 17 indicators,
+    each from the closest source Bedrok holds (bedrok-web's `standard.py`);
+    three rows needed data Bedrok lacked:
+    - **Eurostat's headline unemployment rate** (`unemp_rate_`, 33
+      countries, from `une_rt_m`); Germany's, Spain's and the EU's seed rows
+      were already this series and answer the family ids as aliases. OECD
+      unemployment now skips every country Eurostat covers.
+    - **The OECD's real GDP growth on a year earlier** (`oecd_gdp_yoy_`, 17
+      countries outside Eurostat), beside its quarter-on-quarter family.
+    - **BIS exchange rates against the dollar** (`bis_usd_rate_`, 139
+      countries, monthly averages). Each row's units name its currency as
+      the BIS gives it ("BRL per USD", read into `seeds/world_geos.csv` by
+      `scripts/world_geos.py`, never inferred); the units grammar now takes
+      any ISO pair. The euro, sterling, tenge and dollar users are skipped:
+      their pair comes from the ECB or the National Bank of Kazakhstan, or
+      is 1.
+    The world stage now re-registers its catalog rows on every sync, as the
+    Eurostat stage does (see the notes). Refreshed end to end against the
+    real store: all 188 new series filled with full history (Brazil's
+    exchange rate from 1953). Still behind, truthfully: 11 exchange rates
+    the BIS has not updated since early 2026 or before (Venezuela,
+    Madagascar, DR Congo, Ghana, Lebanon, Bolivia, Libya, Iraq, Uganda,
+    Guyana, Laos), and Switzerland's and Bosnia's unemployment rates.

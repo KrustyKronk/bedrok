@@ -29,6 +29,11 @@ ALIASES: dict[str, str] = {
     # the family ids a cross-country question naturally tries (session C).
     "gdp_yoy_uk": "uk_gdp_yoy",
     "gdp_annual_uk": "uk_gdp_annual",
+    # The Eurostat headline unemployment family (2026-11-20) next to the seed
+    # rows that already held the same series.
+    "unemp_rate_de": "de_unemployment",
+    "unemp_rate_es": "es_unemployment",
+    "unemp_rate_eu27_2020": "eu_unemployment",
     # The world layer's BIS families (2026-11-19) name these countries by
     # family; the seed named them first, from the same BIS datasets.
     **{f"bis_policy_rate_{c}": f"{c}_policy_rate" for c in ("jp", "ch", "ca", "au", "cn")},

@@ -8,11 +8,11 @@ Bedrok is wired to 35 publishers. 29 need no key at all; the others take a free 
 |---|---|---|---|---|---|
 | **Federal Reserve Bank of St. Louis — FRED** (`fred`) | 9 curated | [`FRED_API_KEY`](https://fredaccount.stlouisfed.org/apikeys) | FRED terms (never stored) | no — fetched live | [terms](https://fred.stlouisfed.org/legal/) |
 | **European Central Bank** (`ecb`) | 21 curated | none | reuse with attribution | yes | [terms](https://www.ecb.europa.eu/services/disclaimer/html/index.en.html) |
-| **Eurostat** (`eurostat`) | 12 curated + 31 families | none | reuse with attribution | yes | [terms](https://ec.europa.eu/eurostat/web/main/help/copyright-notice) |
+| **Eurostat** (`eurostat`) | 12 curated + 32 families | none | reuse with attribution | yes | [terms](https://ec.europa.eu/eurostat/web/main/help/copyright-notice) |
 | **U.S. Energy Information Administration** (`eia`) | 8 curated | [`EIA_API_KEY`](https://www.eia.gov/opendata/register.php) | public domain | yes | [terms](https://www.eia.gov/about/copyrights_reuse.php) |
 | **Office for National Statistics** (`ons`) | 10 curated | none | reuse with attribution | yes | [terms](https://www.ons.gov.uk/help/termsandconditions) |
 | **Bank of England** (`boe`) | 9 curated | none | reuse with attribution | yes | [terms](https://www.bankofengland.co.uk/legal) |
-| **OECD** (`oecd`) | 11 curated + 4 families | none | reuse with attribution | yes | [terms](https://www.oecd.org/en/about/terms-conditions.html) |
+| **OECD** (`oecd`) | 11 curated + 5 families | none | reuse with attribution | yes | [terms](https://www.oecd.org/en/about/terms-conditions.html) |
 | **Federal Reserve Banks' research files and FHFA** (`fedfiles`) | 15 curated | none | reuse with attribution | yes | [terms](https://www.newyorkfed.org/privacy/termsofuse) |
 | **Board of Governors of the Federal Reserve System** (`fedboard`) | 26 curated | none | public domain | yes | [terms](https://www.federalreserve.gov/disclaimer.htm) |
 | **U.S. Bureau of Labor Statistics** (`bls`) | 18 curated | [`BLS_API_KEY`](https://data.bls.gov/registrationEngine/) (optional) | public domain | yes | [terms](https://www.bls.gov/opub/copyright-information.htm) |
@@ -22,7 +22,7 @@ Bedrok is wired to 35 publishers. 29 need no key at all; the others take a free 
 | **The World Bank — Commodity Markets (Pink Sheet)** (`worldbank`) | 1 family | none | reuse with attribution | yes | [terms](https://data.worldbank.org/summary-terms-of-use) |
 | **U.S. Commodity Futures Trading Commission — Commitments of Traders** (`cftc`) | 1 family | none | public domain | yes | [terms](https://www.cftc.gov/) |
 | **Bedrok (computed from stored series)** (`derived`) | 86 families | none | reuse with attribution | yes |  |
-| **Bank for International Settlements** (`bis`) | 17 curated + 6 families | none | reuse with attribution | yes | [terms](https://data.bis.org/help/legal) |
+| **Bank for International Settlements** (`bis`) | 17 curated + 7 families | none | reuse with attribution | yes | [terms](https://data.bis.org/help/legal) |
 | **International Monetary Fund** (`imf`) | 16 curated + 6 families | none | reuse with attribution | yes | [terms](https://www.imf.org/en/About/copyright-and-terms) |
 | **Istituto Nazionale di Statistica (Istat)** (`istat`) | 1 curated | none | reuse with attribution | yes | [terms](https://www.istat.it/note-legali/) |
 | **Institut national de la statistique et des études économiques (INSEE)** (`insee`) | 3 curated | none | reuse with attribution | yes | [terms](https://www.insee.fr/fr/information/2008466) |
@@ -111,6 +111,7 @@ Bedrok is wired to 35 publishers. 29 need no key at all; the others take a free 
 - HICP food annual rate (hicp_food_*, 39 geographies)
 - HICP goods annual rate (hicp_goods_*, 39 geographies)
 - HICP services annual rate (hicp_services_*, 39 geographies)
+- Unemployment rate (unemp_rate_*, 35 geographies)
 - Real GDP growth, annual (gdp_annual_*, 37 geographies)
 - GDP contribution, household consumption, annual (gdp_contrib_hh_*, 38 geographies)
 - GDP contribution, household consumption, quarterly (gdp_contrib_q_hh_*, 36 geographies)
@@ -175,9 +176,10 @@ Bedrok is wired to 35 publishers. 29 need no key at all; the others take a free 
 - `oecd_cci_usa` — OECD consumer confidence — United States
 - `oecd_cci_ea20` — OECD consumer confidence — euro area
 - `oecd_bci_usa` — OECD business confidence — United States
-- OECD unemployment rates (oecd_unemployment_*, 26 countries)
+- OECD unemployment rates (oecd_unemployment_*, 6 countries)
 - OECD long-term interest rates (oecd_10y_*, 14 countries)
 - OECD short-term interest rates (oecd_3m_*, 43 countries)
+- OECD real GDP growth, on a year earlier (oecd_gdp_yoy_*, 17 countries)
 - OECD real GDP growth, quarterly (oecd_gdp_qoq_*, 17 countries)
 
 ### Federal Reserve Banks' research files and FHFA
@@ -407,6 +409,7 @@ Bedrok is wired to 35 publishers. 29 need no key at all; the others take a free 
 - BIS real house prices (bis_real_house_prices_*, 54 countries)
 - BIS credit to the private sector (bis_credit_gdp_*, 44 countries)
 - BIS credit-to-GDP gaps (bis_credit_gap_*, 40 countries)
+- BIS exchange rates against the US dollar (bis_usd_rate_*, 139 countries)
 
 ### International Monetary Fund
 
@@ -581,3 +584,6 @@ These ids still answer, with `alias_of` naming the one Bedrok keeps: the same nu
 - `hicp_yoy_es` → `es_hicp_yoy`
 - `hicp_yoy_fr` → `fr_hicp_yoy`
 - `ind_conf_ea20` → `ind_conf_ea21`
+- `unemp_rate_de` → `de_unemployment`
+- `unemp_rate_es` → `es_unemployment`
+- `unemp_rate_eu27_2020` → `eu_unemployment`
