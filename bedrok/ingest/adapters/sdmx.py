@@ -135,16 +135,11 @@ def parse_csv_by(text: str, by: str) -> dict[str, pd.DataFrame]:
     return out
 
 
-def fetch_by(spec: dict, code: str, by: str, start: str | None = None) -> dict[str, pd.DataFrame]:
-    """Fetch every country of one indicator in one request: `code` leaves the
-    `by` dimension empty ("WS_CBPOL/M."). Returns {country code: [date, value]}.
-
-    CSV publishers only (format `accept` or `csvdata`); a start date that finds
-    nothing answers {} as fetch does."""
-    code, scale = _split_scale(code)
+def _csv(spec: dict, code: str, start: str | None) -> str | None:
+    """One SDMX-CSV request, or None when a start date finds nothing."""
     fmt = spec.get("format") or "accept"
     if fmt == "xml":
-        raise ValueError("fetch_by reads SDMX-CSV; this publisher serves only XML")
+        raise ValueError("this reads SDMX-CSV; this publisher serves only XML")
     headers = dict(BROWSER_UA) if spec.get("user_agent") == "browser" else {}
     params = {}
     if fmt == "accept":
@@ -157,9 +152,40 @@ def fetch_by(spec: dict, code: str, by: str, start: str | None = None) -> dict[s
     r = requests.get(f"{spec['base_url'].rstrip('/')}/data/{code}",
                      params=params, headers=headers, timeout=180)
     if r.status_code in (400, 404) and start:
-        return {}
+        return None
     r.raise_for_status()
-    out = parse_csv_by(r.text, by)
+    return r.text
+
+
+def dimension_by(spec: dict, code: str, by: str, dim: str, start: str | None = None) -> dict[str, str]:
+    """{country: the value of `dim`} for an open-country key: which currency
+    each country's exchange rate is in, read from the publisher, never
+    inferred from the country (CLAUDE.md rule 5)."""
+    text = _csv(spec, _split_scale(code)[0], start)
+    if not text:
+        return {}
+    raw = pd.read_csv(io.StringIO(text.lstrip("\ufeff")), dtype=str)
+    raw.columns = [c.strip() for c in raw.columns]
+    out = {}
+    for area, part in raw.groupby(by):
+        values = part[dim].dropna().unique()
+        if len(values) != 1:
+            raise UnpinnedKey(f"{area}: {dim} takes {len(values)} values")
+        out[str(area)] = str(values[0])
+    return out
+
+
+def fetch_by(spec: dict, code: str, by: str, start: str | None = None) -> dict[str, pd.DataFrame]:
+    """Fetch every country of one indicator in one request: `code` leaves the
+    `by` dimension empty ("WS_CBPOL/M."). Returns {country code: [date, value]}.
+
+    CSV publishers only (format `accept` or `csvdata`); a start date that finds
+    nothing answers {} as fetch does."""
+    code, scale = _split_scale(code)
+    text = _csv(spec, code, start)
+    if text is None:
+        return {}
+    out = parse_csv_by(text, by)
     for area, df in list(out.items()):
         if start:
             df = df[df["date"] >= pd.Timestamp(start).date()].reset_index(drop=True)

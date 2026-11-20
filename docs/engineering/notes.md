@@ -941,6 +941,15 @@ those rows, so it needs one non-incremental
 `pipeline.sync_eurostat_multi(con)` to repair. After any change that adds
 members to a family, count rows per new series, not families.
 
+**A family's catalog row is only added once unless its stage re-registers it
+(2026-11-20).** `load_catalog` adds a code-built row when it is missing and
+never updates one that exists, so a changed allowance, note or unit in a
+family's spec never reaches a store that already holds the row. The Eurostat
+stage re-registers its rows on every sync; the world stage did not, and a
+widened staleness allowance for the BIS exchange rates left 45 series
+"stale" in the real store after the code was fixed. Any new bulk stage must
+upsert its catalog rows as it stores data.
+
 **Adding places can move series you did not touch (2026-11-19).** A
 series' place is read from its id: the first token if it is a country code,
 else the last. The world layer added 151 two-letter codes, any of which could
