@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-11-20: three families for the website's standard indicators, Eurostat unemployment, OECD year-on-year GDP and BIS dollar exchange rates (item 24). 0.3.11 carrying them is released (2026-11-20): `publish.yml` passed, and from PyPI an empty home answered all ten smoke calls, its catalog listing 3,124 series; not installed in Claude Desktop. The world layer adds the IMF, BIS and OECD for every country they cover, 1,428 series and 151 new places (item 23). 0.3.10 carrying it is released (2026-11-19): `publish.yml`'s build, publish and bundle jobs passed, and from PyPI an empty folder and an empty home answered all ten smoke calls in 36 seconds, its catalog listing 2,956 series before any refresh; not installed in Claude Desktop. Every Eurostat family carries every country it publishes, about 1,000 series where there were 330 (item 22). 0.3.9 carrying it is released (2026-11-19): `publish.yml`'s build, publish and bundle jobs passed, and from PyPI an empty folder and an empty home answered all ten smoke calls in 35 seconds, its catalog listing 1,135 Eurostat series before any refresh; not installed in Claude Desktop. Bedrok gets a public website, built in its own private repository and now built from all of this store (item 21); this repository stays public and stays the MCP. 0.3.8 is released (2026-11-19): the Fed Board zip fix (item 20), nothing else; not installed in Claude Desktop. 0.3.7 is released, carrying session I's six central banks' decisions on the release calendar (item 19); 0.3.6 is released, carrying Bedrok's logo (item 18), on top of 0.3.5's eight US series for the AI capex cycle (item 17) and 0.3.4's Kazakhstan (sessions K1 to K4, item 16); the owner has installed none of them in Claude Desktop yet.** Bedrok is a local MCP server and store of
+**Updated 2026-11-23. 0.3.11 is the latest release (2026-11-20), on PyPI and with its Desktop bundle on the GitHub release; from PyPI an empty home answered all ten smoke calls with 3,124 catalog series. Claude Desktop still runs 0.3.3: nothing from 0.3.4 on has been installed there (item 25). The work in hand is the public website, built in its own private repository from this package (item 21).** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -121,12 +121,10 @@ calendar listed Bank Rate as due, data to 28 Oct; the refresh brought the
 live store every linked rate now names its bank's next decision (the FOMC and
 the Bank of Canada on 9 Dec, the ECB and the Bank of England on 17 Dec).
 
-**Next:** the public website (item 21, decided 2026-11-19), built in its own
-private repository beside this one. Also still pending: install 0.3.7 in Claude
-Desktop over the old extension (item 19), which also brings 0.3.6's logo and
-0.3.4's and 0.3.5's series, and ask about Kazakhstan and the
-Z.1 financing gap (items 16 and 17); then a cold question on a release
-morning (item 1), then whichever open item the owner picks.
+**Next:** the public website (item 21), built in its own private repository
+beside this one. Then install the latest bundle in Claude Desktop and try what
+0.3.4 to 0.3.11 added there (item 25), a cold question on a release morning
+(item 1), and whichever open item the owner picks.
 
 **The capex-cycle series in one paragraph (2026-11-02).** A downstream
 dashboard that asks whether the AI build-out is outrunning its revenue needed
@@ -701,19 +699,22 @@ Claude may merge Bedrok pull requests once GitHub's checks pass.
 
 ## What is live
 
-**31 publishers, plus `derived`**, from the Fed Board, the ECB, the BLS, the
-BIS, the regional Feds, the OECD, Eurostat, the EIA, Census, the IMF, the ONS,
-the Bank of England, the Bank of Canada, the New York Fed, INSEE, the BEA,
-Statistics Canada, Japan's e-Stat and Ministry of Finance, the ABS, INE, the
-four Nordic offices, Destatis, Istat and the Bundesbank, with FRED for the nine session-only
-series. 777 catalog rows, all of them on a fresh install since session G (session C added 191 for GDP breakdowns; D2 the six
-FX pairs and five rows; E retired shrimp; F added the daily Bund; K1 to K4 Kazakhstan; eight for the capex cycle on 2026-11-02).
+**34 publishers, plus `derived`** (`bedrok/seeds/sources.csv`), from the Fed
+Board, the ECB, the BLS, the BIS, the regional Feds, the OECD, Eurostat, the
+EIA, Census, the IMF, the World Bank, the CFTC, the ONS, the Bank of England,
+the Bank of Canada, the New York Fed, INSEE, the BEA, Statistics Canada,
+Japan's e-Stat and Ministry of Finance, the ABS, INE, the four Nordic offices,
+Destatis, Istat, the Bundesbank, the National Bank of Kazakhstan, its Bureau
+of National Statistics and JODI, with FRED for the nine session-only series.
+3,124 catalog series on a fresh install (0.3.11); most of the growth since
+777 is Eurostat's every-country families (item 22), the world layer (item 23)
+and the standard-indicator families (item 24).
 
 **Twelve commands:** `smoke [--keyless]`, `backfill [--only ids --stage S]`,
 `refresh`, `validate`, `query`, `tieout [--only ids]`, `doctor`, `schema`,
 `pctile`, `rates`, `serve`, `docs [--check]`.
 
-**Tests:** 493 (4 skip without a built wheel or bundle, or the owner's term list), network-free, green on 2026-11-02, including the MCP
+**Tests:** 537, network-free, green on 2026-11-23 (a few skip without a built wheel or bundle, or the owner's term list), including the MCP
 server in memory, the layering rule and the publication gate. **Workflows:**
 `tests` (push and PR), `package` (PR: the empty-home install and the gate on
 the wheel), `publish` (a published release), `liveness` (Tuesdays, keyless).
@@ -789,6 +790,8 @@ None holds a secret.
 ## Open, in the order I would take them
 
 Completed items are removed rather than ticked — git history is the record.
+The numbers are stable labels (bedrok-web, code comments and other documents
+cite them), so a closed item in the middle keeps a one-line placeholder.
 Owner-side items are in `profile/STATE-private.md`.
 
 1. **A cold question on a release morning.** 0.3.3 is installed in Claude
@@ -811,13 +814,8 @@ Owner-side items are in `profile/STATE-private.md`.
    - **Rules not yet written:** families stay on age (the broad HICP set has
      candidate countries that publish later), as do JOLTS, PPI, the regional
      Feds, the OECD, the IMF and the World Bank's annual data.
-3. **Closed 2026-10-16 (session F):** every publisher that refused on
-   2026-10-11 answered again (the OECD, CFTC and Destatis by 2026-10-14; the
-   Bundesbank and BEA on 2026-10-16). Bot checks come and go: read a single
-   red liveness run as "look", and a publisher red for weeks as session 14's
-   "retire or re-point"; never try to get past a bot check. This line stays
-   only so today's item numbers hold for sessions G and H; the next rewrite
-   removes it.
+3. *Closed 2026-10-16 (session F); the number is kept because others point at
+   later ones.*
 
 4. **Jobless claims: revisit the Labor Department's API** when convenient. It
    matches FRED exactly but runs a steady four weeks behind: on 2026-10-16,
@@ -881,11 +879,7 @@ Owner-side items are in `profile/STATE-private.md`.
    Bundesbank is wired (session F) with one series, and its other flows
    (the rest of the Bund curve, the German banking statistics) are a row each.
 
-10. **Closed 2026-10-16 (session F):** Eurostat's debt release had not
-    moved; the allowance was too short and is 310 days, with a release rule.
-    Eurostat now also publishes EA21 for this dataset (88.9 against EA20's
-    89.4 for 2026-Q1); the family still reads EA20, which is current. This
-    line stays only so today's item numbers hold; the next rewrite removes it.
+10. *Closed 2026-10-16 (session F).*
 
 11. **Two 7a series are not what one might assume.** Japan's unemployment rate
     is not seasonally adjusted: the seasonally adjusted series are not in
@@ -907,7 +901,7 @@ Owner-side items are in `profile/STATE-private.md`.
     "contribution" weighs the GDP parts (`_CONTRIB_WORDS` in the server).
 
 15. **The later sessions in `docs/rebuild-plan.md` are unplanned:** 13
-    (13a, the release calendar, in progress as item 2; 13b, revisions, deferred
+    (13a, the release calendar, done except what item 2 lists; 13b, revisions, deferred
     2026-10-12) and 14 (the
     maintenance loop: triage source requests from the issue form, retire stale
     publishers, a second pass over the register for the next thirty).
@@ -950,32 +944,30 @@ Owner-side items are in `profile/STATE-private.md`.
     - **GDP has no exact calendar.** The 2026 calendar shows GDP by
       production about 47 and about 92 days after a quarter, inconsistently;
       it stays on a wide rule until a pattern is clear.
-    - **Released in 0.3.4** (2026-10-29), and carried by 0.3.5; neither is
-      installed in Claude Desktop yet.
+    - **Released in 0.3.4** (2026-10-29); not yet tried in Claude Desktop (item 25).
 
-17. **The capex-cycle series are released in 0.3.5** (2026-11-02), not yet
-    installed in Claude Desktop. Until they are, the installed server answers
-    the eight stored rows but carries 0.3.4's seeds: a due or stale judgment
-    would try the API path for `us_dc_construction` and an unknown `fedfiles`
-    key for `us_ebp`, fail, and keep the stored data. What stays open:
+17. **The capex-cycle series are released in 0.3.5** (2026-11-02). Until a
+    later bundle is installed in Claude Desktop (item 25), the installed
+    server answers the eight stored rows with older seeds: a due or stale
+    judgment would try the API path for `us_dc_construction` and an unknown
+    `fedfiles` key for `us_ebp`, fail, and keep the stored data. What stays
+    open:
     - **Z.1 asked on demand costs about 13 s a series.** From the clean
       install, `us_z1_nfc_financing_gap` and `us_z1_nfc_capex` asked one after
       the other took 13.1 and 12.7 s, so the 37.6 MB zip is downloaded or
       parsed again for each; a refresh fetches it once. Not looked into;
       worth it only if a cold session asking four Z.1 series feels slow.
 
-18. **The logo is released in 0.3.6** (2026-11-05), not yet installed in
-    Claude Desktop. Installing 0.3.7 (item 19) over the old extension brings it; the extension list draws the manifest's icon, which an
-    installed older version does not have. Not yet seen in any host: whether Desktop's list draws it at small sizes
+18. **The logo is released in 0.3.6** (2026-11-05). Installing any later
+    bundle over the old extension brings it (item 25); the extension list
+    draws the manifest's icon, which the installed 0.3.3 does not have. Not
+    yet seen in any host: whether Desktop's list draws it at small sizes
     well, and which other hosts draw `serverInfo.icons` (it is in the MCP
     spec from 2025-11-25; hosts are free to ignore it). A Claude Code
     install (`uvx … bedrok serve`) picks it up on its next start from PyPI.
 
 19. **Central banks' decisions are on the calendar** (session I, 2026-11-05),
-    released in 0.3.7, not yet installed in Claude Desktop. What stays open:
-    - **Install `bedrok-0.3.7.mcpb`** from the release in Claude Desktop and ask
-      "when does the FOMC meet next?" and, the day after a decision, for the
-      rate.
+    released in 0.3.7. What stays open (the Desktop check is item 25):
     - **Banks not read yet.** The SNB (its decisions page lists past
       assessments only; the future dates were not found), the National Bank
       of Kazakhstan (the page's address changes yearly), and the People's Bank
@@ -1126,3 +1118,14 @@ Owner-side items are in `profile/STATE-private.md`.
     the BIS has not updated since early 2026 or before (Venezuela,
     Madagascar, DR Congo, Ghana, Lebanon, Bolivia, Libya, Iraq, Uganda,
     Guyana, Laos), and Switzerland's and Bosnia's unemployment rates.
+25. **Install the latest bundle in Claude Desktop.** Desktop runs 0.3.3
+    (2026-10-16); 0.3.4 to 0.3.11 are released but untried there. Install
+    the newest `.mcpb` from the GitHub release over the old extension (author
+    and name unchanged, so it upgrades in place; ⌘Q and reopen), then ask:
+    - something about Kazakhstan and the Z.1 financing gap (items 16, 17);
+    - "when does the FOMC meet next?", and the day after a decision, the
+      rate (item 19);
+    - an unscoped Eurostat question ("industrial production") and a world
+      one (Brazil's inflation or exchange rate), to see how the longer
+      searches read (items 22 to 24);
+    - whether the extension list draws the logo well (item 18).
