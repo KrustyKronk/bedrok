@@ -853,10 +853,9 @@ Owner-side items are in `profile/STATE-private.md`.
    Russian sites or web.archive.org. Night-lights: 1992–2013 is confirmed
    against the paper, and the figure is "approximately 35%". Severities
    confirmed by the owner: Ethiopia's GDP, the 2025 payrolls benchmark and
-   Tanzania's statistics act stay caveat. Still the owner's to decide: Iran.
-   The CBI's own inflation page now shows annual inflation for every year from
-   1397, so the halt the row describes was later filled; whether the row stays
-   disqualifying is open.
+   Tanzania's statistics act stay caveat, and Iran stays disqualifying even
+   though the CBI's inflation page now shows annual figures for every year
+   from 1397: the row records that the gap was later filled.
 
 7. **The IMF WEO rows' freshness is their last non-forecast year** (session
    11), right for "is this stale" but not for "is this the latest vintage": a
