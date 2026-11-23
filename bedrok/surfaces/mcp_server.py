@@ -99,7 +99,7 @@ its ratio to GDP or its growth instead, or say so beside its percentile.
 
 Freshness says when the next period is usually out (`next_release`); for
 "when is the next CPI?", "what is out this week?" or "when does the FOMC meet?",
-use release_calendar (six central banks' decisions are on it). When its
+use release_calendar (seven central banks' decisions are on it). When its
 status is `due` (inside that window, and a fetch found nothing yet) or `late`
 (past it), say which period is the latest held and give
 `next_release.message`; never present the latest held period as the newest
@@ -1265,8 +1265,12 @@ def _local(iso: str) -> str:
 
 
 def _when_state(nr: dict, now: datetime) -> str:
-    """upcoming, due or late, by the clock alone: a list reads, it never fetches."""
-    if now < datetime.fromisoformat(nr["due_at"]):
+    """upcoming, due or late, by the clock alone: a list reads, it never fetches.
+    An edition is only ever upcoming (it is said, never judged), and a family
+    member the publisher's release left out is behind, not due."""
+    if nr.get("behind"):
+        return "behind"
+    if nr.get("informational") or now < datetime.fromisoformat(nr["due_at"]):
         return "upcoming"
     return "due" if now <= datetime.fromisoformat(nr["late_after"]) else "late"
 
@@ -1292,7 +1296,7 @@ def release_calendar(
 
     Central banks' decisions are listed too, from each bank's own schedule:
     the FOMC, the ECB, the Bank of England, the Bank of Japan, the Bank of
-    Canada and the RBA. The day is the bank's; the time is its usual practice
+    Canada, the RBA and the National Bank of Kazakhstan. The day is the bank's; the time is its usual practice
     (`approximate: true`) except the Bank of Canada's, which it states. A
     policy rate is `due` once its bank has decided and the store does not
     show the decision yet. Never say what a bank is expected to decide."""
@@ -1351,6 +1355,11 @@ def release_calendar(
             if got:                                  # the freshest member speaks for the family
                 picks.append((got[0], fam_label.get(r["prefix"], r["prefix"] + "…"),
                               f"{r['prefix']}… ({got[1]} series)"))
+        for prefix, meta in releases.EDITIONS.items():  # the WEO, by its next edition
+            got = con.execute("SELECT count(DISTINCT series_id), min(series_id) FROM macro_series "
+                              "WHERE starts_with(series_id, ?)", [prefix]).fetchone()
+            if got and got[0]:
+                picks.append((got[1], f"IMF {meta['name']}", f"{prefix}… ({got[0]} series)"))
         for feed in releases.MEETING_FEEDS:          # the policy rates, by their banks' decisions
             for sid in releases.meeting_series(feed):
                 picks.append((sid, releases.FEEDS[feed]["decision"], None))
@@ -1379,14 +1388,15 @@ def release_calendar(
         for g in _dates_only_decisions(con, now, end):
             groups[("upcoming", g["period"], g["when"], g["by"], g["publisher"])] = g
     order = {"late": 0, "due": 1, "upcoming": 2}
-    rows = sorted(groups.values(), key=lambda g: (order[g["status"]], g["when"], g["name"]))
+    rows = sorted(groups.values(), key=lambda g: (order.get(g["status"], 2), g["when"], g["name"]))
     return {"now": now.astimezone().isoformat(timespec="minutes"),
             "to": end.astimezone().isoformat(timespec="minutes"),
             "releases": rows,
-            "not_listed": "Series without a release rule (JOLTS, PPI, the OECD, the IMF and "
-                          "others) are judged by age alone; bedrok://releases lists the rules. "
+            "not_listed": "Series without a release rule (the OECD's and others) are judged "
+                          "by age alone; the IMF's World Economic Outlook is listed by its next "
+                          "edition, for information; bedrok://releases lists the rules. "
                           "Central banks whose schedule Bedrok does not read (the SNB, the "
-                          "People's Bank of China, the National Bank of Kazakhstan and others) "
+                          "People's Bank of China and others) "
                           "are not listed."}
 
 

@@ -664,7 +664,8 @@ User-Agent on 2026-11-05:
   the first cell ("2&ndash;3 February").
 - **The SNB**'s decisions page lists past assessments only; its future dates
   were not found. **The National Bank of Kazakhstan**'s schedule page changes
-  its address every year. The People's Bank of China has no fixed schedule.
+  its address every year; it is found from its section by the year's label
+  (see 2026-11-23 below). The People's Bank of China has no fixed schedule.
 
 Only the Bank of Canada states a time. The others' times are their usual
 practice, said with "usually": the FOMC at 14:00 New York, the ECB at 14:15
@@ -694,6 +695,64 @@ decision, so `sync_feed` keeps a meeting feed's dates before now and replaces
 everything ahead. Keeping "everything before the first fetched date" was the
 first version, and it left a meeting's old date behind when the meeting moved
 later.
+
+**What changed on 2026-11-23 (the world families and more calendars).**
+- **The BIS's calendar is an RSS feed**: `https://data.bis.org/feed.xml`
+  (`bis.org/statistics/relcal.htm` now redirects to
+  `data.bis.org/release-calendar`, which renders its list by script). Each
+  item has `<category>` (the topic: CBPOL, XRU, EER, CPI, RPP, TOTAL_CREDIT,
+  CREDIT_GAPS), a title naming the period ("Consumer prices, 2026-10 /
+  Release", "…, 2026-Q2 / …") and a `pubDate` stamped 10:00 GMT for every
+  item; the calendar says data come "no later than the specified date". It
+  runs from about four weeks back to six months ahead. Policy rates and dollar
+  rates are re-released every Thursday, so a period appears several times:
+  the earliest is its first release. The effective exchange rates' monthly
+  data are apart from the weekly daily data, and the property prices'
+  "selected" (quarterly, Bedrok's) apart from "detailed" (monthly). Selected
+  property prices arrive in partial updates from about 12 weeks after the
+  quarter, so 48 countries held Q2 before Q2's "standard release".
+- **Eurostat's calendar file exists after all**:
+  `https://ec.europa.eu/eurostat/o/calendars/eventsIcal` (the documented
+  `cache/RELEASE_CALENDAR/calendar_EN.ics` is still 404). About 750 KB,
+  every Eurostat item from 2025 on: articles and publications beside data
+  releases, as `X-CATEGORY` ("Data release\,Euro indicators release").
+  Events are all-day, with no time and no reference period, so the time is
+  the usual 11:00 Luxembourg and the period is matched from the rule's
+  window. One stray entry is dated 2029.
+- **Istat's press calendar is a public Google Calendar** (linked from
+  `istat.it/…/giornalisti/appuntamenti/calendario-delle-diffusioni-e-degli-eventi/`):
+  `https://calendar.google.com/calendar/ical/4s57ih6d08n330qrm9ee575nog@group.calendar.google.com/public/basic.ics`,
+  about 1 MB, times in UTC, titles in Italian with the period
+  ("Occupati e disoccupati (stima provvisoria) | Ottobre 2026"), and only to
+  the end of the current year. Not read yet: see `STATE.md`, item 2.
+- **The OECD's release pages answer 403 to programs.** Its timing is unread,
+  so OECD series stay on age. Getting round the refusal with a browser
+  User-Agent is not an option.
+- **A monthly H.8 figure waits for the week across the month's end.** Its
+  monthly levels are pro rata averages of Wednesday weeks, so October 2026
+  first appeared on 13 Nov (the week to 4 Nov), not 6 Nov: the first Friday
+  at least nine days after the month ends.
+- **A family is released, its members are not all in it.** The BIS collects
+  small economies' dollar rates months late, so a family rule made two dozen
+  of them "late" on every run. `freshness._behind` treats a member whose next
+  period another member already holds as behind its publisher: it keeps its
+  age status, and the freshest member speaks for the family (validate's
+  family lines, `release_calendar`'s listing).
+- **The WEO cannot have a period rule.** Its latest point dated today or
+  earlier is the current year's projection, and on 1 January the next year's
+  becomes latest without a fetch. Its next edition is said for information
+  only (`releases.EDITIONS`); telling one edition from the next needs the
+  vintage (`STATE.md`, item 7).
+- **The National Bank of Kazakhstan's decision schedule has a stable
+  section and a yearly page.** The section
+  `nationalbank.kz/en/news/grafik-prinyatiya-resheniy-po-bazovoy-stavke`
+  links each year's page as `…/rubrics/<id>` with the year as the link text
+  (2026 is 2365, 2025 is 2237, back to 2015); the ids are not in order.
+  A year's page is a table whose first cell is the day ("27.10.2026"), the
+  next decision starred as the announcement date, and no time. The base-rate
+  API (`data.nationalbank.kz/api/v1/data/base-rate`) has a row for every
+  decision, holds included, with `effectiveDate` the decision day itself, so
+  a decision shows on its day and a hold needs no "fetched since" test.
 
 **A calendar without reference periods must be matched from the rule's own
 window, not from the period's end.** Taking "the first date after the period

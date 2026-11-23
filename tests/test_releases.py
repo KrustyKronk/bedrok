@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 
 from bedrok.core import releases, sources
-from bedrok.ingest import pipeline
+from bedrok.ingest import pipeline, world
 from bedrok.ops import freshness
 
 ET = ZoneInfo("America/New_York")
@@ -167,7 +167,8 @@ def test_the_seed_has_the_agreed_columns_and_every_row_parses():
 
 def test_every_rule_names_a_series_or_family_bedrok_has():
     cat = _catalog()
-    prefixes = tuple(pipeline.BULK_STAGE_FOR_PREFIX) + tuple(pipeline.BULK_PREFIXES)
+    prefixes = (tuple(pipeline.BULK_STAGE_FOR_PREFIX) + tuple(pipeline.BULK_PREFIXES)
+                + world.PREFIXES)
     for r in releases.load():
         if r["series_id"]:
             assert r["series_id"] in cat, f"unknown series {r['series_id']}"
@@ -212,3 +213,19 @@ def test_every_zone_in_the_seed_is_a_real_zone_and_sources_exist():
     assert {"bls", "bea", "eurostat", "ons"} <= set(sources.load())
     for r in releases.load():
         ZoneInfo(r["tz"])
+
+
+def test_a_month_of_h8_loans_waits_for_the_week_across_its_end():
+    """A monthly H.8 figure is a pro rata average over Wednesday weeks: October
+    2026 first appeared on 13 Nov (the week to 4 Nov), not 6 Nov."""
+    w = releases.window(releases.rule_for("us_ci_loans"), date(2026, 10, 1))
+    assert w["due_at"] == _et(2026, 11, 13, 16, 15) == w["expected_by"]
+    w = releases.window(releases.rule_for("us_ci_loans"), date(2026, 9, 1))
+    assert w["due_at"].date() == date(2026, 10, 9)        # Sep 30 a Wednesday: the 9th
+
+
+def test_the_regional_fed_surveys_come_out_inside_their_own_month():
+    w = releases.window(releases.rule_for("us_empire_fed"), date(2026, 11, 1))
+    assert w["due_at"].date() <= date(2026, 11, 16) <= w["expected_by"].date()
+    w = releases.window(releases.rule_for("us_philly_fed"), date(2026, 12, 1))
+    assert w["due_at"].date() <= date(2026, 12, 17) <= w["expected_by"].date()

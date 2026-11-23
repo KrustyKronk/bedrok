@@ -801,19 +801,35 @@ Owner-side items are in `profile/STATE-private.md`.
    asking for the figure (Canada's CPI on 19 Oct, Spain's EPA and the ECB's M3
    on 27 Oct).
 
-2. **More release calendars** (what session H left; research in
-   `docs/engineering/notes.md`, "Where release dates come from").
-   - **Feeds still without an export** (probed 2026-10-16): Eurostat (its
-     calendar page is a portlet with no iCal) and Istat (every calendar path
-     404 or 500). Look again now and then. Never the BLS website: it refuses
-     programs by policy.
-   - **Cheap "is anything new?" checks** before a full fetch: the BLS API's
-     `latest=true` and the ECB's SDMX `updatedAfter`.
-   - **`us_ci_loans`**: H.8 has a calendar, but which weekly release carries
-     the monthly figure was not pinned down, so it stays on age.
-   - **Rules not yet written:** families stay on age (the broad HICP set has
-     candidate countries that publish later), as do JOLTS, PPI, the regional
-     Feds, the OECD, the IMF and the World Bank's annual data.
+2. **More release calendars** (research in `docs/engineering/notes.md`,
+   "Where release dates come from" and "What changed on 2026-11-23").
+   On 2026-11-23 Eurostat's calendar file (`eurostat_ics`: euro-area flash
+   and full HICP, unemployment, quarterly government debt, by day at the
+   usual 11:00) and the BIS's RSS feed (`bis_rss`, below in item 23) went in,
+   with rules for `us_ci_loans` (the H.8 nine days after the first Wednesday
+   on or after the month's end, also on the Fed Board's calendar), the
+   Empire State and Philadelphia Fed surveys, the Dallas Fed's trimmed mean
+   PCE (on BEA's schedule, which the Dallas Fed follows), the NY Fed's
+   Multivariate Core Trend, JOLTS and PPI (their habit from FRED's update
+   dates: the BLS schedule page refuses programs). A calendar row can now
+   name a family by prefix, and a family member the publisher's release left
+   out is "behind", not late. Still open:
+   - **Istat**: its press calendar is a public Google Calendar with times
+     and periods (URL in the notes). Bedrok holds one Istat series,
+     `it_unemployment`; wiring it needs that series' allowance raised from
+     90 to 100 days in `macro_catalog.csv` (Istat publishes about 32 days
+     after the month), left for after the feeds session's catalog changes
+     merge.
+   - **The broad HICP and unemployment families** (`hicp_yoy_`,
+     `unemp_rate_`) could now have rules: Eurostat's file dates their
+     releases and late countries read as behind, not late.
+   - **The cheap "is anything new?" checks** (the BLS API's `latest=true`,
+     the ECB's SDMX `updatedAfter`) save requests rather than add dates and
+     live in the adapters; not done.
+   - **`us_gscpi`**: the NY Fed states no update day; it stays on age.
+   - **The World Bank's annual data**: Bedrok holds none (its World Bank
+     series are the monthly Pink Sheet, which has a rule), so nothing to do.
+   Never the BLS website: it refuses programs by policy.
 3. *Closed 2026-10-16 (session F); the number is kept because others point at
    later ones.*
 
@@ -935,10 +951,9 @@ Owner-side items are in `profile/STATE-private.md`.
       about 1,845 and condensate about 395 kb/d, against the 1.79 and 0.29
       mb/d the warning quotes. Both are in the catalog notes; the cause is
       not known.
-    - **Kazakhstan's base rate has no decision dates.** Session I gave the
-      ECB's rates their bank's schedule; the National Bank publishes its own
-      on a page whose id changes each year, so `kz_base_rate` is still judged
-      by age (item 19).
+    - **Kazakhstan's base rate has its decision dates** (2026-11-23, item
+      19): `kz_base_rate` is due on each decision day and fresh once the row
+      for it is in.
     - **Small things seen in K1:** "kazakhstan exchange rate" ranks the REER
       and NEER above `usdkzt` and `eurkzt`. A percentile of an event series
       counts decisions, not time spent at each rate (true of the ECB's rows
@@ -982,10 +997,18 @@ Owner-side items are in `profile/STATE-private.md`.
 
 19. **Central banks' decisions are on the calendar** (session I, 2026-11-05),
     released in 0.3.7. What stays open (the Desktop check is item 25):
+    - **The National Bank of Kazakhstan was added on 2026-11-23**
+      (`nbk_base_rate`): its schedule section
+      (`nationalbank.kz/en/news/grafik-prinyatiya-resheniy-po-bazovoy-stavke`)
+      links one page per year by its label ("2026"), and the page's id
+      changes each year, so the feed finds the year's page by its label and
+      fails, keeping the stored dates, when the year has none. The 2027
+      page is not up yet; a refresh in January will fail until it is. The
+      bank's base-rate API has a row dated on each decision day, holds
+      included, so a decision shows on the day. It states no time.
     - **Banks not read yet.** The SNB (its decisions page lists past
-      assessments only; the future dates were not found), the National Bank
-      of Kazakhstan (the page's address changes yearly), and the People's Bank
-      of China, which has no fixed schedule. The Bank of Canada's page lists
+      assessments only; the future dates were not found) and the People's
+      Bank of China, which has no fixed schedule. The Bank of Canada's page lists
       only the next announcement; its full-year schedule is a press release.
     - **The ECB's hold rule rests on an assumption.** A hold counts as shown
       once the rates were fetched on or after the effective Wednesday. If the
@@ -1110,9 +1133,18 @@ Owner-side items are in `profile/STATE-private.md`.
       2026 figures for Afghanistan, Lebanon, Senegal or the West Bank and
       Gaza, and a few BIS and OECD series lag (UAE and Singapore CPI, the
       UK and Indonesia 3-month rates).
-    - **No release dates yet for the IMF, BIS or OECD families.** Their
-      freshness runs on staleness allowances; the WEO's April and October
-      editions and the BIS's monthly cycle could be release rules.
+    - **Release dates for the world families** (2026-11-23): the seven BIS
+      families have rules and the BIS's own release calendar (its RSS feed
+      names each release's dataset and period); credit to GDP and the credit
+      gaps' allowances went from 330 to 360 days and real house prices' to
+      340 (they publish about 165 and 150 days after the quarter). A
+      country the BIS's release left out reads as behind its publisher,
+      not late. The WEO says its next edition (April and October, usually
+      between the 8th and the 24th) for information only: a period rule
+      cannot see an edition, since the current year's projection is always
+      the latest point, and telling editions apart is item 7. **The OECD
+      families stay on age**: its release pages refuse programs (403), so
+      its timing is unread; reading it by hand would let rules go in.
     - **The BIS condition binds the paid API:** BIS statistics must add
       nothing to a commercial product's price (`docs/LICENSING.md`).
     - **The OECD sits behind a bot check that comes and goes.** A blocked

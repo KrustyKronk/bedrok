@@ -110,7 +110,9 @@ def load() -> tuple[dict, ...]:
 
 # The publishers' own dates. `fetched` feeds are downloaded on their own
 # (ingest/calendars.py); a `publisher` feed rides in the series' own response.
-CALENDAR_COLUMNS = ["series_id", "feed", "release_name"]
+# A row names one series or, like a rule, a family by its id prefix: one BIS
+# release dates every country it carries.
+CALENDAR_COLUMNS = ["series_id", "prefix", "feed", "release_name"]
 FEEDS = {
     "bea_json": {"publisher": "BEA", "tz": "America/New_York", "fetched": True,
                  "label": "BEA's release schedule"},
@@ -131,6 +133,19 @@ FEEDS = {
                      "label": "the ECB's statistical calendar"},
     "fedboard_pages": {"publisher": "Federal Reserve Board", "tz": "America/New_York",
                        "fetched": True, "label": "the Fed Board's release calendar"},
+    # Two calendars that give the day and not the time (2026-11-23). Eurostat's
+    # iCal file has every release as an all-day event with no reference
+    # period; the euro indicators come out at 11:00 Luxembourg by long
+    # practice, said with "usually". The BIS's RSS feed names each release's
+    # dataset and period and stamps every item 10:00 GMT, while its calendar
+    # says only that data are released "no later than the specified date".
+    "eurostat_ics": {"publisher": "Eurostat", "tz": "Europe/Luxembourg", "fetched": True,
+                     "time_stated": False, "time": time(11, 0),
+                     "label": "Eurostat's release calendar"},
+    "bis_rss": {"publisher": "BIS", "tz": "Europe/Zurich", "fetched": True,
+                "time_stated": False,
+                "time_note": "the BIS gives the day, releasing no later than it",
+                "label": "the BIS's release calendar"},
     "bns_calendar": {"publisher": "Bureau of National Statistics of Kazakhstan",
                      "tz": "Asia/Almaty", "fetched": True,
                      "label": "the Bureau of National Statistics' release calendar"},
@@ -179,6 +194,20 @@ FEEDS = {
                   "time_stated": False, "reflected_days": None,
                   "decision": "RBA monetary policy decision", "related": "au_policy_rate",
                   "label": "the Reserve Bank of Australia's board meeting schedule"},
+    # The National Bank of Kazakhstan's schedule is one page per year under a
+    # stable section (ingest/calendars.py finds the year's page by its label).
+    # It gives the day and no time. Its base-rate API has a row dated on each
+    # decision day, holds included (every 2024-26 decision checked), so a
+    # decision shows on the day and a hold is a row like a change: the
+    # "fetched since" test for change-only series is not needed.
+    "nbk_base_rate": {"publisher": "National Bank of Kazakhstan", "tz": "Asia/Almaty",
+                      "fetched": True, "meetings": True, "time": time(12, 0),
+                      "time_stated": False,
+                      "time_note": "the National Bank gives the day, not the time",
+                      "reflected_days": 0, "holds_recorded": True,
+                      "decision": "National Bank of Kazakhstan base rate decision",
+                      "effect": "the base rate has a row dated on each decision day, holds included",
+                      "label": "the National Bank of Kazakhstan's base rate decision schedule"},
 }
 MEETING_FEEDS = tuple(f for f, m in FEEDS.items() if m.get("meetings"))
 # An exact date has no window to wait through: the period is late a day after
@@ -189,21 +218,55 @@ CALENDAR_REACH = timedelta(days=60)
 
 
 @functools.lru_cache(maxsize=1)
-def load_calendar() -> dict[str, tuple[str, str]]:
-    """series_id → (feed, release name). A blank release name is the series'
-    own id: an ONS series carries its own next-release date."""
+def _calendar_rows() -> tuple[dict, dict]:
     with open(CALENDAR_CSV, newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
-    out = {}
+    own, fam = {}, {}
     for r in rows:
+        sid, prefix = (r.get("series_id") or "").strip(), (r.get("prefix") or "").strip()
+        name = (r.get("release_name") or "").strip()
+        if bool(sid) == bool(prefix):
+            raise ValueError(f"{sid or prefix or '?'}: set exactly one of series_id and prefix")
         if r["feed"] not in FEEDS:
-            raise ValueError(f"{r['series_id']}: unknown feed {r['feed']!r}")
-        out[r["series_id"]] = (r["feed"], r["release_name"].strip() or r["series_id"])
-    return out
+            raise ValueError(f"{sid or prefix}: unknown feed {r['feed']!r}")
+        if prefix and not name:
+            raise ValueError(f"{prefix}: a family names its release")
+        if sid:
+            own[sid] = (r["feed"], name or sid)
+        else:
+            fam[prefix] = (r["feed"], name)
+    return own, fam
+
+
+def load_calendar() -> dict[str, tuple[str, str]]:
+    """series_id → (feed, release name), for rows naming one series. A blank
+    release name is the series' own id: an ONS series carries its own
+    next-release date."""
+    return _calendar_rows()[0]
+
+
+def load_calendar_families() -> dict[str, tuple[str, str]]:
+    """id prefix → (feed, release name), for rows naming a family."""
+    return _calendar_rows()[1]
 
 
 def calendar_key(series_id: str) -> tuple[str, str] | None:
-    return load_calendar().get(series_id)
+    """The series' own calendar entry, else its family's (the longest prefix)."""
+    own = load_calendar().get(series_id)
+    if own:
+        return own
+    fam = [p for p in load_calendar_families() if series_id.startswith(p)]
+    return load_calendar_families()[max(fam, key=len)] if fam else None
+
+
+def family_of(series_id: str) -> str | None:
+    """The id prefix of the family a series is judged with: its rule's or its
+    calendar's, the longest. None for a series with its own rule and entry."""
+    if any(r["series_id"] == series_id for r in load()):
+        return None
+    fams = [r["prefix"] for r in load() if r["prefix"] and series_id.startswith(r["prefix"])]
+    fams += [p for p in load_calendar_families() if series_id.startswith(p)]
+    return max(fams, key=len) if fams else None
 
 
 def meeting_feed(series_id: str) -> str | None:
@@ -215,6 +278,66 @@ def meeting_feed(series_id: str) -> str | None:
 def meeting_series(feed: str) -> list[str]:
     """The series that show a bank's decisions, in seed order."""
     return [sid for sid, (f, _) in load_calendar().items() if f == feed]
+
+
+# ---- editions ------------------------------------------------------------------
+# A publication that revises every period at once, on a cycle of its own. The
+# IMF's World Economic Outlook comes out each April and October, and its
+# latest point dated today or earlier is always the current year's projection:
+# on 1 January the next year's becomes "latest" without any fetch, so a period
+# rule can never see a new edition. Bedrok cannot yet tell one edition from
+# the next in the store (STATE.md item 7), so an edition is said, never
+# judged: it does not make a series due or late, and age still decides.
+# The IMF's own date for an edition is not published where a program can read
+# it; its recent editions came out between the 8th and the 24th (October 2023
+# on the 10th, April 2024 on the 16th, October 2024 on the 22nd, April 2025 on
+# the 22nd, October 2025 on the 14th, April 2026 on the 14th).
+EDITIONS = {
+    "weo_": {"publisher": "IMF", "name": "World Economic Outlook", "months": (4, 10),
+             "days": (8, 24), "time": time(9, 0), "tz": "America/New_York",
+             "note": "IMF World Economic Outlook: each April and October, around the "
+                     "IMF and World Bank meetings. https://www.imf.org/en/Publications/WEO"},
+}
+
+
+def edition_for(series_id: str) -> str | None:
+    """The id prefix of the edition a series comes in, if any."""
+    hit = [p for p in EDITIONS if series_id.startswith(p)]
+    return max(hit, key=len) if hit else None
+
+
+def edition_window(prefix: str, now: datetime) -> dict:
+    """The next edition whose usual window has not closed: {label (the
+    edition's month), due_at, expected_by, late_after}, all at the window's
+    edges, `source` "edition"."""
+    meta = EDITIONS[prefix]
+    tz = ZoneInfo(meta["tz"])
+    lo, hi = meta["days"]
+    local = now.astimezone(tz)
+    for year in (local.year, local.year + 1):
+        for month in meta["months"]:
+            end = datetime.combine(date(year, month, hi), meta["time"], tzinfo=tz)
+            if end + GRACE > now:
+                start = datetime.combine(date(year, month, lo), meta["time"], tzinfo=tz)
+                return {"label": date(year, month, 1), "due_at": start, "expected_by": end,
+                        "late_after": end + GRACE, "source": "edition", "edition": prefix}
+    raise ValueError(f"{prefix}: no edition ahead of {now}")      # pragma: no cover
+
+
+def describe_edition(w: dict) -> dict:
+    """The `next_release` of a series that comes in editions: the next one, for
+    information. It never says due or late (see EDITIONS)."""
+    meta = EDITIONS[w["edition"]]
+    a, b = w["due_at"], w["expected_by"]
+    period = f"the {_MONTHS[a.month - 1]} {a.year} {meta['name']}"
+    message = (f"Next: {period}, usually out between {a.day} and {b.day} "
+               f"{_MONTHS[a.month - 1][:3]} {a.year}. It revises every year at once, "
+               f"current and forecast; Bedrok cannot yet tell one edition from the next, "
+               f"so this series is judged by age.")
+    return {"period": period, "due_at": a.isoformat(), "expected_by": b.isoformat(),
+            "late_after": w["late_after"].isoformat(), "source": "edition",
+            "approximate": True, "informational": True, "publisher": meta["publisher"],
+            "message": message}
 
 
 def calendar_window(feed: str, label: date, due_at: datetime) -> dict:
@@ -373,8 +496,13 @@ def describe(w: dict, frequency: str, state: str, latest: date | None) -> dict:
     period = period_name(w["label"], frequency)
     held = f"{period_name(latest, frequency)} is the latest held" if latest else ""
     exact = w.get("source") == "calendar"
+    meta = FEEDS[w["feed"]] if exact else {}
+    timed = meta.get("time_stated", True)
     if exact:
-        at = f"{when(w)} ({FEEDS[w['feed']]['label']})"
+        d = w["due_at"]
+        at = (f"{when(w)} ({meta['label']})" if timed
+              else f"{_day(d)} ({meta['label']}; {meta['time_note']})" if meta.get("time_note")
+              else f"{_day(d)}, usually {_clock(d)} ({meta['label']})")
         message = {"due": f"{period} is scheduled for {at} and is not in the store yet; {held}.",
                    "late": f"{period} was scheduled for {at} and has not reached Bedrok; {held}."
                    }.get(state, f"Next: {period}, scheduled for {at}.")
@@ -385,12 +513,19 @@ def describe(w: dict, frequency: str, state: str, latest: date | None) -> dict:
                    f"{_clock(w['expected_by'])} and has not reached Bedrok; {held}.")
     else:
         message = f"Next: {period}, usually out {when(w)}."
+    if state == "behind":
+        # Released for the family, not for this member: the publisher's gap,
+        # not Bedrok's (ops/freshness.py).
+        message = (f"{period} is out for other series in this family but not for this one: "
+                   f"the publisher has not released it yet; {held}.")
     return {"period": period, "due_at": w["due_at"].isoformat(),
             "expected_by": w["expected_by"].isoformat(),
             "late_after": w["late_after"].isoformat(),
-            "source": "calendar" if exact else "rule", "approximate": not exact,
-            **({"publisher": FEEDS[w["feed"]]["publisher"],
-                "calendar": FEEDS[w["feed"]]["label"]} if exact else {}),
+            "source": "calendar" if exact else "rule",
+            "approximate": not (exact and timed),
+            **({"publisher": meta["publisher"], "calendar": meta["label"]} if exact else {}),
+            **({"date_exact": True} if exact and not timed else {}),
+            **({"behind": True} if state == "behind" else {}),
             "message": message}
 
 

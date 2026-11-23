@@ -88,3 +88,21 @@ kz_house_prices_resale,,monthly,8,50,,10:00,Asia/Almaty,BNS housing prices in Ta
 kz_wage_nominal,,quarterly,40,95,,10:00,Asia/Almaty,"BNS number and wages of employees: about 41 days after the quarter, Q4 about 93."
 kz_gdp_real_ytd_yoy,,quarterly,45,95,,10:00,Asia/Almaty,BNS GDP by production: between about 47 and 92 days after the quarter in the 2026 calendar.
 kz_gdp_nominal,,quarterly,45,95,,10:00,Asia/Almaty,BNS GDP by production release
+us_ci_loans,,monthly,9,9,fri,16:15,America/New_York,"Fed Board H.8: a month's average is pro rata over Wednesday weeks, so it first appears in the release nine days after the first Wednesday on or after the month's end, the first Friday at least nine days after it (October 2026 first appeared on 13 Nov, not 6 Nov). https://www.federalreserve.gov/releases/h8/about.htm"
+us_empire_fed,,monthly,-16,-12,,08:30,America/New_York,"NY Fed Empire State survey: dated by its own month, released on the 15th of that month, or the next business day, at or shortly after 08:30. https://www.newyorkfed.org/survey/empire/empiresurvey_overview"
+us_philly_fed,,monthly,-16,-8,thu,08:30,America/New_York,"Philadelphia Fed Manufacturing Business Outlook Survey: dated by its own month, usually released on its third Thursday at 08:30 (December 2026 on 17 Dec). https://www.philadelphiafed.org/surveys-and-data/regional-economic-analysis/manufacturing-business-outlook-survey"
+us_trimmed_pce,,monthly,26,36,,08:30,America/New_York,"Dallas Fed trimmed mean PCE: its updates follow BEA's Personal Income and Outlays schedule (the Dallas Fed's own words), so BEA's date stands for it; the Dallas Fed states no time. https://www.dallasfed.org/research/pce"
+us_mct_infl,,monthly,27,37,,10:00,America/New_York,"NY Fed Multivariate Core Trend: at or shortly after 10:00 on the first business day after BEA's PCE price release. https://www.newyorkfed.org/research/policy/mct"
+us_jolts_openings,,monthly,30,42,,10:00,America/New_York,"BLS JOLTS: usually about five weeks after the month, 10:00 (September 2026 on 3 Nov, FRED's update date). The BLS schedule page refuses programs, so this is its habit, not its calendar."
+us_jolts_quits_rate,,monthly,30,42,,10:00,America/New_York,BLS JOLTS release
+us_jolts_hires_rate,,monthly,30,42,,10:00,America/New_York,BLS JOLTS release
+us_jolts_layoffs_rate,,monthly,30,42,,10:00,America/New_York,BLS JOLTS release
+us_ppi_final_demand,,monthly,9,16,,08:30,America/New_York,"BLS PPI: usually the second or third week after the month, 08:30 (October 2026 on 13 Nov, FRED's update date). The BLS schedule page refuses programs, so this is its habit, not its calendar."
+us_ppi_all_commodities,,monthly,9,16,,08:30,America/New_York,BLS PPI release
+,bis_policy_rate_,monthly,1,8,thu,10:00,UTC,"BIS central bank policy rates: released weekly on Thursdays, a month first on the first Thursday after it ends (October 2026 on 5 Nov). https://data.bis.org/topics/CBPOL"
+,bis_usd_rate_,monthly,1,8,thu,10:00,UTC,"BIS bilateral exchange rates: released weekly on Thursdays, a month's average first on the first Thursday after it ends; smaller economies' rates arrive months later. https://data.bis.org/topics/XRU"
+,bis_reer_,monthly,14,21,thu,10:00,UTC,"BIS effective exchange rates: monthly data around mid-month, on a Thursday (October 2026 on 19 Nov). https://data.bis.org/topics/EER"
+,bis_cpi_yoy_,monthly,21,28,thu,10:00,UTC,"BIS consumer prices: updated once a month, usually in its last week (October 2026 on 26 Nov). https://data.bis.org/topics/CPI"
+,bis_real_house_prices_,quarterly,80,150,,10:00,UTC,"BIS selected residential property prices: partial updates from about 12 weeks after the quarter, the standard release about five months after (Q3 2026: 23 Dec, 28 Jan, 25 Feb). https://data.bis.org/topics/RPP"
+,bis_credit_gdp_,quarterly,155,170,,10:00,UTC,"BIS credit to the non-financial sector: quarterly, about 160-167 days after the quarter (Q1 2026 on 14 Sep, Q2 on 7 Dec). https://data.bis.org/topics/TOTAL_CREDIT"
+,bis_credit_gap_,quarterly,155,170,,10:00,UTC,"BIS credit-to-GDP gaps: with credit to the non-financial sector (Q2 2026 on 7 Dec). https://data.bis.org/topics/CREDIT_GAPS"

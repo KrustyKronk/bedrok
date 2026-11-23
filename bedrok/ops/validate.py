@@ -150,18 +150,24 @@ def staleness_report(con) -> int:
     # which is the failure actually worth waking up for.
     for label, prefix, allow in summaries:
         row = con.execute(
-            "SELECT count(distinct series_id), max(mx) FROM "
-            "(SELECT series_id, max(date) mx FROM macro_series "
-            "WHERE series_id LIKE ? GROUP BY series_id)", [prefix + "%"]
+            "SELECT count(distinct series_id), max(mx), arg_max(series_id, mx) FROM "
+            "(SELECT series_id, max(date) FILTER (WHERE date <= current_date) mx "
+            "FROM macro_series WHERE starts_with(series_id, ?) GROUP BY series_id)", [prefix]
         ).fetchone()
-        if not row or not row[0]:
+        if not row or not row[0] or row[1] is None:
             continue
-        n, freshest = row
+        n, freshest, sid = row
         age = (today - freshest).days
         stale = age > allow
         problems += 1 if stale else 0
         print(f"  {'WARN' if stale else 'info':<4}  {label:<26} {n} series, "
               f"freshest {freshest} ({age}d, allowance {allow}d)")
+        # The freshest member speaks for the family's next release: a member
+        # the publisher's release left out is behind, not due (ops/freshness.py).
+        if not stale and releases.rule_for(sid):
+            f = freshness.assess(con, sid) or {}
+            if f.get("status") in ("due", "late"):
+                print(f"  {f['status']:<4}  {label:<26} {f['next_release']['message']}")
     # FX allowance is 14d, not 7d: the H.10 GBPUSD rate (Fed Board release
     # file) publishes weekly, so a 7d bar fired on every single run. A warning that is always
     # on is a warning nobody reads — this keeps a clean store at "ok" and

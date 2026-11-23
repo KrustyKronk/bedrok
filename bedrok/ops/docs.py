@@ -200,8 +200,12 @@ def _timing(r: dict) -> str:
     return f"{days} after {_AFTER[r['frequency']]}{day}"
 
 
+_NUMBERS = {6: "Six", 7: "Seven", 8: "Eight", 9: "Nine", 10: "Ten"}
+
+
 def releases_md() -> str:
     rules, cal = releases.load(), releases.load_calendar()
+    fams = releases.load_calendar_families()
     out = [HEADER, "# When each series is next released\n\n",
            "A series with a release rule knows when its next period is usually out, "
            "so on a release morning Bedrok fetches it before answering, and says so "
@@ -216,7 +220,7 @@ def releases_md() -> str:
            "| Series | Usually out | Time | Exact calendar |\n|---|---|---|---|\n"]
     for r in sorted(rules, key=lambda r: r["series_id"] or r["prefix"]):
         name = f"`{r['series_id']}`" if r["series_id"] else f"`{r['prefix']}…` (family)"
-        feed = cal.get(r["series_id"])
+        feed = releases.calendar_key(r["series_id"] or r["prefix"])
         exact = releases.FEEDS[feed[0]]["label"] if feed else ""
         out.append(f"| {name} | {_timing(r)} | {r['time']} {r['tz']} | {exact} |\n")
     out.append("\n## Exact calendars\n\n")
@@ -224,16 +228,41 @@ def releases_md() -> str:
         if feed in releases.MEETING_FEEDS:
             continue
         n = sum(1 for f, _ in cal.values() if f == feed)
+        k = sum(1 for f, _ in fams.values() if f == feed)
+        what = " and ".join(x for x in (f"{n} series" if n or not k else "",
+                                         f"{k} famil{'y' if k == 1 else 'ies'}" if k else "") if x)
         how = ("fetched at most once a day" if meta["fetched"]
                else "read from the series' page after each fetch, one extra request per page"
                if meta.get("extra_request")
                else "read from the series' own response, no extra request")
         label = meta["label"][0].upper() + meta["label"][1:]
-        out.append(f"- **{label}** (`{feed}`): {n} series; {how}.\n")
+        day = ("" if meta.get("time_stated", True)
+               else f"; {meta['time_note']}" if meta.get("time_note")
+               else "; it gives the day, and the time is the publisher's usual practice")
+        out.append(f"- **{label}** (`{feed}`): {what}; {how}{day}.\n")
+    out.append("\nA family's members are fetched together, but a publisher may release a "
+               "period for some countries and not others (the BIS collects small economies' "
+               "exchange rates months late). A member whose next period another member "
+               "already holds is behind its publisher, not due or late: it keeps its age "
+               "status, and the answer says so.\n")
     out.append("\nThe BLS publishes a calendar file, but its website refuses automated "
-               "retrieval, so BLS series stay on their rules.\n")
+               "retrieval, so BLS series stay on their rules. Eurostat's file has no times "
+               "and no periods; Istat's press calendar (a public Google Calendar, with "
+               "times) is not read yet. The OECD's release pages refuse programs, so OECD "
+               "series are judged by age.\n")
+    out.append("\n## Editions\n\n"
+               "A publication that revises every period at once, on its own cycle. Its "
+               "next edition is said, for information, and never makes a series due or "
+               "late: Bedrok cannot yet tell one edition from the next in the store.\n\n"
+               "| Family | Next edition | Source |\n|---|---|---|\n")
+    for prefix, meta in releases.EDITIONS.items():
+        months = " and ".join(releases._MONTHS[m - 1] for m in meta["months"])
+        lo, hi = meta["days"]
+        out.append(f"| `{prefix}…` | each {months}, usually between the {lo}th and the "
+                   f"{hi}th | {meta['note']} |\n")
     out.append("\n## Central banks' decisions\n\n"
-               "Six banks' meeting schedules are read from their own pages, at most once "
+               f"{_NUMBERS[len(releases.MEETING_FEEDS)]} banks' meeting schedules are read "
+               "from their own pages, at most once "
                "a day. The day is the bank's; the time is its usual practice, said with "
                "\"usually\", except where the bank states it. A policy rate is `due` once "
                "its bank has decided and the store does not show the decision yet, and "
