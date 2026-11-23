@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-11-23. 0.3.11 is the latest release (2026-11-20), on PyPI and with its Desktop bundle on the GitHub release; from PyPI an empty home answered all ten smoke calls with 3,124 catalog series. Claude Desktop still runs 0.3.3: nothing from 0.3.4 on has been installed there (item 25). The work in hand is the public website, built in its own private repository from this package (item 21).** Bedrok is a local MCP server and store of
+**Updated 2026-11-23. 0.3.12 is the latest release (2026-11-23), on PyPI and with its Desktop bundle on the GitHub release: `publish.yml`'s build, publish and bundle jobs passed, and from PyPI an empty folder and an empty home answered all ten smoke calls in 36 seconds, its catalog listing 3,124 series. It carries PRs 51 to 54: release dates for the world families, Eurostat, the BIS and Kazakhstan's base rate with the new `behind` status (items 2, 16, 23), the sticky CPI re-point (item 20), the warnings' sources (item 6), and the search fixes, the `rates_infl` fix and the website contract tests (items 12, 14, 21). Claude Desktop still runs 0.3.3 (item 25). The work in hand is the public website, built in its own private repository from this package (item 21); it reads `due` and `late` but not yet `behind`.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -1065,8 +1065,11 @@ Owner-side items are in `profile/STATE-private.md`.
     built in the private repository `KrustyKronk/bedrok-web`, created
     2026-11-19. Its open questions (mockup, hosting, which rows, the
     country-then-topic layer, the API) live in that repository's `STATE.md`,
-    not here. It depends on this package (`bedrok>=0.3.7`); nothing here
-    depends on it. What stays open on this side:
+    not here. It depends on this package (`bedrok>=0.3.11` on 2026-11-23); nothing
+    here depends on it. **0.3.12 adds a freshness status, `behind`** (a
+    series its publisher has not updated yet): bedrok-web handles only `due`
+    and `late` (`model.py`, `pages.py`), so teach it `behind` when it moves to
+    0.3.12. What stays open on this side:
     - **The package is now a dependency, and the site relies on these**
       (bedrok-web, 2026-11-19). Changing one of them changes the website:
       `core.config.set_profile` and `connect(read_only=True)`; the
@@ -1190,7 +1193,7 @@ Owner-side items are in `profile/STATE-private.md`.
     Madagascar, DR Congo, Ghana, Lebanon, Bolivia, Libya, Iraq, Uganda,
     Guyana, Laos), and Switzerland's and Bosnia's unemployment rates.
 25. **Install the latest bundle in Claude Desktop.** Desktop runs 0.3.3
-    (2026-10-16); 0.3.4 to 0.3.11 are released but untried there. Install
+    (2026-10-16); 0.3.4 to 0.3.12 are released but untried there. Install
     the newest `.mcpb` from the GitHub release over the old extension (author
     and name unchanged, so it upgrades in place; ⌘Q and reopen), then ask:
     - something about Kazakhstan and the Z.1 financing gap (items 16, 17);
