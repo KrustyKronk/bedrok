@@ -234,8 +234,10 @@ FILES: dict[str, dict] = {
         "parse": _parse_dallas_pce,
     },
     "atl_sticky": {
+        # Moved in November 2026; the old datafiles/…/stickyprice.xlsx path
+        # redirects to a 404 page. Same sheet and layout.
         "url": "https://www.atlantafed.org/-/media/Project/Atlanta/FRBA/Documents/"
-               "datafiles/research/inflationproject/stickprice/stickyprice.xlsx",
+               "research-and-data/data/sticky-price/sticky-price-data.xlsx",
         "parse": _parse_atlanta_sticky,
     },
     "philly_bos": {

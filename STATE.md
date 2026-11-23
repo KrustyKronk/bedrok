@@ -827,11 +827,18 @@ Owner-side items are in `profile/STATE-private.md`.
 5. **Catalog gaps a real question exposed** ("how have 10-year government
    bonds done over two years" for the US, Germany, France, the UK, China and
    Japan). Japan's 10-year is in (session 10), Germany's daily 10-year from
-   the Bundesbank (`de_10y_yield`, session F). Still open:
-   - **France daily:** without it France is only Eurostat's monthly average,
-     about six weeks behind. Source: Banque de France (Webstat) — not yet checked.
-   - **China's 10-year:** probably no openly licensed source (ChinaBond is
-     commercial). A candidate for `bedrok/seeds/gaps.md`, not the catalog.
+   the Bundesbank (`de_10y_yield`, session F). Settled 2026-11-23:
+   - **France daily: not carried, in `gaps.md`.** The Banque de France's
+     Webstat shows the TEC 10 but names Euronext as its producer, states no
+     licence for it, and serves it only with an account key; the ECB and
+     Eurostat publish no daily national yields. France stays on Eurostat's
+     monthly `ltgov_yield_fr`. Reopen only if the Banque de France confirms
+     in writing that the TEC curve may be reused (notes, "Webstat's
+     catalog names who made each series").
+   - **China: the monthly 10-year was already in** (`oecd_10y_cn`, the OECD,
+     from 2014, since 0.3.10); this item had not caught up. The daily curve is
+     ChinaBond's and is in `gaps.md`. ChinaBond's own terms page did not
+     load, so "commercial only" is the likely reading, not a quoted one.
 
    The same answer showed an assistant putting Bedrok's numbers and web
    numbers in one chart without saying the measures differ (Fed
@@ -991,10 +998,8 @@ Owner-side items are in `profile/STATE-private.md`.
 20. **Failures seen in session I's refresh** (2026-11-05), none from the
     session's code: the ECB's data API answered 503 (once a DNS failure) for
     twelve euro-area series and EURUSD, which looked like an outage; Destatis
-    refused `de_industrial_production` again; and the Atlanta Fed's sticky
-    CPI (`us_sticky_core_cpi`) now redirects to a 404 page. That last one
-    may be a moved file: look before the next release. Still a 404 on
-    2026-11-19.
+    refused `de_industrial_production`; and the Atlanta Fed's sticky CPI
+    (`us_sticky_core_cpi`) redirected to a 404 page.
 
     **And in the 2026-11-19 refresh** (run by `bedrok-web update`): the eight
     SLOOS and Z.1 series failed because the Fed Board renamed the data files
@@ -1004,10 +1009,27 @@ Owner-side items are in `profile/STATE-private.md`.
     passed and `bedrok-0.3.8.mcpb` is on the release. Proven from PyPI: an
     empty folder and an empty home answered all ten smoke calls in 30
     seconds (the first try raced PyPI's index), and the installed 0.3.8 read
-    a Z.1 and a SLOOS series from their zips. bedrok-web now requires 0.3.8. The OECD (11 series)
-    and Statistics Canada (3 series and its calendar) answered 403 that
-    morning, the bot checks the notes describe: re-run another day before
-    treating either as gone.
+    a Z.1 and a SLOOS series from their zips. bedrok-web now requires 0.3.8.
+
+    **Rechecked 2026-11-23:**
+    - **Sticky CPI: fixed.** The Atlanta Fed moved the file
+      (`…/research-and-data/data/sticky-price/sticky-price-data.xlsx`, same
+      layout); `tieout` found every stored month equal, and a full refresh
+      from the fix's branch brought September's revision and October.
+    - **Destatis `de_industrial_production`: not a bot check, and the table
+      code has not changed.** `42153-0001` answered through the keyed API on
+      2026-11-20 and again in the 2026-11-23 refresh. The refusal was one
+      of GENESIS's passing faults.
+    - **Destatis `de_cpi_destatis` refused instead,** in the 2026-11-23
+      refresh: Status 7000, "no data cube" for `61111-0002`, the same fault
+      as 2026-10-12 (notes, GENESIS). It fetched on 2026-11-20, and the
+      stored history to October stands. Recheck before changing anything;
+      if it persists past the November flash, look for a CPI rebase.
+    - **The OECD and Statistics Canada answer again:** all 11 OECD series,
+      the OECD world families and StatCan's 3 series and calendar fetched
+      in the 2026-11-23 refresh with no 403. So did every ECB series and
+      EURUSD. Every other stage of that refresh was clean (the HICP set skips
+      Kosovo by design, outside Eurostat's reuse grant).
 
 21. **The public website** (decided 2026-11-19; session 15 in the plan) is
     built in the private repository `KrustyKronk/bedrok-web`, created
