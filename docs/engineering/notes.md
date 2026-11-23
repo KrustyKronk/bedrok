@@ -1240,3 +1240,47 @@ found, and why each fix has the shape it has:
   tools. The author is now fixed for good; the fix for an affected install is
   to set the folder on the new extension and uninstall the old one.
 
+
+## Lessons kept from the session history (2026-11-23)
+
+When the session accounts moved out of `STATE.md` into `docs/history.md`,
+these were the hard-won facts in them that were not yet here.
+
+- **A percentile of an event series counts decisions, not time.** A rate
+  that gains a row only on a change (the ECB's rates, Kazakhstan's base rate)
+  has one observation per decision, so its percentile ranks decisions, not
+  days spent at each level. Carry the value forward to daily or monthly first
+  if the question is about time.
+- **A missing month removes the annual rate a year later too.** `yoy` matches
+  by date, so US CPI's absent October 2025 means no October 2026 annual rate,
+  while the index is held and freshness says 2026-10-01. Expect the same a
+  year after any gap; check what the publisher itself printed for that month.
+- **The National Bank of Kazakhstan's schedule fails in early January** until
+  the bank posts that year's page; the feed keeps the stored dates. A red
+  `nbk_base_rate` calendar line then is expected, not a code fault.
+- **Z.1 asked one series at a time costs about 13 s a series**, because
+  `refresh_series` calls `clear_download_caches()` on every call, so the
+  37.6 MB zip is downloaded and parsed again for each. A full refresh reads
+  it once. Fix it there if a cold session asking several Z.1 series is slow.
+- **PyPI's project page does not resolve relative image paths,** so the
+  README's logo is an absolute `raw.githubusercontent.com/.../main/...` URL.
+  The icon is also sent inline in `serverInfo.icons`, so
+  `bedrok/surfaces/icon.png` must stay package data (`tests/test_install.py`).
+- **A macOS CI job can sit queued past GitHub's 15-minute limit** and be
+  cancelled without running a step (the 0.3.5 release PR). Re-run it before
+  reading it as a failure.
+- **Destatis's Status 7000 ("no data cube") on the CPI tables is
+  intermittent:** 2026-10-12, a clean fetch on 2026-11-20, again on
+  2026-11-23. Change the table code only if it persists past a flash release
+  (then look for a CPI rebase).
+- **When a schedule page refuses programs, read the habit off FRED's update
+  dates** for the same series: that is how JOLTS and PPI got their rules. The
+  result is a rule ("usually"), never a calendar date.
+- **`customs.gov.ru` and `pravo.gov.ru` did not answer from the owner's
+  network** (2026-11-23), so the Russian warning rows cite press or analysis.
+  Retry from another network or through web.archive.org.
+- **Ten-year yields across countries are not one measure:** H.15 constant
+  maturity, the Bank of England's zero-coupon curve, Eurostat's monthly
+  averages of a benchmark bond, the Bundesbank's fitted curve, web point
+  quotes. A cross-country chart must say so, and never splice one into
+  another.

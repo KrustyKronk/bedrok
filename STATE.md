@@ -1,629 +1,23 @@
 # Where Bedrok stands
 
-**Updated 2026-11-23. 0.3.12 is the latest release (2026-11-23), on PyPI and with its Desktop bundle on the GitHub release: `publish.yml`'s build, publish and bundle jobs passed, and from PyPI an empty folder and an empty home answered all ten smoke calls in 36 seconds, its catalog listing 3,124 series. It carries PRs 51 to 54: release dates for the world families, Eurostat, the BIS and Kazakhstan's base rate with the new `behind` status (items 2, 16, 23), the sticky CPI re-point (item 20), the warnings' sources (item 6), and the search fixes, the `rates_infl` fix and the website contract tests (items 12, 14, 21). The owner installed 0.3.12 in Claude Desktop the same day, one extension, replacing 0.3.3; what it brought is untried there yet (item 25). The work in hand is the public website, built in its own private repository from this package (item 21); it moved to 0.3.12 and shows `behind` as "waiting on the publisher" (bedrok-web PR 8).** Bedrok is a local MCP server and store of
-public macroeconomic data, each series fetched from its publisher. The plan is
-`docs/rebuild-plan.md`; the reasoning behind it is
-`docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
-portfolio), 2 (one local store), 3a and 3b (every series to its publisher, FRED
-held only for the conversation), 4 (the source list and one SDMX client), 5
-(the MCP server), 6 (packaging and the zero-key first run), 7a (the second
-wave of publishers) and 7b (warnings, the gaps note, the menu review) built
-it. The owner then used it as an analyst would (2026-10-11), and the feedback
-became sessions 8 (lining up the data), 9 (charts and answers), 10 (the data
-the questions needed) and 11 (tidying the catalog). Session 12 opened it:
-**Bedrok is public**, at `github.com/KrustyKronk/bedrok` and on PyPI
-(`uvx --python 3.12 bedrok serve`), with the Desktop bundle on the release.
-**0.3.0 is released** (2026-10-14): sessions A, correct answers, B, the Fed
-Board watch, C, breakdown questions, D1, chart and tool mechanics, and D2,
-discovery and catalog, are on PyPI and in the Desktop bundle attached to the
-GitHub release. Proven from PyPI: an empty home with no keys answered all
-nine smoke calls in 56 seconds. **0.3.1 is released** (2026-10-16): session
-13a (release rules, the publishers' own dates, `release_calendar`) is on PyPI
-by `publish.yml` and in the Desktop bundle attached to the v0.3.1 GitHub
-release, which was scanned against the owner's terms before upload (only the
-author credit matched). Proven from PyPI: an empty home with no keys answered
-all nine smoke calls, ten tools, in 30 seconds. **The owner installed it in
-Claude Desktop on 2026-10-16 and `release_calendar` worked there.** **Sessions
-E** (the acceptance test's smaller frictions and three small items), **F**
-(the probe-and-repoint pass) **and G** (a fresh install that finds the bulk
-families, the bundle built by CI) are **released as 0.3.2** (2026-10-16), the
-first release whose bundle `publish.yml` built and attached: the run's
-build, publish and bundle jobs all passed, the wheel and sdist are on PyPI
-and `bedrok-0.3.2.mcpb` is on the GitHub release. Proven from PyPI: an empty
-folder and an empty home answered all ten smoke calls in 32 seconds, the
-home check passing. **Session H** (four more publishers' own release dates)
-is **released as 0.3.3** (2026-10-16). `publish.yml`'s build, publish and
-bundle jobs all passed, and `bedrok-0.3.3.mcpb` is on the release. Proven from
-PyPI: an empty folder and an empty home answered all ten smoke calls in 36
-seconds. **The owner installed 0.3.3 in Claude Desktop the same day** (the
-first CI-built bundle to be installed). Ten questions covering E, F, G and H
-all gave the intended answers there:
-- exact release dates named with their publisher for Canada, Spain, the ECB,
-  H.4.1, H.8 and the SLOOS;
-- gold and Türkiye found on the installed store;
-- the quarterly-average footnote and the five-country title;
-- `latest_period` for an annual series;
-- the Bundesbank's daily Bund.
+**Updated 2026-11-23.** 0.3.12 is the latest release (2026-11-23, on PyPI,
+with the Desktop bundle on the GitHub release), and Claude Desktop runs it.
+The work in hand is the public website, built in its own private repository
+from this package (item 21).
 
-**0.3.4 is released** (2026-10-29): the four Kazakhstan sessions, 37 series
-from the National Bank, the Bureau of National Statistics, the IMF, Eurostat
-and JODI. `publish.yml`'s build, publish and bundle jobs all passed, the wheel
-and sdist are on PyPI and `bedrok-0.3.4.mcpb` is on the GitHub release.
-Proven from PyPI: an empty folder and an empty home answered all ten smoke
-calls in 36 seconds, with 769 catalog series, then fetched `kz_cpi_yoy`,
-`kz_base_rate`, `kz_crude_production` and `weo_gdp_growth_kz` on demand. The
-first try raced PyPI's simple index a minute after upload; it listed 0.3.4 on
-the retry.
+Bedrok is a local MCP server and store of public macroeconomic data, each
+series fetched from its publisher. The plan is `docs/rebuild-plan.md`; the
+reasoning behind it is `docs/research/2026-10-09-open-bedrok-brainstorm.md`.
+What each session and release built, and how it was proven, is
+`docs/history.md`; read it only when a question sends you there.
 
-**0.3.5 is released** (2026-11-02): the eight capex-cycle series below.
-`publish.yml`'s build, publish and bundle jobs all passed, the wheel and sdist
-are on PyPI and `bedrok-0.3.5.mcpb` is on the GitHub release. Proven from
-PyPI: an empty folder and an empty home answered all ten smoke calls in 28
-seconds, with 777 catalog series, then fetched `us_ebp`,
-`us_z1_nfc_financing_gap` and `us_z1_nfc_capex` on demand (the two keyless
-new paths; the BEA and Census rows need keys the clean home does not have).
-The release PR's macOS clean-install job sat queued for GitHub's 15-minute
-limit and was cancelled without running; the re-run passed in under a minute.
-
-**The logo (2026-11-05).** An orange tile with a black block B, the owner's.
-One PNG, `bedrok/surfaces/icon.png` (512x512), is both the Desktop bundle's
-`icon` in `packaging/mcpb/manifest.json` and the server's `serverInfo.icons`,
-sent inline as a data URI when any host connects, so it ships in the wheel as
-package data too. The source artwork is `packaging/mcpb/icon.svg`. The README
-shows it from `raw.githubusercontent.com` on `main`, because PyPI does not
-resolve a relative image. `tests/test_install.py` checks that the manifest
-path exists and that the server sends exactly that file.
-
-**0.3.6 is released** (2026-11-05): the logo, nothing else. `publish.yml`'s
-build, publish and bundle jobs all passed, and `bedrok-0.3.6.mcpb` is on the
-GitHub release. Proven from the published artefacts: the released bundle's
-manifest is 0.3.6 with the icon, and the bundle and the PyPI wheel each carry
-the logo byte for byte; a clean `uvx --python 3.12 bedrok==0.3.6 serve` on an
-empty folder answered initialize as `Bedrok` 0.3.6 with the 512x512 PNG in
-`serverInfo.icons`.
-
-**0.3.7 is released** (2026-11-05): session I, nothing else. `publish.yml`'s
-build, publish and bundle jobs all passed, and `bedrok-0.3.7.mcpb` is on the
-GitHub release. Proven from the published artefacts: the released bundle's
-manifest is 0.3.7 and carries `ingest/calendars.py` and the calendar seed;
-PyPI has the 0.3.7 wheel and sdist; a clean `uvx --python 3.12 bedrok==0.3.7
-serve` on an empty home passed `scripts/mcp_smoke.py`, and the installed
-package lists the six meeting feeds.
-
-**Session I in one paragraph (2026-11-05).** Asked "does the calendar
-include the FOMC?", Bedrok had every policy rate's decisions after the fact and
-no bank's meeting dates. Now six banks' schedules are fetched from their own
-pages, at most once a day, into `release_calendar` as six new feeds
-(`fomc_calendar`, `ecb_meetings`, `boe_mpc`, `boj_mpm`, `boc_rate`,
-`rba_board`): the day is the bank's and the time its usual practice, said with
-"usually", except the Bank of Canada's, which its page states. The six series
-that show a decision on its day (the Fed's two bounds, the ECB's two rates,
-Bank Rate, the Bank of Canada's target) are linked to their bank in
-`release_calendar.csv` and judged by its decisions, not by a rule: `due` once
-the bank has decided and the store does not show it, `late` two days after the
-day it should first show, which is read off each bank's own series (the New
-York Fed and the Bank of Canada date a change from the next day, Bank Rate on
-the day, the ECB from the following Wednesday). A rate that gains a row only
-on a change shows a hold through a fifth table, `series_checks`, the last fetch
-without error, written by `sync_macro`. The Bank of Japan and the RBA are dates
-only: their rates are the BIS month-end rows. `release_calendar` lists the
-decisions with the statistics (the two Fed bounds on one line), a past
-decision is kept when a bank's page drops it, the six pages each have a
-`smoke` check, and the catalog note on the Fed's target says a decision shows
-the next day. Bedrok never says what a bank is expected to decide.
-Proven: 512 tests; a full `bedrok refresh` of the real store from this branch
-stored 56 FOMC, 18 ECB, 16 Bank of England, 16 Bank of Japan, 1 Bank of Canada
-and 16 RBA decision dates and recorded 234 series checks. It exited 3 on 15
-failures outside this session (item 20). The Bank of England decided on the
-morning of the session: on a copy of the store taken before the refresh the
-calendar listed Bank Rate as due, data to 28 Oct; the refresh brought the
-5 Nov row (3.75 to 4.00) and it turned fresh, next decision 17 Dec. On the
-live store every linked rate now names its bank's next decision (the FOMC and
-the Bank of Canada on 9 Dec, the ECB and the Bank of England on 17 Dec).
-
-**Next:** the public website (item 21), built in its own private repository
-beside this one. Then try in Claude Desktop what 0.3.4 to 0.3.12 added (item 25), a cold question on a release morning
-(item 1), and whichever open item the owner picks.
-
-**The capex-cycle series in one paragraph (2026-11-02).** A downstream
-dashboard that asks whether the AI build-out is outrunning its revenue needed
-eight public series it was about to fetch from FRED with a key of its own;
-they are Bedrok's now, all public domain and stored. Four come from the Fed
-Board's **Z.1** Financial Accounts with no new code: `fedboard` already reads
-`releases/z1/data/FRB_Z1_xml.zip` (37.6 MB zipped, a 620 MB XML, about 14 s to
-stream-parse): `us_z1_nfc_financing_gap`, `us_z1_nfc_capex`,
-`us_z1_nfc_debt_issuance` and `us_z1_nfc_debt`, 1946 to 2026 Q2. Two are BEA
-NIPA lines: `us_nominal_gdp` (table 1.1.5) and `us_ip_investment`
-(information-processing equipment and software, table 5.3.5 line 31). Two
-needed a little code: `census` gains a workbook path, `c30:<book>:<heading>`,
-because the construction API has no data-centre category and the line exists
-only in `privtime.xlsx` (`us_dc_construction`, NSA, from January 2014); and
-`fedfiles` gains the Board's excess bond premium file (`us_ebp`, 1973 on). The
-Z.1 series take the Fed calendar's own dates ("Z.1" is on its monthly pages),
-the BEA pair BEA's; C30 and the EBP are on rules. The `fedboard` download
-cache grew to twelve slots, and `clear_download_caches` now clears the Census
-workbook too. Proven: 493 tests; `backfill --only` filled all eight from the
-publishers; the information-processing share of GDP reads 5.35% in 2026 Q3
-and 4.46% in 2000 Q4, matching FRED's copies of the same lines.
-
-Session 13 is split: **13a, the release calendar**, is in (three parts,
-below, and session H's four more feeds; what is left is item 2); **13b,
-revisions and vintages**, stays deferred.
+**Next:** the public website (item 21). Then try in Claude Desktop what 0.3.4
+to 0.3.12 added (item 25), a cold question on a release morning (item 1), and
+whichever open item the owner picks.
 
 **Owner-side items** — the ones that need the owner's accounts or describe one
 machine — live in `profile/STATE-private.md`, which is gitignored. This file
 holds only what any reader may see.
-
-**Sessions K3 and K4 in one paragraph.** Kazakhstan's scope is finished
-with 13 more series and no new adapter but one. From the IMF, through the
-existing SDMX client, come the quarterly current account and net
-international investment position in millions of dollars, four World Economic
-Outlook rows and three from the Middle East and Central Asia outlook,
-including non-oil growth and the non-oil fiscal balance. The client learned a
-`#scale=` suffix, because the IMF answers in whole dollars. Eurostat gives EU
-exports to and imports from Kazakhstan, the mirror-trade check, and that
-warning is now found by "kazakhstan exports" without riding on every Kazakh
-question. A new `jodi` adapter reads JODI's yearly oil files for Kazakhstan's
-crude and condensate from 2016, when the split begins, and the
-crude-condensate warning links to both. Backfilled into the repo store,
-smoke 42/42. Released in 0.3.4.
-
-**Session K2 in one paragraph.** Kazakhstan's own statistics follow the
-National Bank's: 11 series from the Bureau of National Statistics through its
-Taldau API, a new keyless adapter (`bns`). They are the CPI (an index on
-December 2010 and the published annual and monthly rates, from 2011), core
-inflation (from 2023 only), real GDP growth year to date and nominal GDP by
-quarter (from 2010), industrial production (from 2014), unemployment (from
-2013, with gaps), the average wage (from 2015) and new and resale apartment
-prices (from 2015). The bureau publishes changes as relatives (109.3) and
-GDP year to date. Bedrok subtracts 100, and makes discrete nominal quarters
-by subtracting each year-to-date level from the next; the quarters sum to the
-published year in every year. The bureau's release calendar is a feed of its
-own for the CPI, industry and wages. Backfilled into the repo store, refresh
-clean apart from one INE timeout that passed on retry, smoke 41/41. Released
-in 0.3.4.
-
-**Session K1 in one paragraph.** Bedrok carries Kazakhstan for the first
-time: 13 series from the National Bank of Kazakhstan, a new keyless adapter
-(`nbk`). They are the base rate (from 2015), gross and net reserves and the
-National Fund's FX assets (from 1993 and 2001), M2 and M3 (from 1994), tenge
-deposit rates for households and companies (from 1996), the real and nominal
-effective rates (from 1995, Dec-2016=100) and households' inflation
-expectations (from 2016). The tenge joins the FX layer as `usdkzt` and
-`eurkzt`, both the bank's own official rates, so no cross is derived. Seven
-of the series read the bank's own next-release date from their statistics
-page. The month each figure belongs to was checked against the IMF: M3
-equals its broad money to the million. Backfilled into the repo store, smoke
-40/40, validate and doctor clean. Released in 0.3.4.
-
-**Session H in one paragraph.** Four more publishers give Bedrok their
-own release dates, so 25 more series say "scheduled for" with the publisher
-named rather than "usually":
-- **Statistics Canada**: CPI, the Labour Force Survey and monthly GDP, from
-  its key-indicator JSON.
-- **INE**: the final CPI and the EPA, from its iCal file. The Spanish-titled
-  flashes are left out.
-- **The ECB**: monetary developments, bank interest rates and the bank
-  lending survey, from its statistical calendar page.
-- **The Fed Board**: G.17, H.6, H.4.1, H.8 and the SLOOS, from its monthly
-  calendar pages.
-
-Fourteen of these series had no rule at all and now have one. A rule may sit
-up to a quarter inside its period, because the SLOOS and the ECB's survey
-come out inside the quarter they are dated by. Building this found a bug in
-how a date without a reference period is matched. Taking "the first release
-after the period ends" gave the H.8 the previous week's date every week, and
-gave the two surveys none. Matching now starts three days before the rule's
-own earliest date. The iCal parser also learned the standard's CRLF line
-endings; INE serves LF.
-
-Probed and still without an export: Eurostat (a portlet with no iCal), Istat
-(every calendar path 404 or 500), and the Fed's charge-off rates (not on the
-monthly pages). `us_ci_loans` stays on age, because which weekly H.8 carries
-its monthly figure was not pinned down.
-
-Proven:
-- 458 tests, each feed tested on an inline fragment through `freshness.assess`.
-  The H.8 and survey tests fail against the old matching.
-- Every feed fetched live with every configured release name present.
-- A full `bedrok refresh` of the real store from this branch with no failures; its
-  calendar stage stored all five fetched feeds.
-- `validate` passed every check.
-- In process against the real store, `release_calendar(days=30)` listed:
-  - Canada's CPI on 19 Oct;
-  - Spain's EPA, and the ECB's money and bank lending survey, on 27 Oct;
-  - Spain's CPI on 13 Nov;
-  - the Fed's G.17 today and H.6 on 27 Oct.
-
-  Each was "scheduled for", with the publisher named. `us_bank_credit`
-  named today's 16:15 H.8 for the week to 7 Oct.
-
-**Session G in one paragraph.** Item 15 said a fresh store listed 436
-series; counted on `main` it held 639, so the README's "more than 500" was
-already true. The real cost was discovery: the 93 rows only a bulk download
-registers (49 Pink Sheet, 5 CFTC, 39 broad HICP) were missing until a
-refresh, so on a new install "gold" found nothing, "copper price" found house
-prices and "turkey inflation" found nothing. Every cold test had run on the
-owner's refreshed store. The rows ship as `bedrok/seeds/bulk_catalog.csv`,
-written from a refreshed store (the Pink Sheet's units and the HICP labels
-exist only in the downloads), and `load_catalog` adds them without
-overwriting, so a download still refines them; the server already sent an
-empty bulk row to its family's download. A fresh store lists 732; README and
-manifest say "more than 700" (the manifest said "about 160"). `publish.yml`
-builds the Desktop bundle and attaches it, only after PyPI took the wheel,
-with the packer pinned (`@anthropic-ai/mcpb@2.1.2`) and the general
-publication gate run on the bundle; the owner relies on the local scan of the
-tracked tree for their private terms (2026-10-16). Proven: 452 tests (4 skip
-without a built wheel or bundle, or the owner's term list; all six gates
-passed on a locally built wheel and bundle with the list); a fresh scratch
-store found gold, copper and Türkiye by words and fetched `wb_gold` and
-`hicp_yoy_tr` on first ask; a full `bedrok refresh` of the real store
-from this branch with no failures (the seed overwrote no downloaded name or
-units; 732 rows, none empty); `validate` passed every check; a dispatch run
-of `publish.yml` built the bundle in CI (version 0.3.2, ten tools, the seed
-inside) and skipped publishing, as intended.
-
-**Session F in one paragraph.** Every publisher that refused on 2026-10-11
-was asked again on 2026-10-16. The Bundesbank answered, so it is the 31st
-publisher (`bundesbank`, the SDMX client, ESCB reuse terms: free, cite the
-source, do not modify) with one series, `de_10y_yield`, the daily 10-year Bund
-from 1997-08: a yield read off the Bundesbank's fitted curve, about 0.08 point
-above Eurostat's monthly `ltgov_yield_de` (correlation 0.9996 over 350
-months), which stays the German leg of the monthly spreads. The probe found
-the trap before the store did: the Bundesbank refuses a month-form
-`startPeriod` with 400, which the client reads on an incremental fetch as
-"nothing new", so the series would have frozen after its first pull with no
-error anywhere. `sources.csv` gains a `start_period` column (`day` for the
-Bundesbank) and the client sends the whole date for it. BEA answered (NIPA to
-2026-08). The Labor Department's claims API still ends four weeks behind
-FRED (2026-09-12 against 2026-10-10), so claims stay on FRED. Eurostat's
-government debt release had not moved (2026-Q1 out on 2026-07-21, 112 days
-after the quarter): the 260-day allowance was too short for a quarter dated
-at its start, so it is 310 and the family has a release rule (108 to 118
-days, 11:00 Brussels) that will call 2026-Q2 due around 22 October. Proven:
-448 tests (3 skipped; the owner's term list passed when pointed at it); the
-incremental fetch live through the client; two full `bedrok refresh` runs of
-the real store from this branch, no failures in either (the first pulled the
-Bund's 7,410 days, the second fetched it incrementally with the fix, 6 rows
-to 2026-10-15); `validate` with no findings at all, the Eurostat debt lag
-gone (Canada's CPI and US industrial production printed as due, not
-counted).
-
-**Session E in one paragraph.** The D2 acceptance test's smaller frictions,
-each checked on the real store, plus three small items. `get_series` takes
-seven ids, as `chart_series` does, so a breakdown's parts come in one call.
-A chart's suggested title names every series; a family's rows ("<measure> —
-<place>") say the measure once ("Real GDP growth, annual — Germany, France,
-Italy, Spain and Netherlands"), which the first live run showed was needed:
-naming each in full repeated the measure five times. Freshness carries
-`latest_period` ("2025", "Q2 2026") beside `age_days`, and the server
-instructions say to name it rather than the age; the age rule is unchanged.
-A chart whose values were combined says so per series in a footnote, with
-the other way ("quarterly averages of daily values; `how: last` gives
-quarter-end values"), from a new `table.aggregated`. `backfill` exits 3 on
-failures, as `refresh` does. `list_sources` names the `home` and `store` it
-answers from, and `scripts/mcp_smoke.py` fails when that home is not under
-the `HOME` (or `BEDROK_PROFILE`) it was started with (`--any-home` turns it
-off). `wb_shrimp` is retired (it ends 2023-10 and held every incremental Pink
-Sheet download back to 2023). The "who publishes what is missing" map is
-closed by decision: the warnings carry it where it matters. Proven: 446
-tests (3 skipped: the wheel checks, and the owner's term list, which passed
-when pointed at it); every changed tool in process against the real store;
-the smoke script FAILED from a folder holding `./profile` and passed from an
-empty one; `backfill` with the network blocked exited 3; a full `bedrok refresh` of the real store
-from this branch with no failures (shrimp's rows and catalog row gone, the
-Pink Sheet's oldest last date now 2026-07); `validate` clean but for the
-known Eurostat debt lag.
-
-**Session 13a, part 3, in one paragraph.** A tenth tool, `release_calendar`,
-answers the two questions the calendar was for. With ids, each series' next
-release ("when is the next CPI?"); without, every release Bedrok knows of
-from now to `days` ahead ("what is out this week?"), overdue ones first,
-series that come out together on one line (the seven Treasury yields, the
-three H.4.1 series), a family as one line spoken for by its freshest member,
-each time in the publisher's zone and on the reader's clock, `approximate`
-when it is a rule. A list never fetches a series; asking for one does. A new
-test fails when the bundle manifest and the server's tools differ (nothing
-checked it before). Proven: 440 tests; on the live store the week's list
-showed five releases due that nobody had asked for and the ONS's exact UK
-dates; `scripts/mcp_smoke.py` from an empty home passed with ten tools in
-14 seconds.
-
-**Session 13a, part 2, in one paragraph.** Where a publisher states the date,
-it replaces the rule's window: a `release_calendar` table (the store's
-fourth), `ingest/calendars.py`, and `bedrok/seeds/release_calendar.csv`
-naming the feed and release per series. BEA's schedule (one JSON of every
-release's dates into 2027) is read at most once a day, by the server before
-it judges a BEA series and by a new last `refresh` stage; the ONS's
-`nextRelease`, already inside the series JSON the adapter downloads, is
-recorded after every fetch at no extra request. PCE, GDP, UK CPI and CPIH,
-UK monthly GDP and the UK unemployment rate now say "scheduled for 29 Oct
-2026, 08:30 EDT (BEA's release schedule)", not "usually". The next date is
-the first after the period is over, which matters: BEA publishes August's PCE
-on 30 September. A date far past the rule's window is not believed, a failed
-fetch keeps the stored dates, and an exact date is late a day after it, not
-two. The ONS dates also caught a wrong rule from part 1: an LFS window is
-dated by its middle month, not its first (the notes have it). **The BLS is not in it:** its website answers any program with an
-"Access Denied" page on automated retrieval, so its iCal file is off limits
-and BLS series stay on their rules. `docs/RELEASES.md` (and
-`bedrok://releases`) lists every rule and feed. Proven: 437 tests; a full
-`bedrok refresh` against the real store with no failures, its calendar stage
-storing 194 BEA dates and the ONS series ten next-release dates, after which
-PCE and GDP read "scheduled for 29 Oct 2026, 08:30 EDT" and UK CPI "21 Oct
-2026, 07:00 BST" from the live store.
-
-**Session 13a in one paragraph.** On 2026-10-15 the September US CPI came
-out at 08:30 ET and Bedrok served August as fresh: freshness was age alone,
-and the August point (dated 08-01) was 75 days old against a 90-day
-allowance, so it would have passed as current until 30 October. The owner
-caught it only because the assistant searched the web. Every series a
-publisher releases on a schedule now carries a **release rule**
-(`bedrok/seeds/release_rules.csv`, 44 rows, `core/releases.py`): the next
-period is expected so many days after it ends, at a time in the publisher's
-zone (stdlib `zoneinfo`), rolled to a weekday when one is set. `freshness`
-gains two statuses, `due` (inside the window) and `late` (past it and a
-two-day grace), and every answer's freshness carries `next_release` with the
-sentence to say ("September 2026 is usually out between 12 Oct and 19 Oct
-2026, 08:30 EDT, and is not in the store yet; August 2026 is the latest
-held"). The server fetches a due series before answering, tries again after
-half an hour (six hours for a stale one), never lets an attempt from before
-the release time hold the release back, says "arrived" only when a newer
-period did (it used to say "refreshed now" either way), and refreshes a
-derived series' inputs first. A late release is a chart footnote; `validate`
-prints due and late lines without counting them; the instructions say to
-give the message and never present the latest held period as the newest.
-A seed test holds every rule inside its series' allowance, which raised
-eleven: PCE 105, M2 100, H.8 credit 28, euro-area unemployment 100, euro-area
-GDP 240, UK monthly GDP 115, Japan's CPIs 95, and the UK unemployment rate
-155. (Part 1 first assumed the LFS window is dated by its first month and
-set 180; part 2's ONS dates showed it is the middle month, so the rule and
-allowance were corrected.) Rules are per series or per uniform
-family (`cot_`, `wb_`) only: a BLS-wide default would call JOLTS late every
-week. Eurostat's and Destatis's flashes come before the month ends, so a lag
-may be negative. Proven: 422 tests; on the live store `validate` showed
-fourteen series due that age had called fresh (US retail sales and industrial
-production, every Treasury yield, UK CPI, the euro-area HICP final, Canada's
-CPI); and on a copy of the store with September CPI deleted, the server in
-process reported it due, fetched it from the BLS and turned fresh with the
-November window. The research behind the next part (which publishers publish
-a calendar a program can read) is in `docs/engineering/notes.md`. Not yet
-released as 0.3.1 on 2026-10-16.
-
-**Session D2 in one paragraph.** The self-test's discovery frictions, each
-reproduced on the live server first. The six FX pairs answer as series in
-every tool (`eurusd`, `gbpusd`, `usdeur`…, "USD per EUR"; capitals as
-aliases): `sync_fx` mirrors `fx_rates` into the catalog, guarded out of the
-macro stage, which the owner chose in planning over a branch in the server.
-Search: the published headline wins a tie (`us_cpi_nsa` over `us_cpi`), the
-Fed's balance sheet is named so that "central bank balance sheet" finds it,
-a place Bedrok covers draws only the warnings its words are about ("us 10
-year yield" no longer carries five BLS notices), and an empty answer for a
-place says why (what Bedrok holds there, or which agency the warnings cite).
-A search whose place left nothing crashed; fixed. Refresh answers for the id
-asked, not for its family's other members, says how many observations
-arrived and the last date before and after, follows aliases, and stamps its
-timezone. New rows: the Bank of England's 5- and 10-year real yields and
-10-year breakeven (RPI-based, said, with the 2030 alignment), the gilts
-naming their parts, `validate` holding each yield to its parts; Japan's
-headline CPI; the IMF's annual growth for Japan; quarterly Japanese GDP on
-the gaps page. `uk_gdp_annual`'s allowance went to 800 days, which the
-acceptance test showed it needed. The full refresh then showed the 10-year
-identity exact on every day but two, both the Bank's own errors (1996-09-27,
-all zeros; 2022-11-28, real yields 1.4 points high), kept as published and
-named; the 5-year only holds within 0.1, since the Bank fits the curves
-apart there, and is reported as info. Proven: 396 tests; a full `bedrok
-refresh` against the real store with no failures at all (the OECD and
-Destatis answered again); `validate` clean but for the known Eurostat debt
-lag; every change through the server in-process against the real store.
-The running servers keep their old code until a reconnect.
-
-**Session D1 in one paragraph.** The chart and tool mechanics the self-test
-found wanting, each verified on the self-test's own chart against the real
-store. Units share a scale by kind (`units.dimension`: every percentage-like
-unit is one, each index base its own), so Spain's two growth rates and a
-breakdown's parts and total sit on one scale. A transform per series
-(`transforms`) puts a price index charted as a rate beside a published rate
-in one recipe. Outside data is drawn beside Bedrok's (`extra`: label, units,
-publisher), named "fetched by Claude, not via Bedrok" on the source line and
-in a footnote, never in a contribution stack. A daily calendar (the days the
-series have, no weekend slot) is chosen by itself for daily data over three
-years or less: a month of the VIX is twenty points, not four. A rate dated
-at its decisions runs to the end of the chart with its last change in a
-footnote. A week that ended on partial data says "holds data to Tue 6 Oct
-only". Titles say the transform ("US CPI, annual rate"); `at` a date gives a
-bar per series with a footnote naming values older than the date; a money
-level's percentile carries a caveat and the instructions say to rank its
-ratio or growth. Parts in one call (`with_related`): a yield with its real
-yield, breakeven and term premium, `describe_series` saying which related
-series are parts. House style updated.
-
-**Session C in one paragraph.** The breakdown questions both feedback logs
-took to Eurostat are answered from the store. Eurostat families:
-`gdp_annual_<geo>` (real growth by year, 13 places, from 1996, France from
-1975) and each expenditure part's contribution to growth, annual
-(`gdp_contrib_<part>_<geo>`) and on a year earlier (`gdp_contrib_q_…`; no
-Germany or Netherlands, which Eurostat does not publish, owner's choice),
-with net trade derived as exports plus imports. The euro area is EA21. The
-US parts are BEA's (`us_gdp_contrib_*`, annual rate, from 1947); UK annual
-growth is the ONS's own (`uk_gdp_annual`, from 1949), its contributions on
-the gaps page. `gdp_yoy_uk` and `gdp_annual_uk` answer as aliases. Search
-shows contribution rows only when the words ask for parts, names the
-nearest series when nothing matches, and a total and its parts point at
-each other under `related`; `list_series` gives first dates. Charts: a
-breakdown comes back as `form: stacked_bars` with its total on one scale, a
-title naming the total and a footnote on whether the parts add up; seven ids
-per chart; the palette's hex values are in the house style; an unfinished
-period's footnote says how many observations it holds ("6 observations, 1 to
-8 Oct 2026"). `validate` checks the parts add up: Spain ties to the logged
-answer exactly (2025: 2.59 against 2.6); 20 of 23 pairs add up within 0.1,
-and Greece, Portugal and Finland quarterly do not, because Eurostat adjusts
-each part alone (Greece by 1.3 points in 2011, said in the note). Proven: a
-full `bedrok refresh` (187/199; the 12 failures are the OECD bot check and
-Destatis) and every new path through the server in-process. **The acceptance
-test passed on 2026-10-14** (session D2): a cold session with only the
-server, asked Spain's growth by expenditure, the US 10-year by quarter and
-annual growth across the big European economies, answered all three from
-Bedrok alone, nine calls, nothing fetched outside. Its friction notes are in
-D2, and session E fixed them.
-
-**Session B in one paragraph.** The Fed Board's retirement of its Data
-Download Program turned out not to touch Bedrok: the adapter reads the
-release-page zips, and the Board's notice says those stay (the interactive
-tool goes the week of 2026-11-09, the pre-built packages later). So nothing
-moved source and no history was lost. What changed: `smoke` now HEADs every
-one of the eight release zips and prints its Last-Modified date, so a file
-that goes shows in the Tuesday liveness run; SLOOS, the one release with no
-release page, falls back to the survey's chart-data HTML table when its zip
-is gone (`parse_sloos_html`, tied out against every stored observation of
-the four series: all equal); the download cache holds eight zips instead of
-four, so a run no longer fetches H.10 twice. The re-point recipes for the
-day a zip does go (Treasury's par and real curves for the yields, the ECB
-cross for GBPUSD, and which series have no non-FRED source at all) are in
-`docs/engineering/notes.md`. Proven live: the forced fallback against the
-current survey page matches the store exactly, `validate` is clean but for
-the known Eurostat debt lag, and `smoke` passed 36 of 38 with all eight zip lines green (the two failures are the OECD bot check and the Destatis outage, item 3).
-
-**Session A in one paragraph.** The cold-session self-test's bugs, each
-pinned by a test of what a user hit. Search matches a warning's country as a
-name, so "trade balance", "government debt" and "central bank" find their
-series again; countries Bedrok carries only inside the broad HICP set
-(`geography.FAMILY_CODES`, Türkiye among them) and the ECB's rates have a
-place, so "turkey inflation" and "euro area deposit rate" find them. The
-October 2025 warnings reach the unadjusted CPI, the 3-month rate,
-participation and U-6; Turkey's warning reaches `hicp_yoy_tr`. Dates are read
-one way everywhere (`core/dates.py`: YYYY, YYYY-MM, YYYY-MM-DD), and a bad
-date, a start after the end or a `since` past the data is refused in words.
-`chart_series` marks a series no scale can take `axis: null, drawn: false`
-(`not_drawn`) instead of putting it on the left. The euro-area surveys moved
-to EA21 (their EA20 stopped at 2025-12; EA21 carries the history from 1980),
-the EA20 ids now aliases. Eurostat's grant is EU, EFTA and candidate
-countries: the broad HICP set keeps only `pipeline.REUSE_GEOS`, Kosovo is
-retired, and the attribution says so. The server instructions now tell the
-assistant to label numbers fetched outside Bedrok and check them against a
-stored headline. Proven against the real store: a full `bedrok refresh`
-(177/189; the 12 failures are the OECD bot check and Destatis, item 3), then
-every failing self-test call repeated through the server in-process.
-
-**Session 12 in one paragraph.** The tree was audited for anything personal and
-cleaned: a lock file whose name carried private detail, one research document
-and a maintainer note went; the engineering notes lost their portfolio-era
-sections (1,248 lines to under 600); every working document now says "the
-owner". `tests/test_publication.py` makes that permanent: it fails on home
-paths, literal key values, token shapes and files that belong only in
-`profile/`, in the tracked tree and in the built wheel, and checks an owner's
-private term list when `profile/publication-terms.txt` exists. The first public
-version is **0.2.0**, released to PyPI by trusted publishing (`publish.yml`:
-OIDC, no token; it refuses a tag that disagrees with `pyproject.toml` and runs
-the empty-home check on the very wheel it uploads). `bedrok smoke` now paces
-its checks, prints WARN when a publisher answers with data older than the
-series' allowance, and takes `--keyless`; `liveness.yml` runs it every Tuesday
-with no secrets; `tests/test_smoke.py` pins its verdicts. `CONTRIBUTING.md`, a
-source-request issue form and a README for a stranger complete the public
-face. The public repository is `github.com/KrustyKronk/bedrok`, created from
-one clean commit of this tree; the old one is archived and stays private.
-Proven after release: `publish.yml` uploaded the wheel and sdist by trusted
-publishing, and the package from PyPI, started from an empty home with no keys,
-fetched live and answered nine calls in 41 seconds (`scripts/mcp_smoke.py`).
-
-**Session 11 in one paragraph.** One id per concept: six family ids that
-duplicated seed ids (`hicp_yoy_es` and `es_hicp_yoy`, …) are aliases in
-`core/aliases.py`; they still answer, with `alias_of`, but are neither stored
-nor listed. A ninth tool, `list_series`, walks the whole catalog in pages or
-counts it by publisher, place and frequency in one call; `search_series` pages
-with `offset`. Search treats a place as a filter (`core/geography.py`, one
-table also used by the warnings and the names test), no longer matches two
-letters inside other words ("us" in `wb_banana_us`), knows a few everyday
-synonyms (inflation → CPI/HICP, growth → GDP), and returns no series, only
-the warning, for a place Bedrok does not cover. Freshness counts from the last
-observation not in the future; forecasts show as `future_to`. Each Eurostat
-family names the euro-area codes its dataset fills (youth unemployment has
-moved to EA21) and the countries it lacks, and the catalog load prunes rows no
-family produces: zero empty stored rows, 531 catalog rows.
-
-**Session 10 in one paragraph.** Six Eurostat families on the curated 14
-geographies: HICP core, energy, food, non-energy goods and services (annual
-rates; `hicp_core_` …) and GDP quarter-on-quarter (`gdp_qoq_`), 84 series.
-Spain's own headline and core annual rates from INE (`es_cpi_yoy_ine` from
-1962, `es_cpi_core_ine`); the ONS's official quarterly UK GDP (`uk_gdp_qoq`,
-`uk_gdp_yoy`, `uk_gdp_level`, from 1955); US CPI unadjusted (`us_cpi_nsa`,
-whose yoy is the published headline); the Fed's daily effective rate and
-target range from the New York Fed (`us_effr`, `us_fed_target_lower`,
-`us_fed_target_upper`; a decision is a day the target changes); a new
-publisher, Japan's Ministry of Finance, for the 10-year JGB daily from 1986
-(`jp_10y_yield`; 30 publishers now). Both Brent series say they are Dated
-Brent, not the futures price the news quotes, and the gaps page names exchange
-futures prices.
-
-**Session 9 in one paragraph.** An eighth tool, `chart_series`, returns the
-aligned data and a chart recipe: a suggested title (never with units), a
-subtitle with the units, how the data was measured and the span; one scale or
-two by units (left solid, right dashed; a third unit is refused with a
-suggestion); a colour per series in a fixed colour-blind-safe order; x labels
-by frequency with about ten ticks; the source line; footnotes for warnings,
-steps, unfinished or incomplete periods and cuts; and the house-style layout.
-The house style is `bedrok/seeds/charting.md`, served as `bedrok://charting`
-and generated into `docs/CHARTING.md`. The server instructions carry the chart
-rule, the short-answer rule (chart and at most three lines, warnings always
-said, analysis on request) and a nudge to use `percentile`.
-
-**Session 8 in one paragraph.** `get_series` takes a `frequency` (weekly,
-monthly, quarterly, annual) and an optional `how` (last, mean, sum, first), and
-then returns one shared `table`: dates and a column per series, with `stepped`,
-`partial_last` and `incomplete` flags. Weeks end on Friday and take the last
-value; longer periods take the average; slower series repeat as a step and
-stop at their last period; nothing is interpolated (conventions in
-`docs/engineering/notes.md`). `max_rows` is per series, capped at 1,000, and a
-cut says which end and how to get the rest.
-
-## From the feedback session (2026-10-11)
-
-The owner's log of a real working session stays outside the repo: it quotes
-ICE high-yield spread values, which are personal-use only. What it found: the
-trust layer worked (caveats, warnings and the `fetched` provenance changed
-answers for the better; 9 of 10 questions came from the store). What failed was
-shaping and presenting, which sessions 8 to 11 fixed. The owner's decisions
-that came out of it, all now in force:
-- two vertical scales are the standard when units differ;
-- units go in the subtitle and on the vertical axis, not the title;
-- answers are short by default (the chart and a couple of lines, warnings
-  always spoken), more on request;
-- Fed decisions come from data: the New York Fed's EFFR feed carries the
-  target range daily from 2000.
-
-Two findings that are not Bedrok faults but are said in the catalog:
-- **Brent is right, and it is a different Brent.** The store matches the EIA
-  exactly and the World Bank agrees; both publish Dated (physical) Brent. The
-  news quotes ICE futures, about $20 lower in early October 2026. ICE futures
-  are on the gaps page.
-- **Charts must be specified by Bedrok because the host draws them.** Only
-  what the server returns and says reaches every host (Claude on the web
-  included), which is why the house style is served from the server.
-
-The ask from the same log, a series with its parts in one call, was built in session D1.
-
-## From the cold-session self-test (2026-10-12)
-
-Claude played the user: a fresh session, given no briefing about Bedrok and
-free to use the web or a shell, answered 30 questions with follow-ups (37
-exchanges) against the owner's keyed store, and a second session checked each
-answer against Bedrok afterwards. The log stays outside the repo. What it
-found:
-- **The trust layer works when the data is there.** Bedrok supplied every
-  number in 33 of 37 exchanges; percentiles came with their samples, loud
-  warnings were said, every loaded premise was checked against data first,
-  and the chart recipe was followed for one or two units.
-- **When the catalog lacks something, the session goes around Bedrok.**
-  The first time it stopped honestly at the gap; pushed once, it fetched
-  Eurostat with a general web tool, and after that it went to the web on the
-  first ask (Japan's GDP, Argentina and Turkey, China's youth unemployment).
-  That tool passes numbers through a summarising model, and twice nothing in
-  Bedrok could check them. Going to the web for what Bedrok lacks is fine
-  (see "Bedrok answers what it can" under the decisions); the fix was
-  session C for what Bedrok should carry, and a labelling line in the server
-  instructions for the rest (added in session A).
-- **Some of those trips were Bedrok's own fault:** a search that returned
-  nothing for "trade balance" or "government debt", and a stored Turkish
-  series that search could not find. Session A fixed them.
 
 ## Read this first if you are picking the project up
 
@@ -705,16 +99,15 @@ the Bank of Canada, the New York Fed, INSEE, the BEA, Statistics Canada,
 Japan's e-Stat and Ministry of Finance, the ABS, INE, the four Nordic offices,
 Destatis, Istat, the Bundesbank, the National Bank of Kazakhstan, its Bureau
 of National Statistics and JODI, with FRED for the nine session-only series.
-3,124 catalog series on a fresh install (0.3.11); most of the growth since
-777 is Eurostat's every-country families (item 22), the world layer (item 23)
-and the standard-indicator families (item 24).
+3,124 catalog series on a fresh install (0.3.12), most of them Eurostat's
+every-country families and the IMF, BIS and OECD world layer (items 22 to 24).
 
 **Twelve commands:** `smoke [--keyless]`, `backfill [--only ids --stage S]`,
 `refresh`, `validate`, `query`, `tieout [--only ids]`, `doctor`, `schema`,
 `pctile`, `rates`, `serve`, `docs [--check]`.
 
-**Tests:** 537, network-free, green on 2026-11-23 (a few skip without a built wheel or bundle, or the owner's term list), including the MCP
-server in memory, the layering rule and the publication gate. **Workflows:**
+**Tests:** 577, network-free, green on 2026-11-23 (a few skip without a built
+wheel or bundle, or the owner's term list), including the MCP server in memory, the layering rule and the publication gate. **Workflows:**
 `tests` (push and PR), `package` (PR: the empty-home install and the gate on
 the wheel), `publish` (a published release), `liveness` (Tuesdays, keyless).
 None holds a secret.
@@ -779,421 +172,170 @@ None holds a secret.
   fresh until the next. Meeting dates come from each bank's own page, never a
   list kept by hand (the owner's rule of 2026-10-11 for Fed decisions).
 - **Freshness is age and the next release** (2026-10-15). Statuses: `fresh`,
-  `due`, `late`, `stale`, `empty`, `session`. A series without a release rule
+  `due`, `late`, `stale`, `empty`, `session`; a family member its publisher's
+  release left out carries `next_release.behind` (2026-11-23), the
+  publisher's delay, not a late release. A series without a release rule
   is judged by age exactly as before; staleness overrides due and late, so a
   wrong rule cannot hide a broken feed. Rule timings are the publisher's usual
-  practice (`approximate: true`, "usually" in every message), not its calendar,
-  until the exact calendars land (item 2).
+  practice (`approximate: true`, "usually" in every message) wherever no
+  publisher calendar is read (item 2).
 - **Never advice, never timing signals.** See `docs/DISCLAIMER.md`.
 
 ## Open, in the order I would take them
 
-Completed items are removed rather than ticked — git history is the record.
-The numbers are stable labels (bedrok-web, code comments and other documents
-cite them), so a closed item in the middle keeps a one-line placeholder.
-Owner-side items are in `profile/STATE-private.md`.
+Completed items are removed rather than ticked — git history and
+`docs/history.md` are the record. The numbers are stable labels (bedrok-web,
+code comments and other documents cite them), so a closed item keeps a
+one-line placeholder. Owner-side items are in `profile/STATE-private.md`.
 
-1. **A cold question on a release morning.** 0.3.12 is installed in Claude
-   Desktop (2026-11-23; 0.3.3 passed the owner's ten-question check there on
-   2026-10-16). What has not
-   run outside this machine's development server is the fetch on a due
-   series. Test it by asking "what is out today?" on a release morning, then
-   asking for the figure (Canada's CPI on 19 Oct, Spain's EPA and the ECB's M3
-   on 27 Oct).
+1. **A cold question on a release morning.** What has not run outside this
+   machine's development server is the fetch on a due series. In Claude
+   Desktop (0.3.12), ask "what is out today?" on a release morning, then ask
+   for the figure.
 
-2. **More release calendars** (research in `docs/engineering/notes.md`,
-   "Where release dates come from" and "What changed on 2026-11-23").
-   On 2026-11-23 Eurostat's calendar file (`eurostat_ics`: euro-area flash
-   and full HICP, unemployment, quarterly government debt, by day at the
-   usual 11:00) and the BIS's RSS feed (`bis_rss`, below in item 23) went in,
-   with rules for `us_ci_loans` (the H.8 nine days after the first Wednesday
-   on or after the month's end, also on the Fed Board's calendar), the
-   Empire State and Philadelphia Fed surveys, the Dallas Fed's trimmed mean
-   PCE (on BEA's schedule, which the Dallas Fed follows), the NY Fed's
-   Multivariate Core Trend, JOLTS and PPI (their habit from FRED's update
-   dates: the BLS schedule page refuses programs). A calendar row can now
-   name a family by prefix, and a family member the publisher's release left
-   out is "behind", not late. Still open:
-   - **Istat**: its press calendar is a public Google Calendar with times
-     and periods (URL in the notes). Bedrok holds one Istat series,
-     `it_unemployment`; wiring it needs that series' allowance raised from
-     90 to 100 days in `macro_catalog.csv` (Istat publishes about 32 days
-     after the month), left for after the feeds session's catalog changes
-     merge.
+2. **More release calendars** (notes, "Where release dates come from" and
+   "What changed on 2026-11-23"). Still open:
+   - **Istat**: its press calendar is a public Google Calendar (URL in the
+     notes). Wiring it needs `it_unemployment`'s allowance raised from 90 to
+     100 days in `macro_catalog.csv` (Istat publishes about 32 days after the
+     month).
    - **The broad HICP and unemployment families** (`hicp_yoy_`,
-     `unemp_rate_`) could now have rules: Eurostat's file dates their
-     releases and late countries read as behind, not late.
-   - **The cheap "is anything new?" checks** (the BLS API's `latest=true`,
-     the ECB's SDMX `updatedAfter`) save requests rather than add dates and
-     live in the adapters; not done.
-   - **`us_gscpi`**: the NY Fed states no update day; it stays on age.
-   - **The World Bank's annual data**: Bedrok holds none (its World Bank
-     series are the monthly Pink Sheet, which has a rule), so nothing to do.
+     `unemp_rate_`) could now have rules: Eurostat's calendar file dates
+     their releases, and late countries read as behind, not late.
+   - **Cheap "is anything new?" checks** (the BLS API's `latest=true`, the
+     ECB's SDMX `updatedAfter`), in the adapters; not done.
+   - **`us_gscpi`** stays on age: the NY Fed states no update day.
    Never the BLS website: it refuses programs by policy.
-3. *Closed 2026-10-16 (session F); the number is kept because others point at
-   later ones.*
 
-4. **Jobless claims: revisit the Labor Department's API** when convenient. It
-   matches FRED exactly but runs a steady four weeks behind: on 2026-10-16,
-   the day after a Thursday release, its newest filled week was 2026-09-12
-   while FRED's initial claims had 2026-10-10 (on 2026-10-10 it was
-   2026-09-05 against 2026-10-03). If it catches up, move the three claims
-   rows to it (the fields are in `docs/engineering/notes.md`).
+3. *Closed 2026-10-16.*
 
-5. **Catalog gaps a real question exposed** ("how have 10-year government
-   bonds done over two years" for the US, Germany, France, the UK, China and
-   Japan). Japan's 10-year is in (session 10), Germany's daily 10-year from
-   the Bundesbank (`de_10y_yield`, session F). Settled 2026-11-23:
-   - **France daily: not carried, in `gaps.md`.** The Banque de France's
-     Webstat shows the TEC 10 but names Euronext as its producer, states no
-     licence for it, and serves it only with an account key; the ECB and
-     Eurostat publish no daily national yields. France stays on Eurostat's
-     monthly `ltgov_yield_fr`. Reopen only if the Banque de France confirms
-     in writing that the TEC curve may be reused (notes, "Webstat's
-     catalog names who made each series").
-   - **China: the monthly 10-year was already in** (`oecd_10y_cn`, the OECD,
-     from 2014, since 0.3.10); this item had not caught up. The daily curve is
-     ChinaBond's and is in `gaps.md`. ChinaBond's own terms page did not
-     load, so "commercial only" is the likely reading, not a quoted one.
+4. **Jobless claims: revisit the Labor Department's API** when convenient.
+   It matches FRED but ran a steady four weeks behind (2026-10-16: newest
+   week 2026-09-12 against FRED's 2026-10-10). If it catches up, move the
+   three claims rows to it (fields in the notes).
 
-   The same answer showed an assistant putting Bedrok's numbers and web
-   numbers in one chart without saying the measures differ (Fed
-   constant-maturity, BoE zero-coupon, Eurostat monthly averages, web point
-   quotes).
+5. *Closed 2026-11-23:* France's daily 10-year is not carried (no reuse
+   licence; `gaps.md`); China's monthly is `oecd_10y_cn`, its daily curve
+   in `gaps.md`.
 
-6. **The warnings' remaining weak sources.** Reviewed 2026-11-23: Lebanon,
-   Zimbabwe, Turkey, the OPEC producers, Tanzania's statistics act, Zambia and
-   the BLS leadership row now cite a primary document, and their facts were
-   corrected against it (Lebanon's 89,500 is January 2024; Turkey's appeal was
-   September 2023, final March 2024; Tanzania's approval was the Statistician
-   General's). Five still rest on press or analysis because no primary could be
-   reached, and each row says so in `source_name`: Russia's customs trade
-   (customs.gov.ru unreachable), Russia's oil and gas output (Order 1074-r and
-   Law 55-FZ are named, pravo.gov.ru unreachable), Russia's statistics
-   generally (OSW; an assessment, so an analysis is the honest source),
-   Venezuela (no BCV release or IMF text found) and Kazakhstan's crude and
-   condensate split (Argus only). Retry those from a network that reaches the
-   Russian sites or web.archive.org. Night-lights: 1992–2013 is confirmed
-   against the paper, and the figure is "approximately 35%". Severities
-   confirmed by the owner: Ethiopia's GDP, the 2025 payrolls benchmark and
-   Tanzania's statistics act stay caveat, and Iran stays disqualifying even
-   though the CBI's inflation page now shows annual figures for every year
-   from 1397: the row records that the gap was later filled.
+6. **Five warnings still rest on press or analysis**, each saying so in
+   `source_name`: Russia's customs trade, Russia's oil and gas output,
+   Russia's statistics generally, Venezuela, and Kazakhstan's crude and
+   condensate split. Retry from a network that reaches the Russian sites or
+   web.archive.org.
 
-7. **The IMF WEO rows' freshness is their last non-forecast year** (session
-   11), right for "is this stale" but not for "is this the latest vintage": a
-   WEO update shows only as revised values. Freshness by vintage needs the
-   publishers' vintages (session 13b). Also still open from session 5: live SDMX
-   discovery beyond the catalog, and SQL over session-only series. A
-   session-only `fetch_dataset` was proposed on 2026-10-12 to keep uncatalogued
-   questions inside Bedrok; under "Bedrok answers what it can" that is no
-   longer needed, and it is shelved; session A added the one line it left: the
-   server instructions tell the assistant to label numbers fetched outside
-   Bedrok and check them against a stored headline.
+7. **The IMF WEO rows' freshness is their last non-forecast year**, right for
+   "is this stale" but not for "is this the latest vintage": a WEO update
+   shows only as revised values. Freshness by vintage needs session 13b.
+   Also open from session 5: live SDMX discovery beyond the catalog, and SQL
+   over session-only series.
 
-8. **Watch the Fed Board's release zips.** Bedrok reads the eight
-   release-page zips, which the Board says outlive its Data Download Program
-   (session B). `smoke` now checks every one; read a red Tuesday run on a
-   `<REL> release zip` line as that file having moved or gone. SLOOS falls
-   back to the survey's HTML table by itself. For the yields the recipe is
-   Treasury's par and real curves (from 1990 and 2003; a re-point costs
-   1962–1989 of history), for GBPUSD the ECB cross; the dollar index, G.17,
-   H.6, H.8, H.4.1 and the charge-off rates have no non-FRED source and would
-   freeze with their history and go on the gaps page. All in
-   `docs/engineering/notes.md`, "The Fed Board is retiring…".
+8. **Watch the Fed Board's release zips.** `smoke` checks all eight; read a
+   red Tuesday run on a `<REL> release zip` line as that file having moved
+   or gone. The re-point recipes are in the notes, "The Fed Board is
+   retiring…".
 
-9. **Starter-set gaps from session 4:** Italy's NIC CPI (rebased in 2026, its
-   history sits in a differently shaped flow — Eurostat's HICP covers Italy),
-   Istat's headline confidence indices, the ABS monthly CPI (only from 2024;
-   the quarterly index from 1948 is carried). The ILO was left for later; the
-   Bundesbank is wired (session F) with one series, and its other flows
-   (the rest of the Bund curve, the German banking statistics) are a row each.
+9. **Starter-set gaps:** Italy's NIC CPI (Eurostat's HICP covers Italy),
+   Istat's confidence indices, the ABS monthly CPI (only from 2024). The ILO;
+   the Bundesbank's other flows (the rest of the Bund curve, German banking
+   statistics) are a row each.
 
-10. *Closed 2026-10-16 (session F).*
+10. *Closed 2026-10-16.*
 
-11. **Two 7a series are not what one might assume.** Japan's unemployment rate
-    is not seasonally adjusted: the seasonally adjusted series are not in
-    e-Stat's API database. USD/CAD from the Bank of Canada starts only in 2017.
-    Both are said in their notes; a better source for either is welcome.
+11. **Two series are not what one might assume:** Japan's unemployment rate
+    is not seasonally adjusted (e-Stat's API lacks the adjusted one), and
+    USD/CAD from the Bank of Canada starts only in 2017. Both are in their
+    notes; a better source for either is welcome.
 
-12. *Closed 2026-11-23.* `rates_infl`, `backfill`'s choice of stages and the
-    sync stages end to end are tested on inline payloads
-    (`tests/test_rates_infl.py`, `tests/test_sync_stages.py`). The first test of
-    `bedrok rates` found it took an annual rate as twelve rows up, wrong across
-    US CPI's missing October 2025; it now works by date. `smoke`'s verdicts are
-    tested (session 12); whether the live publishers answer is the liveness
-    run's job, not the suite's.
+12. *Closed 2026-11-23.*
 
-13. **The liveness run checks keyless publishers only.** The six keyed ones
+13. **The liveness run checks keyless publishers only.** The keyed ones
     (BEA, Census, EIA, FRED, Destatis, e-Stat) would need their keys as
     repository secrets, and a secret-holding workflow must never run on
-    `pull_request`.
+    `pull_request`. The owner's call.
 
-14. *Closed 2026-11-23.* "Crude oil positioning" finds `cot_wti_net_noncomm`
-    first. Positioning words (`_COT_WORDS` in the server) lift the `cot_` rows
-    that also match another word of the search; they are lifted, not hidden as
-    the parts of growth are, since six rows bury nothing. "oil" also means
-    crude and condensate. Pinned by tests of the words as typed, on a fresh
-    store.
+14. *Closed 2026-11-23.*
 
-15. **The later sessions in `docs/rebuild-plan.md` are unplanned:** 13
-    (13a, the release calendar, done except what item 2 lists; 13b, revisions, deferred
-    2026-10-12) and 14 (the
-    maintenance loop: triage source requests from the issue form, retire stale
-    publishers, a second pass over the register for the next thirty).
+15. **Unplanned sessions in `docs/rebuild-plan.md`:** 13b (revisions and
+    vintages, deferred) and 14 (the maintenance loop: triage source requests,
+    retire stale publishers, a second pass over the register).
 
-16. **Kazakhstan: the scope is built (K1 to K4, 2026-10-28 and -29), 37
-    series.** The scope is `docs/research/2026-10-28-kazakhstan-scope.md`;
-    each session is described at the top of this file. What stays open:
-    - **Armenia and the Kyrgyz Republic.** Eurostat's
-      `ext_st_eu27_2020sitc` has no values for them (Kazakhstan and Russia
-      are there), and Comext was not reachable at the paths tried, so the
-      mirror-trade warning links only to Kazakhstan's rows.
-    - **Dropped from the scope, with reasons.** The IMF has no National Fund
-      ratio, and Kazakhstan's `QGFS` is cash-based only, so the fiscal rows
-      are the outlooks' annual ratios. JODI's own data licence was taken from
-      its user guide ("freely available", cite JODI), not from a reply.
-    - **JODI disagrees with the ministry.** For March 2025 JODI shows crude
-      about 1,845 and condensate about 395 kb/d, against the 1.79 and 0.29
-      mb/d the warning quotes. Both are in the catalog notes; the cause is
-      not known.
-    - **Kazakhstan's base rate has its decision dates** (2026-11-23, item
-      19): `kz_base_rate` is due on each decision day and fresh once the row
-      for it is in.
-    - **Small things seen in K1:** a percentile of an event series counts
-      decisions, not time spent at each rate (true of the ECB's rows too).
-      There is no GBPKZT. Inflation expectations have no release rule, because
-      the bank states no timing for them. (The two search rankings seen then
-      were fixed 2026-11-23: "kazakhstan exchange rate" leads with `eurkzt`
-      and `usdkzt`, and "kazakhstan oil" with crude, then condensate in the
-      top three, "non-oil" no longer matching "oil".)
-    - **What K2 left out, and why.** The short-term economic indicator,
-      Kazakhstan's monthly activity gauge, is in Taldau only in tenge, not as
-      its growth rate. Real wages start in 2021 and lag two quarters. The
-      annual GDP and wage views lag the year-to-date data (2025 is in Q4 to
-      date, not in the annual view), so annual history before 2010 is not
-      carried. Retail trade is nominal only.
-    - **Watch house prices in Taldau.** The bureau publishes them about the
-      9th, but September 2026 was still not in Taldau on 29 Oct, so they are
-      on a wide rule (lag 8 to 50 days) and off the calendar. Narrow the rule
-      once a few months show when Taldau actually updates.
-    - **GDP has no exact calendar.** The 2026 calendar shows GDP by
-      production about 47 and about 92 days after a quarter, inconsistently;
-      it stays on a wide rule until a pattern is clear.
-    - **Released in 0.3.4** (2026-10-29); in Claude Desktop since 0.3.12 (2026-11-23), untried there (item 25).
+16. **Kazakhstan** (37 series; scope in
+    `docs/research/2026-10-28-kazakhstan-scope.md`). Open:
+    - Armenia and the Kyrgyz Republic have no mirror-trade rows (Eurostat has
+      no values; Comext was unreachable).
+    - JODI and the ministry disagree on crude and condensate (March 2025);
+      cause unknown, both in the catalog notes.
+    - Watch Taldau's house prices (wide rule, lag 8 to 50 days) and GDP (no
+      consistent calendar); narrow the rules once a pattern shows.
+    - Not carried, with reasons in the history: the activity gauge's growth
+      rate, real wages before 2021, annual history before 2010, real retail.
 
-17. **The capex-cycle series are released in 0.3.5** (2026-11-02), and in
-    Claude Desktop since 0.3.12 was installed there (2026-11-23). What stays
-    open:
-    - **Z.1 asked on demand costs about 13 s a series.** From the clean
-      install, `us_z1_nfc_financing_gap` and `us_z1_nfc_capex` asked one after
-      the other took 13.1 and 12.7 s, so the 37.6 MB zip is downloaded or
-      parsed again for each; a refresh fetches it once. Not looked into;
-      worth it only if a cold session asking four Z.1 series feels slow.
+17. **Z.1 asked on demand costs about 13 s a series** (the 37.6 MB zip is
+    parsed again for each; a refresh fetches it once). Worth it only if a
+    cold session asking several Z.1 series feels slow.
 
-18. **The logo is released in 0.3.6** (2026-11-05). It reached Claude
-    Desktop with 0.3.12 (2026-11-23). Not yet seen in any host: whether Desktop's list draws it at small sizes
-    well, and which other hosts draw `serverInfo.icons` (it is in the MCP
-    spec from 2025-11-25; hosts are free to ignore it). A Claude Code
-    install (`uvx … bedrok serve`) picks it up on its next start from PyPI.
+18. **The logo, unseen in hosts:** whether Desktop's list draws it well at
+    small sizes, and which other hosts draw `serverInfo.icons`.
 
-19. **Central banks' decisions are on the calendar** (session I, 2026-11-05),
-    released in 0.3.7. What stays open (the Desktop check is item 25):
-    - **The National Bank of Kazakhstan was added on 2026-11-23**
-      (`nbk_base_rate`): its schedule section
-      (`nationalbank.kz/en/news/grafik-prinyatiya-resheniy-po-bazovoy-stavke`)
-      links one page per year by its label ("2026"), and the page's id
-      changes each year, so the feed finds the year's page by its label and
-      fails, keeping the stored dates, when the year has none. The 2027
-      page is not up yet; a refresh in January will fail until it is. The
-      bank's base-rate API has a row dated on each decision day, holds
-      included, so a decision shows on the day. It states no time.
-    - **Banks not read yet.** The SNB (its decisions page lists past
-      assessments only; the future dates were not found) and the People's
-      Bank of China, which has no fixed schedule. The Bank of Canada's page lists
-      only the next announcement; its full-year schedule is a press release.
-    - **The ECB's hold rule rests on an assumption.** A hold counts as shown
-      once the rates were fetched on or after the effective Wednesday. If the
-      ECB publishes a changed rate in its data before that day, the rule is
-      merely cautious; if it publishes later, the rule calls a cut a hold.
-      Watch the 17 Dec 2026 decision: when does the new row appear?
-    - **Not carried:** which FOMC meetings come with projections (the page
-      marks them), the minutes' dates, and the press conference times.
+19. **Central banks' meeting dates.** Open:
+    - **Kazakhstan's 2027 schedule page is not up yet**; a refresh in January
+      fails, keeping the stored dates, until it is.
+    - **Banks not read:** the SNB (no future dates found) and the People's
+      Bank of China (no fixed schedule). The Bank of Canada's page lists only
+      the next announcement.
+    - **The ECB's hold rule rests on an assumption** (a hold counts once the
+      rates were fetched on or after the effective Wednesday). Watch the
+      17 Dec 2026 decision: when does the new row appear?
+    - **Not carried:** which FOMC meetings come with projections, minutes'
+      dates, press conference times.
 
-20. **Failures seen in session I's refresh** (2026-11-05), none from the
-    session's code: the ECB's data API answered 503 (once a DNS failure) for
-    twelve euro-area series and EURUSD, which looked like an outage; Destatis
-    refused `de_industrial_production`; and the Atlanta Fed's sticky CPI
-    (`us_sticky_core_cpi`) redirected to a 404 page.
+20. **Destatis's `de_cpi_destatis` refused on 2026-11-23** (Status 7000, "no
+    data cube" for `61111-0002`, as on 2026-10-12; notes, GENESIS). The stored
+    history to October stands. Recheck before changing anything; if it
+    persists past the November flash, look for a CPI rebase. Bot checks come
+    and go (OECD, StatCan): read one red run as "look", weeks of red as
+    "retire or re-point", and never try to get past one.
 
-    **And in the 2026-11-19 refresh** (run by `bedrok-web update`): the eight
-    SLOOS and Z.1 series failed because the Fed Board renamed the data files
-    inside those two zips to lower case on 2026-11-12. Fixed the same day
-    (`fedboard.data_member`; notes, "Ingest and vendors"); released as
-    0.3.8 the same day. `publish.yml`'s build, publish and bundle jobs all
-    passed and `bedrok-0.3.8.mcpb` is on the release. Proven from PyPI: an
-    empty folder and an empty home answered all ten smoke calls in 30
-    seconds (the first try raced PyPI's index), and the installed 0.3.8 read
-    a Z.1 and a SLOOS series from their zips. bedrok-web now requires 0.3.8.
+21. **The public website** is built in the private repository
+    `KrustyKronk/bedrok-web`, whose `STATE.md` holds its open questions. It
+    depends on this package (`bedrok>=0.3.12`) and relies on the internals
+    `tests/test_web_contract.py` pins: a change that fails that test breaks
+    the site, so change bedrok-web in step. Open on this side:
+    - **October 2026's US CPI annual rate cannot be computed** (October 2025
+      was never published), so `yoy` stops at September 2026 while
+      `freshness.last_date` says 2026-10-01. Check what the BLS published for
+      October 2026's annual rate and decide what the MCP says.
 
-    **Rechecked 2026-11-23:**
-    - **Sticky CPI: fixed.** The Atlanta Fed moved the file
-      (`…/research-and-data/data/sticky-price/sticky-price-data.xlsx`, same
-      layout); `tieout` found every stored month equal, and a full refresh
-      from the fix's branch brought October 2026 (3.06%).
-    - **Destatis `de_industrial_production`: not a bot check, and the table
-      code has not changed.** `42153-0001` answered through the keyed API on
-      2026-11-20 and again in the 2026-11-23 refresh. The refusal was one
-      of GENESIS's passing faults.
-    - **Destatis `de_cpi_destatis` refused instead,** in the 2026-11-23
-      refresh: Status 7000, "no data cube" for `61111-0002`, the same fault
-      as 2026-10-12 (notes, GENESIS). It fetched on 2026-11-20, and the
-      stored history to October stands. Recheck before changing anything;
-      if it persists past the November flash, look for a CPI rebase.
-    - **The OECD and Statistics Canada answer again:** all 11 OECD series,
-      the OECD world families and StatCan's 3 series and calendar fetched
-      in the 2026-11-23 refresh with no 403. So did every ECB series and
-      EURUSD. Every other stage of that refresh was clean (the HICP set skips
-      Kosovo by design, outside Eurostat's reuse grant).
-
-21. **The public website** (decided 2026-11-19; session 15 in the plan) is
-    built in the private repository `KrustyKronk/bedrok-web`, created
-    2026-11-19. Its open questions (mockup, hosting, which rows, the
-    country-then-topic layer, the API) live in that repository's `STATE.md`,
-    not here. It depends on this package (`bedrok>=0.3.11` on 2026-11-23); nothing
-    here depends on it. **0.3.12 adds a freshness status, `behind`** (a
-    series its publisher has not updated yet): bedrok-web handles only `due`
-    and `late` (`model.py`, `pages.py`), so teach it `behind` when it moves to
-    0.3.12. What stays open on this side:
-    - **The package is now a dependency, and the site relies on these**
-      (bedrok-web, 2026-11-19). Changing one of them changes the website:
-      `core.config.set_profile` and `connect(read_only=True)`; the
-      `macro_catalog` and `macro_series` tables; `core.sources.load` and
-      `attribution`; `core.warnings.load` (its `series_ids`, `severity`,
-      `period_start`, `period_end`); `core.geography.of_series`;
-      `core.units.is_money_level`; `ops.freshness.assess` (its
-      `latest_period`, `status`, `next_release`); `engines.pctile.compute`
-      with `frame=`; `ingest.transforms.to_frequency` and `yoy`;
-      `ingest.live.fetch` for the FRED-channel rows; `core.store.init_db` and
-      the upserts (its tests); the seed catalogs; and
-      `bedrok/surfaces/icon.png`. `tests/test_web_contract.py` pins each
-      signature and the fields the site reads from it (taken from bedrok-web's
-      code on 2026-11-23): a change that fails it breaks the site, so change
-      bedrok-web in step.
-    - **October 2026's US CPI annual rate cannot be computed.** The October
-      2026 index is held, but October 2025 was never published (the shutdown
-      gap), so `get_series(transform="yoy")` stops at September 2026, while
-      `freshness.last_date` says 2026-10-01. Check what the BLS itself
-      published for October 2026's annual rate and decide what the MCP says.
-22. **Every Eurostat family carries every country it publishes** (2026-11-19,
-    released as 0.3.9). The 30 multi-geo families (yields, sentiment, production, retail,
-    GDP and its parts, house prices, labour costs, debt, HICP components,
-    youth unemployment) kept eleven countries and threw the rest of each
-    download away; they now keep every country inside the reuse grant that
-    is still publishing: about 1,000 series where there were 330, from the
-    same downloads. Which countries each family publishes is a seed,
-    `seeds/eurostat_geos.csv`, written by `scripts/eurostat_geos.py` and held
-    inside `pipeline.REUSE_GEOS` by a test and by the sync, which refuses a
-    family whose seed strays outside it. Net trade is derived for every
-    country with both parts. The sovereign spreads stay at the four euro
-    members: a Hungarian or Polish yield minus the Bund mixes currencies.
-    Bosnia, Moldova and Ukraine became searchable places. Refreshed end to
-    end against the real store and repaired (see the notes entry on the
-    incremental start): every family series has its full history, 691 of
-    the 701 new series are fresh. What stays open:
-    - **Ten new series are genuinely behind, and say so:** Estonia and
-      Malta's sentiment surveys stop at April 2026, Albania's production and
-      retail at June, youth unemployment for Bosnia, Switzerland and Romania
-      at June. If any is still frozen in three months, drop it from the seed
-      rather than carry a stale line.
+22. **Eurostat's every-country families.** Open:
+    - **Ten series are behind:** Estonia and Malta's sentiment (to April
+      2026), Albania's production and retail, and youth unemployment for
+      Bosnia, Switzerland and Romania (to June). Any still frozen around
+      2027-02-19: drop it from the seed.
     - **Re-run `scripts/eurostat_geos.py` when Eurostat adds or drops a
-      country.** A seeded country that stops publishing altogether makes
-      its family download the whole history on every refresh until then.
-    - **Unscoped MCP searches are now longer** (36 countries for "industrial
-      production"). Searches that name a place filter by it; not yet tried
-      in Claude Desktop.
-    - **The website names places itself**: `bedrok-web`'s `places.py` needs
-      Bosnia, Moldova and Ukraine, or their series land under "world".
-23. **The world layer: the IMF, BIS and OECD for every country they cover**
-    (2026-11-19, released as 0.3.10; the owner chose all IMF economies). Sixteen families,
-    one request each with the country left open (`sdmx.fetch_by`, which
-    keeps the one-series rule within each country): six from the IMF World
-    Economic Outlook for about 195 economies (growth, inflation,
-    unemployment, debt, budget balance, current account, all with IMF
-    forecasts to 2031 labelled as such), six from the BIS (policy rates,
-    CPI, real effective exchange rates, real house prices, credit to GDP,
-    credit gaps; 24 to 59 countries) and four from the OECD (unemployment,
-    10-year and 3-month rates, quarterly GDP; 14 to 43). 1,428 new series.
-    Defined in `ingest/world.py`; which countries each carries is
-    `seeds/world_geos.csv`, written by `scripts/world_geos.py`, which skips
-    a country where Bedrok already holds the same measure from a closer
-    source (HICP or a national CPI, Eurostat's or a national 10-year, the
-    ECB's or a national policy rate). Seed rows with a family id
-    (`weo_gdp_growth_kz`) stay per-series with their own notes; older BIS
-    ids (`us_reer_bis`, `jp_policy_rate`) answer the family ids as aliases.
-    151 economies became places (`geography.py`, with search names, leaving
-    out Chad, Jordan, Guinea and Niger, which are words first); no existing
-    id changed place. Search counts "price"/"prices" as only a hint for
-    "inflation", or the BIS's house prices led every country's inflation
-    question. Refreshed end to end against the real store: all 1,428 filled
-    with history, 1,391 fresh. What stays open:
-    - **37 world series are stale, truthfully:** the October 2026 WEO has no
-      2026 figures for Afghanistan, Lebanon, Senegal or the West Bank and
-      Gaza, and a few BIS and OECD series lag (UAE and Singapore CPI, the
-      UK and Indonesia 3-month rates).
-    - **Release dates for the world families** (2026-11-23): the seven BIS
-      families have rules and the BIS's own release calendar (its RSS feed
-      names each release's dataset and period); credit to GDP and the credit
-      gaps' allowances went from 330 to 360 days and real house prices' to
-      340 (they publish about 165 and 150 days after the quarter). A
-      country the BIS's release left out reads as behind its publisher,
-      not late. The WEO says its next edition (April and October, usually
-      between the 8th and the 24th) for information only: a period rule
-      cannot see an edition, since the current year's projection is always
-      the latest point, and telling editions apart is item 7. **The OECD
-      families stay on age**: its release pages refuse programs (403), so
-      its timing is unread; reading it by hand would let rules go in.
+      country**; a seeded country that stops publishing makes its family
+      download the whole history on every refresh.
+    - **Unscoped searches are long** (36 countries for "industrial
+      production"); not yet tried in Claude Desktop (item 25).
+
+23. **The world layer (IMF, BIS, OECD).** Open:
+    - **37 series are stale, truthfully** (the WEO has no 2026 figures for a
+      few economies; some BIS and OECD series lag).
+    - **The OECD families stay on age**: its release pages refuse programs,
+      so its timing is unread.
     - **The BIS condition binds the paid API:** BIS statistics must add
       nothing to a commercial product's price (`docs/LICENSING.md`).
-    - **The OECD sits behind a bot check that comes and goes.** A blocked
-      refresh keeps its last values; it carries only what the IMF and BIS
-      lack.
-    - **Small economies have only the WEO:** about 130 places hold six
-      annual series whose latest values include the IMF's projection for
-      the current year.
     - **Re-run `scripts/world_geos.py`** when a publisher adds or drops a
-      country, as for Eurostat.
-24. **Three families for the website's standard indicators** (2026-11-20,
-    released as 0.3.11). The website now shows every country the same 17 indicators,
-    each from the closest source Bedrok holds (bedrok-web's `standard.py`);
-    three rows needed data Bedrok lacked:
-    - **Eurostat's headline unemployment rate** (`unemp_rate_`, 33
-      countries, from `une_rt_m`); Germany's, Spain's and the EU's seed rows
-      were already this series and answer the family ids as aliases. OECD
-      unemployment now skips every country Eurostat covers.
-    - **The OECD's real GDP growth on a year earlier** (`oecd_gdp_yoy_`, 17
-      countries outside Eurostat), beside its quarter-on-quarter family.
-    - **BIS exchange rates against the dollar** (`bis_usd_rate_`, 139
-      countries, monthly averages). Each row's units name its currency as
-      the BIS gives it ("BRL per USD", read into `seeds/world_geos.csv` by
-      `scripts/world_geos.py`, never inferred); the units grammar now takes
-      any ISO pair. The euro, sterling, tenge and dollar users are skipped:
-      their pair comes from the ECB or the National Bank of Kazakhstan, or
-      is 1.
-    The world stage now re-registers its catalog rows on every sync, as the
-    Eurostat stage does (see the notes). Refreshed end to end against the
-    real store: all 188 new series filled with full history (Brazil's
-    exchange rate from 1953). Still behind, truthfully: 11 exchange rates
-    the BIS has not updated since early 2026 or before (Venezuela,
-    Madagascar, DR Congo, Ghana, Lebanon, Bolivia, Libya, Iraq, Uganda,
-    Guyana, Laos), and Switzerland's and Bosnia's unemployment rates.
-25. **Try 0.3.12 in Claude Desktop.** Installed by the owner on 2026-11-23
-    over 0.3.3 (the extension list shows one Bedrok, 0.3.12), so 0.3.4 to
-    0.3.12 reach Desktop for the first time. Not yet asked there:
-    - something about Kazakhstan and the Z.1 financing gap (items 16, 17);
-    - "when does the FOMC meet next?", and the day after a decision, the
-      rate (item 19);
-    - an unscoped Eurostat question ("industrial production") and a world
-      one (Brazil's inflation or exchange rate), to see how the longer
-      searches read (items 22 to 24);
-    - whether the extension list draws the logo well (item 18).
+      country.
+
+24. **The standard-indicator families** (`unemp_rate_`, `oecd_gdp_yoy_`,
+    `bis_usd_rate_`). Behind, truthfully: 11 BIS exchange rates not updated
+    since early 2026 or before, and Switzerland's and Bosnia's unemployment.
+
+25. **Try 0.3.12 in Claude Desktop.** Installed on 2026-11-23 over 0.3.3, so
+    0.3.4 to 0.3.12 reach Desktop for the first time. Not yet asked there:
+    - something about Kazakhstan and the Z.1 financing gap;
+    - "when does the FOMC meet next?", and the day after a decision, the rate;
+    - an unscoped Eurostat question and a world one (Brazil's inflation or
+      exchange rate), to see how the longer searches read;
+    - whether the extension list draws the logo well.
