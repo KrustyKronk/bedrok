@@ -17,10 +17,10 @@ INDEC changed its CPI staff and methods from 2007. The IMF Executive Board issue
 
 ### Iran: Consumer price index, Central Bank of Iran (CBI) and Statistical Centre of Iran (SCI) (2018-12 onward)
 
-The CBI withheld its CPI from the Iranian month Azar (Nov-Dec 2018) onward, and in January 2019 a commission of the Statistical High Council ruled that the CBI had no mandate to publish price indices or national accounts. Two official CPIs diverged before the halt (Aban 1397: 39.9% y/y at the CBI versus 34.9% at the SCI) and only the SCI series has been published since, so there is no second official measure to compare it with.
+The CBI withheld its CPI from the Iranian month Azar (Nov-Dec 2018) onward, and in January 2019 a commission of the Statistical High Council ruled that the CBI had no mandate to publish price indices or national accounts. Two official CPIs diverged before the halt (Aban 1397: 39.9% y/y at the CBI versus 34.9% at the SCI), and while it lasted only the SCI series was published. The CBI's inflation page now shows annual inflation for every year from 1397 (31.2%) onward, with a base-year change at 1401; the page does not say when the 1397-1400 figures were published.
 
 - Cross-check: None licence-clean.
-- Source: [Eghtesad Online (news report)](https://www.eghtesadonline.com/en/news/784482/sci-cbi-caught-in-statistical-tug-of-war)
+- Source: [Eghtesad Online (news report; the CBI's current series is at cbi.ir/Inflation)](https://www.eghtesadonline.com/en/news/784482/sci-cbi-caught-in-statistical-tug-of-war)
 
 ### Ireland: Gross Domestic Product and Gross National Product, Central Statistics Office (CSO) (2015 onward)
 
@@ -30,12 +30,12 @@ In July 2016 the CSO reported real GDP growth of 26.3% for 2015, driven by multi
 - Source: [Central Statistics Office (Ireland)](https://www.cso.ie/en/csolatestnews/pressreleases/2017pressreleases/pressstatementmacroeconomicreleasesyear2016andquarter12017/)
 - Bedrok series: `gdp_yoy_ie`
 
-### Lebanon: Official exchange rate LBP per USD, Banque du Liban (BDL); USD-denominated aggregates converted at it (2019-10–2024-02)
+### Lebanon: Official exchange rate LBP per USD, Banque du Liban (BDL); USD-denominated aggregates converted at it (2019-10–2024-01)
 
-After the 2019 crisis the official rate stayed at 1,507.5 LBP/USD until 1 February 2023, when it moved to 15,000; BDL later adopted its platform rate of 89,500 in February 2024. In 2023 the IMF recommended unifying the multiple exchange rates. The official rate was far from the rates at which most transactions took place, so any series converted to or from US dollars at it, including GDP and balance-sheet aggregates, is misstated for the period.
+After the 2019 crisis the official rate stayed at 1,507.5 LBP/USD until February 2023, when it moved to 15,000, and then to 89,500 in January 2024, per Banque du Liban. In its 2023 Article IV staff report (Country Report 23/237) the IMF recommended unifying the multiple exchange rates. The official rate was far from the rates at which most transactions took place, so any series converted to or from US dollars at it, including GDP and balance-sheet aggregates, is misstated for the period.
 
 - Cross-check: None licence-clean.
-- Source: [International Monetary Fund](https://www.imf.org/en/news/articles/2023/03/23/lebanon-staff-concluding-statement-of-the-2023-article-iv-mission)
+- Source: [Banque du Liban, Balance of Payments and International Investment Position Report 2024](https://www.bdl.gov.lb/CB%20Com/Publications/Publications/Annual%20Report_2024_En%C2%A710530_3.pdf)
 
 ### Mozambique: Public and publicly guaranteed external debt, Ministry of Economy and Finance; IMF and World Bank debt series (2013–2016-04)
 
@@ -53,17 +53,17 @@ After a March 2017 mission at which, an IMF spokesman later said, Congo had not 
 
 ### Russia: Foreign trade statistics, Federal Customs Service (FTS) (2022-02 onward)
 
-The FTS suspended trade statistics in April 2022. In March 2023 it resumed totals by commodity group, monthly with a 40-day lag, but not by partner country, last published for January 2022. Customs trade by partner country is missing from February 2022, and commodity data is published only at a coarse level; February to December 2022 had no official monthly release at the time.
+The FTS suspended trade statistics in April 2022. In March 2023 it published 2022 totals by commodity group, without a partner-country breakdown (last published for January 2022), and said releases would follow monthly about 40 days after each period. Publication then paused again and resumed in November 2023 with January-September 2023 data broken down by region, not country (TKS.ru, 14 November 2023). Customs trade by partner country is missing from February 2022, and commodity data is published only at a coarse level and irregularly; February to December 2022 had no official monthly release at the time.
 
 - Cross-check: Partner-country mirror statistics, such as Eurostat Comext and other partners' published imports from and exports to Russia.
-- Source: [Interfax (news report)](https://www.interfax.ru/russia/890721)
+- Source: [Interfax (news report; the Federal Customs Service site could not be reached)](https://www.interfax.ru/russia/890721)
 
 ### Russia: Crude oil, natural gas and condensate production, Rosstat (2023-03 onward)
 
-Under a government decree reported in April 2023, publication of oil, gas and condensate output was suspended from the March and first-quarter 2023 figures, initially until 1 April 2024; Rosstat's industrial report omitted them. Official monthly and quarterly oil and gas production figures are missing from March 2023.
+Government Order No. 1074-r of 26 April 2023, made under Federal Law No. 55-FZ of 28 February 2023, suspended publication of oil, gas and condensate output, monthly from March 2023 and quarterly from the first quarter of 2023, initially until 1 April 2024; Rosstat's industrial report omitted them. Official monthly and quarterly oil and gas production figures are missing from March 2023.
 
 - Cross-check: OPEC Monthly Oil Market Report secondary-source estimates of Russian crude output.
-- Source: [Reuters (via Kitco)](https://www.kitco.com/news/off-the-wire/2023-04-28/update-1-russia-stop-publishing-data-oil-gas-output-until-april-2024)
+- Source: [Reuters (via Kitco; the official texts on pravo.gov.ru and rosstat.gov.ru could not be reached)](https://www.kitco.com/news/off-the-wire/2023-04-28/update-1-russia-stop-publishing-data-oil-gas-output-until-april-2024)
 
 ### Senegal: Central government debt and fiscal deficit, Ministry of Finance and Budget (2019–2023)
 
@@ -79,18 +79,18 @@ In September 2026 the IMF Executive Board found Turkmenistan in breach of its da
 - Cross-check: Night-time lights, such as EOG VIIRS and NASA Black Marble, and partner-country mirror trade for gas exports.
 - Source: [International Monetary Fund](https://www.imf.org/en/news/articles/2026/09/11/pr26287-turkmenistan-statement-by-the-imf-executive-board)
 
-### Venezuela: Consumer prices, GDP and balance of payments, Banco Central de Venezuela (BCV) (2015–2019-05)
+### Venezuela: Consumer prices, GDP and balance of payments, Banco Central de Venezuela (BCV) (2016–2019-05)
 
-The BCV published no inflation or GDP data from 2015 until 29 May 2019, when it released figures including 130,060% inflation for 2018 and a 22.5% fall in GDP in the year to the third quarter of 2018. There is no official contemporaneous data for 2016 to early 2019; the later releases are retrospective and could not be checked against published data at the time.
+The BCV published no inflation or GDP data for periods after 2015 until 29 May 2019, when it released figures including 130,060% inflation for 2018 and a 22.5% fall in GDP in the year to the third quarter of 2018. There is no official contemporaneous data for 2016 to early 2019; the later releases are retrospective and could not be checked against published data at the time.
 
 - Cross-check: IMF World Economic Outlook staff estimates and OPEC secondary-source oil output.
-- Source: [Central Banking (trade press)](https://www.centralbanking.com/central-banks/economics/4230871/venezuelas-central-bank-finally-admits-economic-collapse)
+- Source: [Central Banking (trade press; no BCV release or IMF document stating this could be reached)](https://www.centralbanking.com/central-banks/economics/4230871/venezuelas-central-bank-finally-admits-economic-collapse)
 
 ## Material — use only with the cross-check
 
 ### Autocracies (cross-country): Real GDP growth as reported by national authorities (1992–2013)
 
-A 2022 study (Martinez, Journal of Political Economy) compared reported GDP with satellite night-time lights across countries and found that autocracies report higher GDP growth for the same growth in lights than democracies. The study estimated that autocracies overstate yearly GDP growth by as much as about 35%; official growth for non-democracies should be read as an upper bound.
+A 2022 study (Martinez, Journal of Political Economy) compared reported GDP with satellite night-time lights across countries and found that autocracies report higher GDP growth for the same growth in lights than democracies. The study estimated that autocracies overstate yearly GDP growth by approximately 35%; official growth for non-democracies should be read as an upper bound.
 
 - Cross-check: Night-time lights growth, such as EOG VIIRS and NASA Black Marble, for the same country and period.
 - Source: [Journal of Political Economy (University of Chicago Press)](https://doi.org/10.1086/720458)
@@ -183,10 +183,10 @@ NBS rebased the CPI from January 2025, moving the price reference period from 20
 
 ### Russia: GDP, industrial production, real incomes and foreign trade, Rosstat and the Bank of Russia (2022 onward)
 
-Since 2022 Russia has restricted access to statistics, including foreign trade data, and from April 2023 stopped reporting oil and gas output under a February 2023 act allowing temporary suspension of indicators. Long series are hard to compare because Rosstat changes methods, presentation and frequency, and some revisions altered earlier readings; a 2023 OSW analysis advised treating published figures with great caution.
+Since 2022 Russia has restricted access to statistics, including foreign trade data, and from April 2023 stopped reporting oil and gas output under Federal Law No. 55-FZ of 28 February 2023, which lets the government suspend the release of official statistical indicators. Long series are hard to compare because Rosstat changes methods, presentation and frequency, and some revisions altered earlier readings; a 2023 OSW analysis advised treating published figures with great caution.
 
 - Cross-check: Partner-country mirror trade (UN Comtrade, Eurostat Comext) and electricity data from Ember.
-- Source: [Centre for Eastern Studies (OSW)](https://www.osw.waw.pl/en/publikacje/analyses/2023-05-24/credibility-russian-economic-statistics-a-growing-problem)
+- Source: [Centre for Eastern Studies (OSW), analysis](https://www.osw.waw.pl/en/publikacje/analyses/2023-05-24/credibility-russian-economic-statistics-a-growing-problem)
 
 ### South Africa: Census 2022 and Mid-year Population Estimates, Statistics South Africa (2022 onward)
 
@@ -202,12 +202,12 @@ In December 2017 IMF staff said other indicators pointed to downward pressure on
 - Cross-check: IMF World Economic Outlook growth estimates for Tanzania, read alongside electricity generation and tax revenue series.
 - Source: [International Monetary Fund](https://www.imf.org/en/News/Articles/2017/12/12/pr17487-imf-staff-concludes-visit-to-tanzania)
 
-### Turkey: Consumer Price Index (2003=100) (Turkish Statistical Institute, TurkStat) (2022-04 onward)
+### Turkey: Consumer Price Index (2003=100) (Turkish Statistical Institute, TurkStat) (2022-05 onward)
 
-TurkStat stopped publishing average prices of individual CPI items in 2022 and publishes expenditure-group indices instead. The Ankara 6th Administrative Court ordered disclosure in March 2023 on a DİSK suit; an appeals court upheld this in April 2025, per bianet. The item-level prices behind the headline CPI cannot be checked by outside users; the index is still published. Wages, pensions and contracts indexed to CPI carry any measurement error in it.
+TurkStat published average prices of 400-plus individual CPI items from 2003 until its release of 3 May 2022 and stopped from June 2022. On a suit by the DİSK union confederation, the Ankara 6th Administrative Court ordered disclosure on 31 March 2023; the Ankara Regional Administrative Court rejected TurkStat's appeal on 15 September 2023, and the ruling became final in March 2024, per DİSK. The item-level prices behind the headline CPI cannot be checked by outside users; the index itself is still published. Wages, pensions and contracts indexed to CPI carry any measurement error in it.
 
 - Cross-check: Istanbul Chamber of Commerce (ITO) Istanbul retail price index; ENAG estimates exist but their licence terms are unclear.
-- Source: [bianet](https://bianet.org/haber/turkish-statistical-authority-ordered-to-disclose-inflation-basket-data-as-union-wins-appeal-306685)
+- Source: [DİSK (Confederation of Progressive Trade Unions of Turkey)](https://disk.org.tr/2024/04/kazandigimiz-davada-karar-kesinlesti-tuik-madde-fiyat-listesini-derhal-aciklamak-zorunda/)
 - Bedrok series: `hicp_yoy_tr`
 
 ### United Kingdom: Labour Force Survey estimates of employment, unemployment and economic inactivity (Office for National Statistics) (2023 onward)
@@ -236,17 +236,17 @@ During the lapse in federal appropriations from 1 October to 12 November 2025, B
 
 ### Zambia: Public and publicly guaranteed external debt stocks (World Bank International Debt Statistics; Ministry of Finance, Zambia) (2018–2021)
 
-A 2021 Johns Hopkins SAIS-CARI briefing paper estimated Zambia's public external debt to Chinese lenders at about US$6.6 billion in August 2021, about double the commonly cited figure, and found SOE external debt had not been reported to the World Bank IDS. IDS and Ministry of Finance debt stocks in these vintages appear to omit state-owned enterprise borrowing (e.g. ZESCO) and some Chinese loans, per CARI, understating the stock and misstating its split by creditor.
+A 2021 Johns Hopkins SAIS-CARI briefing paper estimated Zambia's public external debt to Chinese lenders at about US$6.6 billion in August 2021, almost double the highest figure the government had released (US$3.4 billion), and found that SOE external debt had not been reported to the World Bank IDS. IDS and Ministry of Finance debt stocks in these vintages appear to omit state-owned enterprise borrowing (e.g. ZESCO) and some Chinese loans, per CARI, understating the stock and misstating its split by creditor.
 
-- Cross-check: Compare later IDS vintages with earlier ones, and with the Boston University Chinese Loans to Africa database.
-- Source: [Johns Hopkins SAIS China Africa Research Initiative](https://www.econstor.eu/bitstream/10419/248246/1/sais-cari-bp05.pdf)
+- Cross-check: Compare later IDS vintages with earlier ones; the IMF's 2022 ECF request (Country Report 22/292) shows US$5.9 billion of public and publicly guaranteed debt owed to China at end-2021; the Boston University Chinese Loans to Africa database.
+- Source: [Johns Hopkins SAIS China Africa Research Initiative, Briefing Paper No. 5 (Brautigam and Wang, 2021)](https://www.sais-cari.org/s/Final-Version-Briefing-Paper-5-Brautigam-and-Wang2595.pdf)
 
 ### Zimbabwe: Consumer Price Index, year-on-year inflation rate (Zimbabwe National Statistics Agency, ZIMSTAT) (2019-07–2020-01)
 
-In the August 2019 Mid-Term Budget Review the Finance Minister said ZIMSTAT would defer publishing year-on-year inflation until after February 2020, following the 2019 move to a single domestic currency; month-on-month figures continued. No official annual inflation rate was published for these months. Annual rates must be built by chaining month-on-month prints, and comparisons across the 2019 currency change mix currency regimes.
+In the 2019 Mid-Year Budget Review, presented to Parliament on 1 August 2019, the Finance Minister said ZIMSTAT would defer publishing year-on-year inflation for 12 months to February 2020, because the 2019 move from the multicurrency system to the Zimbabwe dollar affected the CPI base; users were to follow month-on-month inflation meanwhile. No official annual inflation rate was published for these months. Annual rates must be built by chaining month-on-month prints, and comparisons across the 2019 currency change mix currency regimes.
 
 - Cross-check: WFP and FEWS NET market food-price monitoring for Zimbabwe.
-- Source: [The Herald (Zimbabwe)](https://www.heraldonline.co.zw/mthuli-defends-annual-inflation-bar/)
+- Source: [Ministry of Finance and Economic Development, Zimbabwe, 2019 Mid-Year Budget Review (paras 54-56; copy hosted by the Commercial Farmers' Union, the Treasury site being unreachable)](https://cfuzim.org/wp-content/uploads/2019/08/budgetmidreview19.pdf)
 
 ## Caveat — read before relying on it
 
@@ -274,25 +274,25 @@ In October 2009 Greece revised its 2008 government deficit from 5.0% to 7.7% of 
 
 ### Gulf and OPEC producers: Crude oil production, direct communication and secondary sources (OPEC Monthly Oil Market Report) ( onward)
 
-Many OPEC member governments treat production data as confidential or publish figures that analysts consider unreliable, according to a 2018 KAPSARC paper. OPEC's monthly report therefore shows country-reported figures alongside averaged secondary-source estimates. Country-reported and secondary-source crude figures can differ materially for the same country and month; neither is a direct audited measurement.
+OPEC's Monthly Oil Market Report prints crude production as reported by member countries (direct communication) in a separate table from averaged secondary-source estimates, and some members report no figure. A 2018 KAPSARC paper (Mollet and Al Muhanna) notes that many member governments treat production data as confidential or publish figures analysts consider unreliable. Country-reported and secondary-source crude figures can differ materially for the same country and month (March 2025: Iraq 3,637 tb/d reported against 3,981 from secondary sources); neither is a direct audited measurement.
 
 - Cross-check: US EIA International Energy Statistics crude oil production estimates.
-- Source: [King Abdullah Petroleum Studies and Research Center (KAPSARC)](https://www.kapsarc.org/research/publications/opec-oil-production-data-the-role-of-secondary-sources/)
+- Source: [OPEC, Monthly Oil Market Report, April 2025 (tables 5-7 and 5-8)](https://www.opec.org/assets/assetdb/momr-april-2025.pdf)
 
 ### Kazakhstan: Oil and gas condensate production (Ministry of Energy of the Republic of Kazakhstan) (2017 onward)
 
-Kazakhstan's output is often reported as crude oil and gas condensate combined, while its OPEC+ target is compared with crude alone. For March 2025 a deputy energy minister told Argus crude was 1.79 mb/d and condensate 0.29 mb/d, against a 1.468 mb/d target. Combined figures overstate the crude volume relevant to OPEC+ targets by roughly 0.3 mb/d (2025); crude-only figures understate total liquids supply.
+Kazakhstan's Ministry of Energy reports output as oil and gas condensate combined, while its OPEC+ target is compared with crude alone. For March 2025 a deputy energy minister told Argus crude was 1.79 mb/d and condensate 0.29 mb/d, against a 1.468 mb/d target; OPEC's secondary sources put March 2025 crude at 1.852 mb/d. Combined figures overstate the crude volume relevant to OPEC+ targets by roughly 0.3 mb/d (2025); crude-only figures understate total liquids supply.
 
 - Cross-check: JODI's oil database, which reports Kazakhstan's crude and NGL (condensate) separately from 2016 (kz_crude_production, kz_ngl_production); US EIA International Energy Statistics, which report crude including lease condensate and other liquids separately.
-- Source: [Argus Media](https://www.argusmedia.com/en/news-and-insights/latest-market-news/2676247-kazakhstan-continues-to-massively-exceed-opec-target)
+- Source: [Argus Media (the crude and condensate split is not in an official release)](https://www.argusmedia.com/en/news-and-insights/latest-market-news/2676247-kazakhstan-continues-to-massively-exceed-opec-target)
 - Bedrok series: `kz_crude_production`, `kz_ngl_production`
 
-### Tanzania: All official statistics, National Bureau of Statistics Tanzania (Statistics Act 2015) (2018–2019-06)
+### Tanzania: All official statistics, National Bureau of Statistics Tanzania (Statistics Act 2015) (2018-09–2019-06)
 
-Amendments passed in 2018 made it an offence to publish statistics without NBS approval or that 'invalidate, distort or discredit' official figures; Parliament removed the criminal penalty in June 2019. No direct change to published official series is documented; the effect was on independent statistics that could be used to check official figures during 2018-2019.
+The Written Laws (Miscellaneous Amendments) (No. 3) Act 2018 barred disseminating statistics 'intended to invalidate, distort or discredit official statistics' or without the approval of the Statistician General, with a fine of at least TZS 10 million, at least three years' imprisonment, or both. The No. 3 Act of 2019, passed on 27 June 2019, repealed these provisions and the penalty and gave any person the right to publish statistics that differ from official figures. No direct change to published official series is documented; the effect was on independent statistics that could be used to check official figures during 2018-2019.
 
 - Cross-check: IMF Article IV staff estimates and World Bank Tanzania Economic Updates.
-- Source: [Human Rights Watch](https://www.hrw.org/news/2019/07/03/tanzania-drops-threat-prison-over-publishing-independent-statistics)
+- Source: [Written Laws (Miscellaneous Amendments) (No. 3) Act 2019, published by the National Bureau of Statistics, Tanzania](https://www.nbs.go.tz/nbs/takwimu/ACT/THE_WRITTEN_LAWS_MISCELLENEOUS_NO3_%20ACT_OF_2019.pdf)
 
 ### United States: Current Population Survey household response rate and labor force estimates (Bureau of Labor Statistics) (2013 onward)
 
@@ -320,8 +320,8 @@ BLS suspended CPI price collection entirely in Lincoln NE and Provo UT from Apri
 
 ### United States: All releases (Bureau of Labor Statistics) (2025-08–2026-08)
 
-On 1 August 2025 the BLS Commissioner was removed from office by the President, and the Deputy Commissioner became acting Commissioner. A new Commissioner, confirmed by the Senate on 7 August 2026, took office on 11 August 2026. No series break is attached to this event. Method and collection changes in this period are documented in separate BLS notices (CPI sample reductions, the October 2025 collection gap).
+BLS lists Commissioner Erika McEntarfer's tenure as January 2024 to August 2025; she was removed from office by the President on 1 August 2025, per press reports. Deputy Commissioner William Wiatrowski was acting Commissioner from August 2025 to August 2026. Brett Matsumoto, confirmed by the Senate on 7 August 2026, became Commissioner on 11 August 2026. No series break is attached to this event. Method and collection changes in this period are documented in separate BLS notices (CPI sample reductions, the October 2025 collection gap).
 
 - Cross-check: Compare release dates against the published BLS release calendar, and payroll trends against the Quarterly Census of Employment and Wages.
-- Source: [Bureau of Labor Statistics](https://www.bls.gov/bls/history/commissioners/erika-mcentarfer.htm)
+- Source: [Bureau of Labor Statistics, Commissioners of Labor Statistics](https://www.bls.gov/bls/history/commissioners/)
 - Bedrok series: `us_avg_hourly_earnings`, `us_core_cpi`, `us_cpi`, `us_cpi_shelter`, `us_cpi_supercore`, `us_eci`, `us_import_prices`, `us_jolts_hires_rate`, `us_jolts_layoffs_rate`, `us_jolts_openings`, `us_jolts_quits_rate`, `us_participation`, `us_payrolls`, `us_ppi_all_commodities`, `us_ppi_final_demand`, `us_u6`, `us_unemployment`

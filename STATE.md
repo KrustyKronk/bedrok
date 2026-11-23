@@ -838,17 +838,24 @@ Owner-side items are in `profile/STATE-private.md`.
    constant-maturity, BoE zero-coupon, Eurostat monthly averages, web point
    quotes).
 
-6. **Review the warnings' weaker sources.** 11 of 43 cite a news outlet,
-   trade press, a think tank or a research brief because no primary document
-   could be reached: Iran, Russia (oil output, trade, statistics generally),
-   Venezuela, Turkey, Zimbabwe, Kazakhstan, the Gulf producers, Zambia and
-   Tanzania's 2018 act. Two more cite a primary page that carries only part of
-   their facts: Lebanon's exchange rates and the BLS leadership change.
-   Replace with a primary source when one turns up. Three severities were set
-   against the register and are the owner's to confirm: Ethiopia's GDP and the
-   2025 payrolls benchmark down to caveat, Tanzania's statistics act down to
-   caveat. The night-lights study's 1992–2013 period is unverified against the
-   paper.
+6. **The warnings' remaining weak sources.** Reviewed 2026-11-23: Lebanon,
+   Zimbabwe, Turkey, the OPEC producers, Tanzania's statistics act, Zambia and
+   the BLS leadership row now cite a primary document, and their facts were
+   corrected against it (Lebanon's 89,500 is January 2024; Turkey's appeal was
+   September 2023, final March 2024; Tanzania's approval was the Statistician
+   General's). Five still rest on press or analysis because no primary could be
+   reached, and each row says so in `source_name`: Russia's customs trade
+   (customs.gov.ru unreachable), Russia's oil and gas output (Order 1074-r and
+   Law 55-FZ are named, pravo.gov.ru unreachable), Russia's statistics
+   generally (OSW; an assessment, so an analysis is the honest source),
+   Venezuela (no BCV release or IMF text found) and Kazakhstan's crude and
+   condensate split (Argus only). Retry those from a network that reaches the
+   Russian sites or web.archive.org. Night-lights: 1992–2013 is confirmed
+   against the paper, and the figure is "approximately 35%". Severities
+   confirmed by the owner: Ethiopia's GDP, the 2025 payrolls benchmark and
+   Tanzania's statistics act stay caveat, and Iran stays disqualifying even
+   though the CBI's inflation page now shows annual figures for every year
+   from 1397: the row records that the gap was later filled.
 
 7. **The IMF WEO rows' freshness is their last non-forecast year** (session
    11), right for "is this stale" but not for "is this the latest vintage": a
