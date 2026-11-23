@@ -1,6 +1,6 @@
 # Where Bedrok stands
 
-**Updated 2026-11-23. 0.3.12 is the latest release (2026-11-23), on PyPI and with its Desktop bundle on the GitHub release: `publish.yml`'s build, publish and bundle jobs passed, and from PyPI an empty folder and an empty home answered all ten smoke calls in 36 seconds, its catalog listing 3,124 series. It carries PRs 51 to 54: release dates for the world families, Eurostat, the BIS and Kazakhstan's base rate with the new `behind` status (items 2, 16, 23), the sticky CPI re-point (item 20), the warnings' sources (item 6), and the search fixes, the `rates_infl` fix and the website contract tests (items 12, 14, 21). Claude Desktop still runs 0.3.3 (item 25). The work in hand is the public website, built in its own private repository from this package (item 21); it reads `due` and `late` but not yet `behind`.** Bedrok is a local MCP server and store of
+**Updated 2026-11-23. 0.3.12 is the latest release (2026-11-23), on PyPI and with its Desktop bundle on the GitHub release: `publish.yml`'s build, publish and bundle jobs passed, and from PyPI an empty folder and an empty home answered all ten smoke calls in 36 seconds, its catalog listing 3,124 series. It carries PRs 51 to 54: release dates for the world families, Eurostat, the BIS and Kazakhstan's base rate with the new `behind` status (items 2, 16, 23), the sticky CPI re-point (item 20), the warnings' sources (item 6), and the search fixes, the `rates_infl` fix and the website contract tests (items 12, 14, 21). The owner installed 0.3.12 in Claude Desktop the same day, one extension (`local.mcpb.andreu-paddack.bedrok`), replacing 0.3.3; what it brought is untried there yet (item 25). The work in hand is the public website, built in its own private repository from this package (item 21); it reads `due` and `late` but not yet `behind`.** Bedrok is a local MCP server and store of
 public macroeconomic data, each series fetched from its publisher. The plan is
 `docs/rebuild-plan.md`; the reasoning behind it is
 `docs/research/2026-10-09-open-bedrok-brainstorm.md`. Sessions 1 (strip the
@@ -122,8 +122,7 @@ live store every linked rate now names its bank's next decision (the FOMC and
 the Bank of Canada on 9 Dec, the ECB and the Bank of England on 17 Dec).
 
 **Next:** the public website (item 21), built in its own private repository
-beside this one. Then install the latest bundle in Claude Desktop and try what
-0.3.4 to 0.3.11 added there (item 25), a cold question on a release morning
+beside this one. Then try in Claude Desktop what 0.3.4 to 0.3.12 added (item 25), a cold question on a release morning
 (item 1), and whichever open item the owner picks.
 
 **The capex-cycle series in one paragraph (2026-11-02).** A downstream
@@ -794,8 +793,9 @@ The numbers are stable labels (bedrok-web, code comments and other documents
 cite them), so a closed item in the middle keeps a one-line placeholder.
 Owner-side items are in `profile/STATE-private.md`.
 
-1. **A cold question on a release morning.** 0.3.3 is installed in Claude
-   Desktop and passed the owner's ten-question check (2026-10-16). What has not
+1. **A cold question on a release morning.** 0.3.12 is installed in Claude
+   Desktop (2026-11-23; 0.3.3 passed the owner's ten-question check there on
+   2026-10-16). What has not
    run outside this machine's development server is the fetch on a due
    series. Test it by asking "what is out today?" on a release morning, then
    asking for the figure (Canada's CPI on 19 Oct, Spain's EPA and the ECB's M3
@@ -980,13 +980,10 @@ Owner-side items are in `profile/STATE-private.md`.
     - **GDP has no exact calendar.** The 2026 calendar shows GDP by
       production about 47 and about 92 days after a quarter, inconsistently;
       it stays on a wide rule until a pattern is clear.
-    - **Released in 0.3.4** (2026-10-29); not yet tried in Claude Desktop (item 25).
+    - **Released in 0.3.4** (2026-10-29); in Claude Desktop since 0.3.12 (2026-11-23), untried there (item 25).
 
-17. **The capex-cycle series are released in 0.3.5** (2026-11-02). Until a
-    later bundle is installed in Claude Desktop (item 25), the installed
-    server answers the eight stored rows with older seeds: a due or stale
-    judgment would try the API path for `us_dc_construction` and an unknown
-    `fedfiles` key for `us_ebp`, fail, and keep the stored data. What stays
+17. **The capex-cycle series are released in 0.3.5** (2026-11-02), and in
+    Claude Desktop since 0.3.12 was installed there (2026-11-23). What stays
     open:
     - **Z.1 asked on demand costs about 13 s a series.** From the clean
       install, `us_z1_nfc_financing_gap` and `us_z1_nfc_capex` asked one after
@@ -994,10 +991,8 @@ Owner-side items are in `profile/STATE-private.md`.
       parsed again for each; a refresh fetches it once. Not looked into;
       worth it only if a cold session asking four Z.1 series feels slow.
 
-18. **The logo is released in 0.3.6** (2026-11-05). Installing any later
-    bundle over the old extension brings it (item 25); the extension list
-    draws the manifest's icon, which the installed 0.3.3 does not have. Not
-    yet seen in any host: whether Desktop's list draws it at small sizes
+18. **The logo is released in 0.3.6** (2026-11-05). It reached Claude
+    Desktop with 0.3.12 (2026-11-23). Not yet seen in any host: whether Desktop's list draws it at small sizes
     well, and which other hosts draw `serverInfo.icons` (it is in the MCP
     spec from 2025-11-25; hosts are free to ignore it). A Claude Code
     install (`uvx … bedrok serve`) picks it up on its next start from PyPI.
@@ -1192,10 +1187,9 @@ Owner-side items are in `profile/STATE-private.md`.
     the BIS has not updated since early 2026 or before (Venezuela,
     Madagascar, DR Congo, Ghana, Lebanon, Bolivia, Libya, Iraq, Uganda,
     Guyana, Laos), and Switzerland's and Bosnia's unemployment rates.
-25. **Install the latest bundle in Claude Desktop.** Desktop runs 0.3.3
-    (2026-10-16); 0.3.4 to 0.3.12 are released but untried there. Install
-    the newest `.mcpb` from the GitHub release over the old extension (author
-    and name unchanged, so it upgrades in place; ⌘Q and reopen), then ask:
+25. **Try 0.3.12 in Claude Desktop.** Installed by the owner on 2026-11-23
+    over 0.3.3 (the extension list shows one Bedrok, 0.3.12), so 0.3.4 to
+    0.3.12 reach Desktop for the first time. Not yet asked there:
     - something about Kazakhstan and the Z.1 financing gap (items 16, 17);
     - "when does the FOMC meet next?", and the day after a decision, the
       rate (item 19);
