@@ -490,12 +490,33 @@ _CONTRIB_WORDS = {"contribution", "contributions", "component", "components", "b
                   "drove", "parts"}
 _CONTRIB_PREFIXES = ("gdp_contrib_", "us_gdp_contrib_")
 
+# Words that ask for the CFTC's positioning rather than a price. They do not
+# hide the cot_ rows otherwise (six rows bury nothing); they lift the one whose
+# market the other words name above that market's prices (item 14: "crude oil
+# positioning" listed Pink Sheet prices and not cot_wti_net_noncomm).
+_COT_WORDS = {"positioning", "positions", "position", "positioned", "speculators",
+              "speculator", "speculative", "speculation", "cot", "cftc", "commitments",
+              "traders"}
+_COT_PREFIX = "cot_"
+_COT_BOOST = 10
+
+# Words that ask for a currency's price. Bilateral pairs are named "Euro in
+# tenge, EURKZT", never "exchange rate", which only the effective-rate indices
+# carry; so "kazakhstan exchange rate" led with the REER and NEER (item 16).
+# The pairs count as named so, and a little more: an effective rate is asked
+# for by "effective", "reer" or "neer".
+_FX_WORDS = {"exchange", "fx", "currency", "forex"}
+_FX_NAME = "exchange rate fx currency"
+_FX_BOOST = 2
+
 _SYNONYMS = {
     "inflation": {"cpi", "hicp", "prices", "price"},
     "prices": {"cpi", "hicp"},
     "growth": {"gdp"},
     "jobless": {"unemployment"},
     "jobs": {"payrolls", "employment", "unemployment"},
+    # cot_wti is "WTI crude"; Kazakhstan's condensate is "natural gas liquids".
+    "oil": {"crude", "condensate"},
 }
 # Synonyms that only hint: "inflation" may be a series named for prices, but a
 # word that names many other measures ("house prices") must not outrank the
@@ -548,16 +569,26 @@ def search_series(
                    for sid, src in zip(cat["series_id"], cat["source"])]]
     pubs = {s: r["name"].lower() for s, r in sources.load().items()}
 
+    def words_of(text) -> list[str]:
+        # "non-oil" is one word: it means without oil, and "kazakhstan oil"
+        # ranked two non-oil rows above the condensate series (item 16).
+        return re.findall(r"[a-z0-9]+", re.sub(r"\bnon-(?=[a-z])", "non", str(text).lower()))
+
     def toks(text) -> set[str]:
-        return set(re.findall(r"[a-z0-9]+", str(text).lower()))
+        return set(words_of(text))
+
+    asks_cot = bool(set(words) & _COT_WORDS)
+    asks_fx = bool(set(words) & _FX_WORDS)
+    other_words = [w for w in words if w not in _COT_WORDS]
 
     def score(r) -> int:
         # r["name"], never r.name: on a pandas row .name is the index label.
         sid = str(r["series_id"]).lower()
-        sid_t, name_t = set(sid.split("_")), toks(r["name"])
+        raw_name = str(r["name"]) + (f" {_FX_NAME}" if sid in pipeline.FX_IDS else "")
+        sid_t, name_t = set(sid.split("_")), toks(raw_name)
         rest_t = toks(" ".join(str(r[c]) for c in ("units", "notes", "source"))
                       + " " + pubs.get(r["source"], ""))
-        name = " ".join(re.findall(r"[a-z0-9]+", str(r["name"]).lower()))
+        name = " ".join(words_of(raw_name))
 
         def one(w) -> int:
             n = 4 * (w in sid_t) + 3 * (w in name_t) + (w in rest_t)
@@ -577,6 +608,12 @@ def search_series(
         # outrank the same words scattered across a different series.
         total += sum(3 for a, b in zip(words, words[1:]) if f"{a} {b}" in name)
         total += 10 if "_".join(words) == sid else 0
+        if asks_cot and sid.startswith(_COT_PREFIX) and (
+                not other_words or any(one(w) or any(one(c) for c in _SYNONYMS.get(w, ()))
+                                       for w in other_words)):
+            total += _COT_BOOST
+        if asks_fx and sid in pipeline.FX_IDS and total:
+            total += _FX_BOOST
         # A headline breaks a tie with its near twin, never a real difference.
         return total + (1 if total and sid in aliases.HEADLINES else 0)
 
