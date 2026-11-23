@@ -1,6 +1,6 @@
 """Inflation + rate differentials + EURUSD era-correlations (the hedge-tilt toolkit).
 
-  .venv/bin/python src/engines/rates_infl.py [--csv /tmp/panel.csv]
+  bedrok rates [--csv /tmp/panel.csv]
 
 Outputs: latest YoY inflation (US CPI/core CPI/core PCE, EA HICP), policy and 10y
 differentials, the carry proxy (us_3m − ecb_estr), and EURUSD↔differential
@@ -14,7 +14,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from bedrok.core import config  # noqa: E402
+from bedrok.core import config
+from bedrok.ingest import transforms
 
 ERAS = ["2010-01-01", "2015-01-01", "2022-01-01", "2024-01-01"]
 
@@ -48,7 +49,12 @@ def main() -> int:
     con.close()
     fx["date"] = pd.to_datetime(fx["date"]); eurusd = fx.set_index("date")["rate"]
 
-    yoy = lambda s: (s / s.shift(12) - 1.0) * 100.0
+    def yoy(s):
+        # By date, never twelve rows up: US CPI has no October 2025 (the
+        # shutdown), and a row shift compared every month after it with the
+        # wrong one a year earlier.
+        out = transforms.yoy(s.rename("value").rename_axis("date").reset_index())
+        return out.assign(date=pd.to_datetime(out["date"])).set_index("date")["value"]
     print("\nLatest inflation (YoY):")
     for name, s in [("US CPI", yoy(us_cpi)), ("US core CPI", yoy(us_core)),
                     ("US core PCE", yoy(us_pce)), ("EA HICP", ea_hicp)]:

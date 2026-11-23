@@ -916,19 +916,25 @@ Owner-side items are in `profile/STATE-private.md`.
     e-Stat's API database. USD/CAD from the Bank of Canada starts only in 2017.
     Both are said in their notes; a better source for either is welcome.
 
-12. **Test coverage gaps:** nothing tests `rates_infl`, `backfill` (beyond
-    its exit code, session E), or the sync stages end to end. `smoke`'s verdicts are tested (session 12); whether the
-    live publishers answer is the liveness run's job, not the suite's.
+12. *Closed 2026-11-23.* `rates_infl`, `backfill`'s choice of stages and the
+    sync stages end to end are tested on inline payloads
+    (`tests/test_rates_infl.py`, `tests/test_sync_stages.py`). The first test of
+    `bedrok rates` found it took an annual rate as twelve rows up, wrong across
+    US CPI's missing October 2025; it now works by date. `smoke`'s verdicts are
+    tested (session 12); whether the live publishers answer is the liveness
+    run's job, not the suite's.
 
 13. **The liveness run checks keyless publishers only.** The six keyed ones
     (BEA, Census, EIA, FRED, Destatis, e-Stat) would need their keys as
     repository secrets, and a secret-holding workflow must never run on
     `pull_request`.
 
-14. **"Crude oil positioning" does not find the CFTC row.** On a fresh store
-    (session G) it lists four Pink Sheet crude prices and not
-    `cot_wti_net_noncomm`; "positioning" should weigh the CFTC family the way
-    "contribution" weighs the GDP parts (`_CONTRIB_WORDS` in the server).
+14. *Closed 2026-11-23.* "Crude oil positioning" finds `cot_wti_net_noncomm`
+    first. Positioning words (`_COT_WORDS` in the server) lift the `cot_` rows
+    that also match another word of the search; they are lifted, not hidden as
+    the parts of growth are, since six rows bury nothing. "oil" also means
+    crude and condensate. Pinned by tests of the words as typed, on a fresh
+    store.
 
 15. **The later sessions in `docs/rebuild-plan.md` are unplanned:** 13
     (13a, the release calendar, done except what item 2 lists; 13b, revisions, deferred
@@ -954,12 +960,13 @@ Owner-side items are in `profile/STATE-private.md`.
     - **Kazakhstan's base rate has its decision dates** (2026-11-23, item
       19): `kz_base_rate` is due on each decision day and fresh once the row
       for it is in.
-    - **Small things seen in K1:** "kazakhstan exchange rate" ranks the REER
-      and NEER above `usdkzt` and `eurkzt`. A percentile of an event series
-      counts decisions, not time spent at each rate (true of the ECB's rows
-      too). There is no GBPKZT. Inflation expectations have no release rule,
-      because the bank states no timing for them. "kazakhstan oil" ranks the
-      condensate series below the first six matches.
+    - **Small things seen in K1:** a percentile of an event series counts
+      decisions, not time spent at each rate (true of the ECB's rows too).
+      There is no GBPKZT. Inflation expectations have no release rule, because
+      the bank states no timing for them. (The two search rankings seen then
+      were fixed 2026-11-23: "kazakhstan exchange rate" leads with `eurkzt`
+      and `usdkzt`, and "kazakhstan oil" with crude, then condensate in the
+      top three, "non-oil" no longer matching "oil".)
     - **What K2 left out, and why.** The short-term economic indicator,
       Kazakhstan's monthly activity gauge, is in Taldau only in tenge, not as
       its growth rate. Real wages start in 2021 and lag two quarters. The
@@ -1071,7 +1078,10 @@ Owner-side items are in `profile/STATE-private.md`.
       with `frame=`; `ingest.transforms.to_frequency` and `yoy`;
       `ingest.live.fetch` for the FRED-channel rows; `core.store.init_db` and
       the upserts (its tests); the seed catalogs; and
-      `bedrok/surfaces/icon.png`. None has a test here as a public API yet.
+      `bedrok/surfaces/icon.png`. `tests/test_web_contract.py` pins each
+      signature and the fields the site reads from it (taken from bedrok-web's
+      code on 2026-11-23): a change that fails it breaks the site, so change
+      bedrok-web in step.
     - **October 2026's US CPI annual rate cannot be computed.** The October
       2026 index is held, but October 2025 was never published (the shutdown
       gap), so `get_series(transform="yoy")` stops at September 2026, while

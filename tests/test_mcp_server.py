@@ -863,3 +863,52 @@ def test_a_country_s_inflation_outranks_its_house_prices(srv):
            _call("search_series", {"text": "brazil inflation"}).structured_content["matches"]]
     assert ids.index("bis_real_house_prices_br") > max(ids.index("weo_inflation_br"),
                                                        ids.index("bis_cpi_yoy_br"))
+
+
+@pytest.fixture
+def fresh(tmp_path, monkeypatch):
+    """A store that has only loaded its catalog, as on a first install: the
+    search tests below rank the real seed rows, not a fixture's."""
+    db = tmp_path / "market.duckdb"
+    monkeypatch.setattr(config, "PROFILE_DIR", tmp_path)
+    monkeypatch.setattr(config, "DB_PATH", db)
+    con = duckdb.connect(str(db))
+    store.init_db(con)
+    pipeline.load_catalog(con)
+    store.close_checkpointed(con)
+
+    def ids(text):
+        return [m["series_id"] for m in
+                _call("search_series", {"text": text}).structured_content["matches"]]
+    return ids
+
+
+def test_positioning_words_find_the_cftc_row_for_that_market(fresh):
+    """Item 14: "crude oil positioning" listed Pink Sheet crude prices and not
+    the CFTC's WTI row, whose name says "WTI crude", never "oil"."""
+    ids = fresh("crude oil positioning")
+    assert ids[0] == "cot_wti_net_noncomm"
+    # The other markets' positioning does not jump the crude prices.
+    assert ids.index("wb_crude_wti") < ids.index("cot_es_net_noncomm")
+    assert fresh("oil positioning")[0] == "cot_wti_net_noncomm"
+    assert fresh("gold speculators")[0] == "cot_gold_net_noncomm"
+    assert all(i.startswith("cot_") for i in fresh("positioning"))
+    assert all(i.startswith("cot_") for i in fresh("cot")[:5])
+
+
+def test_a_country_s_exchange_rate_is_its_currency_pairs_first(fresh):
+    """Item 16: "kazakhstan exchange rate" led with the effective-rate indices,
+    the only rows named "exchange rate"."""
+    ids = fresh("kazakhstan exchange rate")
+    assert set(ids[:2]) == {"usdkzt", "eurkzt"}
+    assert ids.index("kz_reer") > 1 and ids.index("kz_neer") > 1
+    assert fresh("kazakhstan real effective exchange rate")[0] == "kz_reer"
+
+
+def test_kazakhstan_oil_finds_its_production_before_its_non_oil_rows(fresh):
+    """Item 16: the condensate series came seventh of eight, behind two
+    "non-oil" rows that matched "oil"."""
+    ids = fresh("kazakhstan oil")
+    assert ids[0] == "kz_crude_production"
+    assert "kz_ngl_production" in ids[:3]
+    assert ids.index("kz_ngl_production") < ids.index("mcdreo_nonoil_balance_kz")
