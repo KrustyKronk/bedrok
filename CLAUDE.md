@@ -4,8 +4,9 @@ Read `STATE.md` first. It is where the project stands and what is open. Then
 `docs/rebuild-plan.md` for where it is going, `README.md` if you need to run
 something, and `docs/engineering/notes.md` before you debug anything in the
 sandbox, the ingest path, or a vendor API — it is the list of things that
-already cost somebody hours. Do not read `docs/archive/` unless a question sends
-you there; it is history and it contradicts the present on purpose.
+already cost somebody hours. Do not read `docs/history.md` (what each session
+built) or `docs/archive/` (the pre-rebuild project, which contradicts the
+present on purpose) unless a question sends you there.
 
 Bedrok measures, contextualises and premise-checks. The reader decides.
 
@@ -16,15 +17,14 @@ here answers a portfolio question.
 
 **1. The folder and GitHub are one to one.** A session does not end with
 `git status` dirty. Commit the work and the documents it produced, on a branch,
-as a PR. A fix once sat uncommitted on `main` for two weeks while a fix plan
-written after it was authored recorded the bug as unfixed. Only secrets,
-`profile/`, fetched binaries and build output stay local.
+as a PR: an uncommitted fix once sat on `main` for two weeks while a later
+plan recorded the bug as unfixed. Only secrets, `profile/`, fetched binaries
+and build output stay local.
 
 **2. Open items live in `STATE.md` and nowhere else.** If another document has a
 to-do list, it is stale by construction. Point at `STATE.md` instead of keeping a
-second copy. This rule exists because for three months the real backlog lived in a
-folder outside the repo, and it could not see the code: the 2026-08-07 plan opens by declaring the standing queue
-unimplemented, two days after commit `10dcfdd` implemented a large part of it.
+second copy: a backlog once kept outside the repo declared work unimplemented
+two days after it was merged.
 
 **3. Rewrite `STATE.md` in place at the end of every session.** Never date-copy
 it and never start a second one. Git history is the record of what it used to
@@ -38,10 +38,10 @@ in `profile/`. `tests/test_publication.py` enforces the general part (home
 paths, key values, lock files, anything under `profile/`), and also checks
 every tracked file and the built wheel against the owner's own list of
 personal terms in `profile/publication-terms.txt`, when that file exists.
-
-Not even as a test fixture: that is exactly how a real NAV ended up inside the
-test for a privacy gate, and survived being written and reviewed because "it is
-only a fixture".
+GitHub's CI cannot see that list, so run the full suite locally before every
+push, not after: an identifier carrying the owner's name once reached a public
+PR that way. Not even as a test fixture: a real NAV once sat in the test for
+the privacy gate itself, because "it is only a fixture".
 
 **5. Currency is a column, never an inference.** For a macro series the
 authority is its catalog `units`; never infer a currency from a level or a
@@ -80,16 +80,12 @@ listing. Touch `bin/`, `profile/data/` and `profile/seeds/` directly.
 surfaces  ->  ops  ->  engines  ->  ingest  ->  core
 ```
 
-`core/` is configuration, the store and shared vocabulary; `ingest/` is source
-adapters and the sync drivers; `engines/` is the analysis maths; `ops/` is the
-audit reports and the connectivity check; `surfaces/` renders for a human or an assistant
-(the MCP server). A `main()` may dispatch across
-layers — that is a command composing, not a library depending — and nothing
-else may. `tests/test_layering.py` enforces this, so it is a fact rather than a
-habit. If an import has to go upward, the module is almost always filed in the
-wrong layer: that is how one ingest module once came to hold both a command and
-the helpers the engines needed, with the resulting cycle held apart only by
-function-local imports.
+`core/` is configuration, the store and shared vocabulary; `ingest/` the
+source adapters and sync drivers; `engines/` the analysis maths; `ops/` the
+audits and the connectivity check; `surfaces/` the MCP server. Only a `main()`
+may dispatch across layers. `tests/test_layering.py` enforces it. An import
+that has to go upward almost always means the module is filed in the wrong
+layer.
 
 **13. Derive paths from the package, never by counting `.parent`.**
 `Path(__file__).parents[2]` is the repo root because it is the parent of the
