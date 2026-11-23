@@ -1015,7 +1015,7 @@ Owner-side items are in `profile/STATE-private.md`.
     - **Sticky CPI: fixed.** The Atlanta Fed moved the file
       (`…/research-and-data/data/sticky-price/sticky-price-data.xlsx`, same
       layout); `tieout` found every stored month equal, and a full refresh
-      from the fix's branch brought September's revision and October.
+      from the fix's branch brought October 2026 (3.06%).
     - **Destatis `de_industrial_production`: not a bot check, and the table
       code has not changed.** `42153-0001` answered through the keyed API on
       2026-11-20 and again in the 2026-11-23 refresh. The refusal was one
