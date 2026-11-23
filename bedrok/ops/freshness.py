@@ -18,6 +18,14 @@ Two tests, the second only where a series has a release rule
      the publisher has stated the date (the store's release_calendar, filled
      by ingest/calendars.py), that date replaces the rule's window. Reading it
      is offline: `assess` never fetches.
+     A member of a family fetched in one request (a BIS dataset, a
+     Eurostat table) whose next period another member already holds is not
+     due or late but behind its publisher: the release came and did not
+     include it (the BIS collects small economies' exchange rates months
+     late). It keeps its age status, and the answer says so; the freshest
+     member speaks for the family.
+     A series that comes in editions (the IMF's WEO) says when the next
+     edition is usually out, for information only (core/releases.py).
   3. A central bank's decision, for a series that shows one (a policy rate
      whose bank's schedule is in the calendar): due once the decision has been
      taken and the store does not show it yet, else fresh until the next one.
@@ -108,7 +116,7 @@ def _meeting(con, series_id: str, feed: str, top: date | None, frequency: str,
         w = releases.meeting_window(feed, prev)
         first = releases.reflected_on(feed, w["label"])
         shown = first is None or (top is not None and top >= first)
-        if not shown and frequency == "event":
+        if not shown and frequency == "event" and not releases.FEEDS[feed].get("holds_recorded"):
             try:
                 got = con.execute("SELECT checked_at FROM series_checks WHERE series_id = ?",
                                   [series_id]).fetchone()
@@ -204,6 +212,22 @@ def assess(con, series_id: str, today: date | None = None, *,
     if found:
         w, wfreq = found
         state = releases.status(w, now)
-        status = "stale" if stale else state
+        if state in ("due", "late") and _behind(con, series_id, w["label"], today):
+            state = "behind"
+        status = "stale" if stale else ("fresh" if state == "behind" else state)
         out["next_release"] = releases.describe(w, wfreq, state, hi)
+    elif releases.edition_for(series_id):
+        w = releases.edition_window(releases.edition_for(series_id), now)
+        out["next_release"] = releases.describe_edition(w)
     return {**out, "age_days": age, "stale": stale, "status": status}
+
+
+def _behind(con, series_id: str, label: date, today: date) -> bool:
+    """Whether another member of the series' family already holds the period
+    it is waiting for: then the publisher has released that period without it."""
+    fam = releases.family_of(series_id)
+    if not fam:
+        return False
+    return con.execute(
+        "SELECT 1 FROM macro_series WHERE starts_with(series_id, ?) AND series_id <> ? "
+        "AND date >= ? AND date <= ? LIMIT 1", [fam, series_id, label, today]).fetchone() is not None

@@ -5,10 +5,11 @@ from datetime import date, datetime, timezone
 from zoneinfo import ZoneInfo
 
 import duckdb
+import pytest
 import pandas as pd
 
 from bedrok.core import releases, store
-from bedrok.ingest import calendars, pipeline
+from bedrok.ingest import calendars, pipeline, world
 from bedrok.ingest.adapters import ons
 from bedrok.ops import freshness
 
@@ -155,9 +156,17 @@ def test_every_calendar_series_has_a_rule_and_a_known_feed():
         reader = csv.DictReader(f)
         assert reader.fieldnames == releases.CALENDAR_COLUMNS
         rows = list(reader)
-    assert len(rows) == len({r["series_id"] for r in rows})
+    keys = [r["series_id"] or r["prefix"] for r in rows]
+    assert len(keys) == len(set(keys))
+    assert all(bool(r["series_id"]) != bool(r["prefix"]) for r in rows)
+    families = tuple(pipeline.BULK_STAGE_FOR_PREFIX) + tuple(pipeline.BULK_PREFIXES) + world.PREFIXES
     for r in rows:
         assert r["feed"] in releases.FEEDS
+        if r["prefix"]:
+            assert r["prefix"] in families, f"unknown family {r['prefix']}"
+            assert releases.rule_for(r["prefix"]), f"{r['prefix']}: a calendar needs a rule to bound it"
+            assert r["release_name"], r["prefix"]
+            continue
         if r["feed"] in releases.MEETING_FEEDS:
             # A policy rate is bounded by its bank's decisions, not by a rule;
             # a rule as well would judge it twice.
@@ -170,7 +179,8 @@ def test_every_calendar_series_has_a_rule_and_a_known_feed():
         if meta["fetched"]:
             assert r["release_name"], f"{r['series_id']}: a fetched feed needs a release name"
     cat = set(pd.read_csv(pipeline.CATALOG_CSV, dtype=str)["series_id"])
-    missing = [r["series_id"] for r in rows if r["series_id"] not in cat]
+    cat |= set(pipeline.static_catalog_rows()["series_id"])
+    missing = [r["series_id"] for r in rows if r["series_id"] and r["series_id"] not in cat]
     assert not missing, f"calendar rows for series not in the catalog: {missing}"
 
 
@@ -441,3 +451,202 @@ def test_the_bureau_calendar_asks_for_this_month_and_the_next(monkeypatch):
     df = calendars.fetch_bns(date(2026, 10, 29))
     assert [u.rsplit("=", 1)[1] for u in asked] == ["10.2026", "11.2026"]
     assert len(df) == 4
+
+
+# ---- 2026-11-23: Eurostat, the BIS, families and editions -------------------------
+
+# A fragment of https://ec.europa.eu/eurostat/o/calendars/eventsIcal, 2026-11-23:
+# all-day events, LF line endings, an escaped comma, articles beside releases.
+EUROSTAT = (
+    "BEGIN:VCALENDAR\nBEGIN:VEVENT\nDTSTART;VALUE=DATE:20261201\n"
+    "SUMMARY:Flash estimate inflation euro area\n"
+    "X-CATEGORY:Data release\\,Euro indicators release\\,Statistics Explained\nEND:VEVENT\n"
+    "BEGIN:VEVENT\nDTSTART;VALUE=DATE:20261202\nSUMMARY:Unemployment\n"
+    "X-CATEGORY:Data release\\,Euro indicators release\nEND:VEVENT\n"
+    "BEGIN:VEVENT\nDTSTART;VALUE=DATE:20261130\nSUMMARY:Unemployment\n"
+    "X-CATEGORY:Statistics Explained\nEND:VEVENT\n"
+    "BEGIN:VEVENT\nDTSTART;VALUE=DATE:20261203\nSUMMARY:Industrial producer prices\\, domes\n"
+    " tic market\nX-CATEGORY:Data release\\,Euro indicators release\nEND:VEVENT\n"
+    "END:VCALENDAR\n")
+
+
+def test_eurostat_keeps_its_euro_indicator_releases_at_eleven_luxembourg():
+    df = calendars.parse_eurostat(EUROSTAT)
+    assert list(df["release_name"]) == ["Flash estimate inflation euro area", "Unemployment"]
+    assert list(df["due_at"]) == [datetime(2026, 12, 1, 10), datetime(2026, 12, 2, 10)]
+    assert df["period"].isna().all()                 # the file names no period
+
+
+def test_the_flash_date_is_eurostats_and_its_time_is_usual():
+    con = _series("ea_hicp_yoy", "eurostat", "monthly", date(2026, 10, 1), 90)
+    nr = _next(con, "eurostat_ics", calendars.parse_eurostat(EUROSTAT), "ea_hicp_yoy",
+               now=datetime(2026, 11, 23, 12, tzinfo=timezone.utc))
+    assert nr["period"] == "November 2026" and nr["due_at"] == "2026-12-01T11:00:00+01:00"
+    assert nr["approximate"] is True and nr["date_exact"] is True
+    assert "1 Dec 2026, usually 11:00 CET (Eurostat's release calendar)" in nr["message"]
+
+
+# A fragment of https://data.bis.org/feed.xml, 2026-11-23.
+BIS = """<rss><channel>
+<item><title><![CDATA[Consumer prices, 2026-10 / Release]]></title><category><![CDATA[CPI]]></category>
+<pubDate>Thu, 26 Nov 2026 10:00:00 GMT</pubDate></item>
+<item><title><![CDATA[Bilateral exchange rates, 2026-11 / Daily and monthly data]]></title>
+<category><![CDATA[XRU]]></category><pubDate>Thu, 03 Dec 2026 10:00:00 GMT</pubDate></item>
+<item><title><![CDATA[Bilateral exchange rates, 2026-11 / Daily and monthly data]]></title>
+<category><![CDATA[XRU]]></category><pubDate>Thu, 10 Dec 2026 10:00:00 GMT</pubDate></item>
+<item><title><![CDATA[Effective exchange rates, 2026-11-30 / Nominal daily data]]></title>
+<category><![CDATA[EER]]></category><pubDate>Thu, 03 Dec 2026 10:00:00 GMT</pubDate></item>
+<item><title><![CDATA[Effective exchange rates, 2026-11 / Nominal / real monthly data]]></title>
+<category><![CDATA[EER]]></category><pubDate>Thu, 17 Dec 2026 10:00:00 GMT</pubDate></item>
+<item><title><![CDATA[Residential property prices, 2026-10 / Detailed residential release]]></title>
+<category><![CDATA[RPP]]></category><pubDate>Wed, 23 Dec 2026 10:00:00 GMT</pubDate></item>
+<item><title><![CDATA[Residential property prices, 2026-Q3 / Selected residential, partial update 1]]></title>
+<category><![CDATA[RPP]]></category><pubDate>Wed, 23 Dec 2026 10:00:00 GMT</pubDate></item>
+<item><title><![CDATA[Credit to the non-financial sector, 2026-Q2 / Release]]></title>
+<category><![CDATA[TOTAL_CREDIT]]></category><pubDate>Mon, 07 Dec 2026 10:00:00 GMT</pubDate></item>
+<item><title><![CDATA[Central bank total assets, 2026-09 / Release]]></title>
+<category><![CDATA[CBTA]]></category><pubDate>Thu, 26 Nov 2026 10:00:00 GMT</pubDate></item>
+</channel></rss>"""
+
+
+def test_the_bis_feed_names_each_release_and_its_period():
+    df = calendars.parse_bis(BIS)
+    got = {(r.release_name, r.due_at.date(), r.period) for r in df.itertuples()}
+    assert got == {("CPI", date(2026, 11, 26), date(2026, 10, 1)),
+                   ("XRU", date(2026, 12, 3), date(2026, 11, 1)),
+                   ("XRU", date(2026, 12, 10), date(2026, 11, 1)),
+                   ("EER monthly", date(2026, 12, 17), date(2026, 11, 1)),
+                   ("RPP selected", date(2026, 12, 23), date(2026, 7, 1)),
+                   ("TOTAL_CREDIT", date(2026, 12, 7), date(2026, 4, 1))}
+
+
+def _family(members: dict, frequency="monthly", staleness=150):
+    return _con([{"series_id": s, "source": "bis", "source_code": "x", "name": s,
+                  "frequency": frequency, "staleness_days": staleness} for s in members], members)
+
+
+def test_a_family_takes_the_first_bis_release_of_its_period():
+    con = _family({"bis_usd_rate_br": date(2026, 10, 1)})
+    now = datetime(2026, 12, 3, 12, tzinfo=timezone.utc)
+    nr = _next(con, "bis_rss", calendars.parse_bis(BIS), "bis_usd_rate_br", now=now)
+    assert nr["period"] == "November 2026" and nr["due_at"].startswith("2026-12-03")
+    assert nr["publisher"] == "BIS" and "releasing no later than it" in nr["message"]
+    assert freshness.assess(con, "bis_usd_rate_br", now=now)["status"] == "due"
+
+
+def test_a_member_the_publisher_left_out_is_behind_not_late():
+    """The BIS collects small economies' dollar rates months late: Ghana's
+    August while Brazil's October is out is the BIS's gap, not Bedrok's."""
+    con = _family({"bis_usd_rate_br": date(2026, 10, 1), "bis_usd_rate_gh": date(2026, 8, 1)})
+    now = datetime(2026, 11, 23, 12, tzinfo=timezone.utc)
+    f = freshness.assess(con, "bis_usd_rate_gh", now=now)
+    assert f["status"] == "fresh" and f["next_release"]["behind"] is True
+    assert "out for other series in this family" in f["next_release"]["message"]
+    assert "August 2026 is the latest held" in f["next_release"]["message"]
+    # Past its allowance it is stale all the same: behind is not a pardon.
+    old = _family({"bis_usd_rate_br": date(2026, 10, 1), "bis_usd_rate_gh": date(2026, 5, 1)})
+    assert freshness.assess(old, "bis_usd_rate_gh", now=now)["status"] == "stale"
+
+
+def test_a_series_with_its_own_rule_is_never_behind_a_family():
+    con = _con([{"series_id": s, "source": "fedboard", "source_code": "x", "name": s,
+                 "frequency": "monthly", "staleness_days": 90} for s in ("us_ci_loans", "us_cix")],
+               {"us_ci_loans": date(2026, 9, 1), "us_cix": date(2026, 10, 1)})
+    assert releases.family_of("us_ci_loans") is None
+    f = freshness.assess(con, "us_ci_loans", now=datetime(2026, 11, 20, 23, tzinfo=timezone.utc))
+    assert f["status"] == "late"
+
+
+def test_a_family_calendar_entry_answers_every_member():
+    assert releases.calendar_key("bis_cpi_yoy_br") == ("bis_rss", "CPI")
+    assert releases.calendar_key("bis_credit_gap_cn") == ("bis_rss", "CREDIT_GAPS")
+    assert releases.family_of("bis_cpi_yoy_br") == "bis_cpi_yoy_"
+    assert releases.calendar_key("us_ci_loans") == ("fedboard_pages", "H.8")
+
+
+def test_the_weo_says_its_next_edition_and_is_judged_by_age():
+    con = _con([{"series_id": "weo_gdp_growth_br", "source": "imf", "source_code": "x",
+                 "name": "x", "frequency": "annual", "staleness_days": 450}],
+               {"weo_gdp_growth_br": date(2026, 1, 1)})
+    store.upsert_macro_series(con, "weo_gdp_growth_br",
+                              pd.DataFrame({"date": [date(2027, 1, 1), date(2031, 1, 1)],
+                                            "value": [2.0, 2.0]}))
+    f = freshness.assess(con, "weo_gdp_growth_br", now=datetime(2026, 11, 23, tzinfo=timezone.utc))
+    nr = f["next_release"]
+    assert f["status"] == "fresh" and nr["informational"] is True
+    assert nr["period"] == "the April 2027 World Economic Outlook"
+    assert "between 8 and 24 Apr 2027" in nr["message"]
+    # Inside the window it is still only said: an edition never makes a series due.
+    f = freshness.assess(con, "weo_gdp_growth_br", now=datetime(2027, 4, 20, tzinfo=timezone.utc))
+    assert f["status"] == "fresh" and f["next_release"]["period"].startswith("the April 2027")
+    # Once the window has closed, the next one is October's.
+    f = freshness.assess(con, "weo_gdp_growth_br", now=datetime(2027, 5, 1, tzinfo=timezone.utc))
+    assert f["next_release"]["period"] == "the October 2027 World Economic Outlook"
+
+
+# ---- the National Bank of Kazakhstan's decisions (2026-11-23) ---------------------
+
+# Fragments of nationalbank.kz/en/news/grafik-prinyatiya-resheniy-po-bazovoy-stavke
+# and its 2026 page (rubrics/2365), 2026-11-23.
+NBK_SECTION = (
+    '<li><a href="/en/news/grafik-prinyatiya-resheniy-po-bazovoy-stavke/rubrics/2365" '
+    'class="x"><span>2026</span></a></li>'
+    '<li><a href="/en/news/grafik-prinyatiya-resheniy-po-bazovoy-stavke/rubrics/2237">2025</a></li>'
+    '<li><a href="/en/news/grafik-prinyatiya-resheniy-po-bazovoy-stavke/rubrics/2365"></a></li>'
+    '<li><a href="/en/news/statistical-bulletin/rubrics/2329">NBK Statistical Bulletin</a></li>')
+NBK_2026 = (
+    '<table><tbody><tr><td><p>Date</p></td><td>Base rate</td><td>Corridor</td><td></td></tr>'
+    '<tr style="height: 100px;"><td style="text-align: center;"><p><span>27.10.2026</span></p></td>'
+    '<td>15.75</td><td>14.75 - 16.75</td><td><a href="x">Press-release</a></td></tr>'
+    '<tr style="height: 100px;"><td style="text-align: center;"><span style="font-size: 18px;">'
+    '04.12.2026*</span></td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>'
+    '</tbody></table><p><em>*Base rate announcement date&nbsp;</em></p>')
+
+
+def test_the_national_banks_year_page_is_found_by_its_label():
+    years = calendars.parse_nbk_rubrics(NBK_SECTION)
+    assert years == {
+        2026: "https://nationalbank.kz/en/news/grafik-prinyatiya-resheniy-po-bazovoy-stavke/rubrics/2365",
+        2025: "https://nationalbank.kz/en/news/grafik-prinyatiya-resheniy-po-bazovoy-stavke/rubrics/2237"}
+
+
+def test_the_national_bank_schedule_lists_each_decision_day():
+    df = calendars.parse_nbk_schedule(NBK_2026)
+    assert list(df["due_at"]) == [datetime(2026, 10, 27, 7), datetime(2026, 12, 4, 7)]
+    assert set(df["release_name"]) == {"National Bank of Kazakhstan base rate decision"}
+
+
+def test_a_missing_year_page_fails_rather_than_guessing(monkeypatch):
+    class R:
+        text = NBK_SECTION
+        def raise_for_status(self):
+            pass
+    monkeypatch.setattr(calendars.requests, "get", lambda *a, **k: R())
+    with pytest.raises(ValueError, match="no 2027 page"):
+        calendars.fetch_nbk_schedule(date(2027, 1, 5))
+
+
+def _kz_rate(held):
+    con = _con([{"series_id": "kz_base_rate", "source": "nbk", "source_code": "base-rate",
+                 "name": "x", "frequency": "event", "staleness_days": 150}],
+               {"kz_base_rate": held})
+    store.replace_release_calendar(con, "nbk_base_rate", calendars._frame(
+        "nbk_base_rate", calendars.parse_nbk_schedule(NBK_2026), KZ_NOW))
+    return con
+
+
+def test_the_base_rate_is_due_on_decision_day_and_a_hold_is_a_row():
+    """Every decision, holds included, has a row dated on its day, so a hold
+    shows like a change, and a fetch that morning before the announcement
+    does not count it as shown."""
+    con = _kz_rate(date(2026, 10, 27))
+    before = datetime(2026, 12, 1, 6, tzinfo=timezone.utc)
+    f = freshness.assess(con, "kz_base_rate", now=before)
+    assert f["status"] == "fresh" and "4 Dec 2026" in f["next_release"]["message"]
+    assert "gives the day, not the time" in f["next_release"]["message"]
+    day = datetime(2026, 12, 4, 9, tzinfo=timezone.utc)
+    store.record_check(con, "kz_base_rate", datetime(2026, 12, 4, 4))   # 09:00 Almaty, before it
+    assert freshness.assess(con, "kz_base_rate", now=day)["status"] == "due"
+    store.upsert_macro_series(con, "kz_base_rate",
+                              pd.DataFrame({"date": [date(2026, 12, 4)], "value": [15.75]}))
+    assert freshness.assess(con, "kz_base_rate", now=day)["status"] == "fresh"

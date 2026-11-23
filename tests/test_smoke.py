@@ -147,7 +147,7 @@ def test_every_central_bank_schedule_gets_a_check(world, monkeypatch):
     """Session I: the meeting schedules are scraped pages, so a page that moves
     or loses its dates must fail the weekly run, not go quiet."""
     descs = [d for source, d, *_ in smoke.checks() if source == "calendar"]
-    assert len(descs) == 6 and all(len(f"{d}") <= 28 for d in descs)
+    assert len(descs) == 7 and all(len(f"{d}") <= 28 for d in descs)
 
 
 def test_a_schedule_with_nothing_ahead_fails(monkeypatch):

@@ -16,12 +16,19 @@ the answer says whose date it is. The feeds (researched 2026-10-15 and
   bns_calendar      the Bureau of National Statistics of Kazakhstan's release
                     calendar, a month per page (this month and the next);
                     dates without a time, so at 10:00 Almaty.
+  eurostat_ics      Eurostat's iCal file (2026-11-23): every release as an
+                    all-day event, no time and no reference period; the euro
+                    indicators are kept, at Eurostat's usual 11:00.
+  bis_rss           the BIS's release-calendar RSS feed (2026-11-23): the
+                    dataset, the reference period ("2026-10", "2026-Q2") and
+                    the day, about six months ahead.
   ons_next_release  the ONS series JSON the adapter already downloads carries
                     `description.nextRelease`; recorded after each fetch
                     (pipeline.sync_macro), no request of its own.
 
-And six central banks' meeting schedules, one page each (session I):
-fomc_calendar, ecb_meetings, boe_mpc, boj_mpm, boc_rate and rba_board. Their
+And seven central banks' meeting schedules, one page each (session I, and
+the National Bank of Kazakhstan on 2026-11-23): fomc_calendar, ecb_meetings,
+boe_mpc, boj_mpm, boc_rate, rba_board and nbk_base_rate. Their
 dates are decisions, not periods; freshness reads them in its own way.
 
 The fetched feeds are read at most once a day.
@@ -486,12 +493,150 @@ def fetch_rba_board() -> pd.DataFrame:
     return parse_rba_board(r.text)
 
 
+EUROSTAT_URL = "https://ec.europa.eu/eurostat/o/calendars/eventsIcal"
+# The euro-indicator releases Bedrok's series come out in, by the file's own
+# titles. The file holds every Eurostat item (articles, publications, events),
+# so only these, and only as data releases, are kept.
+EUROSTAT_RELEASES = ("Flash estimate inflation euro area", "Inflation (HICP)", "Unemployment",
+                     "Quarterly government debt")
+
+
+def _ics_events(text: str) -> list[str]:
+    """An iCal file's events, with line endings made one kind and folded lines
+    unfolded (RFC 5545: a continuation starts with a space or tab)."""
+    unfolded = re.sub(r"\n[ \t]", "", (text or "").replace("\r\n", "\n"))
+    return unfolded.split("BEGIN:VEVENT")[1:]
+
+
+def parse_eurostat(text: str) -> pd.DataFrame:
+    """Eurostat's iCal → rows at 11:00 Luxembourg, with no period: the file
+    dates each release by day only and does not say which month it covers."""
+    rows = []
+    for event in _ics_events(text):
+        summary = re.search(r"^SUMMARY[^:\n]*:(.*)$", event, re.M)
+        start = re.search(r"^DTSTART[^:\n]*:(\d{8})", event, re.M)
+        kind = re.search(r"^X-CATEGORY[^:\n]*:(.*)$", event, re.M)
+        if not summary or not start or not kind or "Data release" not in kind.group(1):
+            continue
+        name = summary.group(1).replace("\\,", ",").strip()
+        if name not in EUROSTAT_RELEASES:
+            continue
+        day = datetime.strptime(start.group(1), "%Y%m%d").date()
+        rows.append((name, _at(day, releases.FEEDS["eurostat_ics"]["time"], "eurostat_ics"),
+                     None))
+    return _rows(rows)
+
+
+def fetch_eurostat() -> pd.DataFrame:
+    r = requests.get(EUROSTAT_URL, headers=BROWSER_UA, timeout=60)
+    r.raise_for_status()
+    return parse_eurostat(r.content.decode("utf-8", errors="replace"))
+
+
+BIS_URL = "https://data.bis.org/feed.xml"
+_BIS_TITLE = re.compile(r"(.+?), (\d{4})-(\d{2}|Q[1-4])\b.*?/\s*(.*)")
+
+
+def _bis_release(category: str, kind: str) -> str | None:
+    """The release name Bedrok keys a BIS item by, or None for one it does not
+    date. Policy rates and dollar rates come weekly; the effective exchange
+    rates' monthly data apart from their daily; the property prices' selected
+    (quarterly) series apart from the detailed (monthly) ones."""
+    kind = kind.lower()
+    if category in ("CBPOL", "XRU", "CPI", "TOTAL_CREDIT", "CREDIT_GAPS"):
+        return category
+    if category == "EER" and "monthly" in kind:
+        return "EER monthly"
+    if category == "RPP" and kind.startswith("selected"):
+        return "RPP selected"
+    return None
+
+
+def parse_bis(text: str) -> pd.DataFrame:
+    """The BIS's RSS feed → rows: <category> the dataset, <title> "Consumer
+    prices, 2026-10 / Release", <pubDate> the day (every item 10:00 GMT)."""
+    rows = []
+    for item in re.findall(r"<item>(.*?)</item>", text or "", re.S):
+        def tag(name: str) -> str:
+            m = re.search(rf"<{name}>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</{name}>", item, re.S)
+            return html.unescape(m.group(1).strip()) if m else ""
+        m = _BIS_TITLE.fullmatch(tag("title"))
+        name = _bis_release(tag("category"), m.group(4)) if m else None
+        if not name:
+            continue
+        year, part = int(m.group(2)), m.group(3)
+        period = (date(year, 3 * int(part[1]) - 2, 1) if part.startswith("Q")
+                  else date(year, int(part), 1))
+        try:
+            due = datetime.strptime(tag("pubDate"), "%a, %d %b %Y %H:%M:%S %Z")
+        except ValueError:
+            continue
+        rows.append((name, due, period))
+    return _rows(rows)
+
+
+def fetch_bis() -> pd.DataFrame:
+    r = requests.get(BIS_URL, headers=BROWSER_UA, timeout=60)
+    r.raise_for_status()
+    return parse_bis(r.content.decode("utf-8", errors="replace"))
+
+
+NBK_SCHEDULE_URL = "https://nationalbank.kz/en/news/grafik-prinyatiya-resheniy-po-bazovoy-stavke"
+_NBK_RUBRIC = re.compile(r'<a[^>]*href="([^"]*/grafik-prinyatiya-resheniy-po-bazovoy-stavke/'
+                         r'rubrics/\d+)"[^>]*>\s*(?:<[^>]+>\s*)*(\d{4})\s*<', re.S)
+_NBK_DAY = re.compile(r"^(\d{2})\.(\d{2})\.(\d{4})\*?$")
+
+
+def parse_nbk_rubrics(text: str) -> dict[int, str]:
+    """The schedule section's year pages: {2026: url}. Each year's page has its
+    own id ("rubrics/2365" for 2026, 2237 for 2025), which changes every year;
+    the section and its links labelled by year do not."""
+    out = {}
+    for url, year in _NBK_RUBRIC.findall(text or ""):
+        out.setdefault(int(year), url if url.startswith("http") else
+                       "https://nationalbank.kz" + url)
+    return out
+
+
+def parse_nbk_schedule(text: str) -> pd.DataFrame:
+    """A year's page: a table whose first cell is the decision day
+    ("27.10.2026", the next one starred as the announcement date)."""
+    rows = []
+    for row in re.findall(r"<tr[^>]*>(.*?)</tr>", text or "", re.S):
+        cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)
+        if not cells:
+            continue
+        m = _NBK_DAY.match(_text(cells[0]))
+        if m:
+            day = date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
+            rows.append(_decision("nbk_base_rate", day))
+    return _rows(rows)
+
+
+def fetch_nbk_schedule(today: date | None = None) -> pd.DataFrame:
+    """This year's page and next year's when it is up, found by their labels
+    on the section page, never by a remembered id."""
+    today = today or date.today()
+    r = requests.get(NBK_SCHEDULE_URL, headers={"Accept-Language": "en"}, timeout=60)
+    r.raise_for_status()
+    years = parse_nbk_rubrics(r.text)
+    if today.year not in years:
+        raise ValueError(f"no {today.year} page in the National Bank's schedule section")
+    frames = []
+    for year in (today.year, today.year + 1):
+        if year in years:
+            page = requests.get(years[year], headers={"Accept-Language": "en"}, timeout=60)
+            page.raise_for_status()
+            frames.append(parse_nbk_schedule(page.text))
+    return pd.concat(frames, ignore_index=True)
+
+
 FETCHERS = {"bea_json": fetch_bea, "statcan_json": fetch_statcan, "ine_ics": fetch_ine,
             "ecb_statscal": fetch_ecb, "fedboard_pages": fetch_fedboard,
-            "bns_calendar": fetch_bns,
+            "bns_calendar": fetch_bns, "eurostat_ics": fetch_eurostat, "bis_rss": fetch_bis,
             "fomc_calendar": fetch_fomc, "ecb_meetings": fetch_ecb_meetings,
             "boe_mpc": fetch_boe_mpc, "boj_mpm": fetch_boj_mpm, "boc_rate": fetch_boc_rate,
-            "rba_board": fetch_rba_board}
+            "rba_board": fetch_rba_board, "nbk_base_rate": fetch_nbk_schedule}
 
 
 def parse_ons_next(text: str | None, latest: date | None, frequency: str) -> dict | None:

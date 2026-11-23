@@ -1,58 +1,74 @@
-series_id,feed,release_name
-us_pce,bea_json,Personal Income and Outlays
-us_core_pce,bea_json,Personal Income and Outlays
-us_real_gdp,bea_json,Gross Domestic Product
-us_gdp_growth_saar,bea_json,Gross Domestic Product
-us_nominal_gdp,bea_json,Gross Domestic Product
-us_ip_investment,bea_json,Gross Domestic Product
-uk_cpi_yoy,ons_next_release,
-uk_cpih_yoy,ons_next_release,
-uk_gdp_monthly_index,ons_next_release,
-uk_unemployment_rate,ons_next_release,
-ca_cpi,statcan_json,Consumer Price Index
-ca_unemployment,statcan_json,Labour Force Survey
-ca_real_gdp_monthly,statcan_json,Gross domestic product by industry
-es_cpi_ine,ine_ics,Consumer Price Index
-es_cpi_yoy_ine,ine_ics,Consumer Price Index
-es_cpi_core_ine,ine_ics,Consumer Price Index
-es_unemployment_epa,ine_ics,Economically Active Population Survey
-ea_m3_growth,ecb_statscal,BSI
-ea_m1_growth,ecb_statscal,BSI
-ea_loans_hh_growth,ecb_statscal,BSI
-ea_loans_nfc_growth,ecb_statscal,BSI
-ea_cob_nfc,ecb_statscal,MIR
-ea_cob_hh_house,ecb_statscal,MIR
-ea_bls_cs_enterprises,ecb_statscal,BLS
-ea_bls_cs_households_house,ecb_statscal,BLS
-us_indpro,fedboard_pages,G.17
-us_m2,fedboard_pages,H.6
-us_fed_balance_sheet,fedboard_pages,H.4.1
-us_bank_reserves,fedboard_pages,H.4.1
-us_tga,fedboard_pages,H.4.1
-us_bank_credit,fedboard_pages,H.8
-us_sloos_cni_tightening,fedboard_pages,SLOOS
-us_sloos_cni_demand,fedboard_pages,SLOOS
-us_sloos_cni_small,fedboard_pages,SLOOS
-us_sloos_cc_tightening,fedboard_pages,SLOOS
-us_z1_nfc_financing_gap,fedboard_pages,Z.1
-us_z1_nfc_capex,fedboard_pages,Z.1
-us_z1_nfc_debt_issuance,fedboard_pages,Z.1
-us_z1_nfc_debt,fedboard_pages,Z.1
-kz_reserves_gross,nbk_next_release,
-kz_reserves_net,nbk_next_release,
-kz_national_fund_fx_assets,nbk_next_release,
-kz_m2,nbk_next_release,
-kz_m3,nbk_next_release,
-kz_deposit_rate_households_kzt,nbk_next_release,
-kz_deposit_rate_firms_kzt,nbk_next_release,
-kz_cpi,bns_calendar,Inflation
-kz_cpi_yoy,bns_calendar,Inflation
-kz_cpi_mom,bns_calendar,Inflation
-kz_industrial_production_yoy,bns_calendar,Industry
-kz_wage_nominal,bns_calendar,Wages
-us_fed_target_lower,fomc_calendar,FOMC decision
-us_fed_target_upper,fomc_calendar,FOMC decision
-ecb_deposit_rate,ecb_meetings,ECB monetary policy decision
-ecb_mro_rate,ecb_meetings,ECB monetary policy decision
-uk_boe_bank_rate,boe_mpc,Bank of England MPC decision
-ca_overnight_target_boc,boc_rate,Bank of Canada rate announcement
+series_id,prefix,feed,release_name
+us_pce,,bea_json,Personal Income and Outlays
+us_core_pce,,bea_json,Personal Income and Outlays
+us_real_gdp,,bea_json,Gross Domestic Product
+us_gdp_growth_saar,,bea_json,Gross Domestic Product
+us_nominal_gdp,,bea_json,Gross Domestic Product
+us_ip_investment,,bea_json,Gross Domestic Product
+uk_cpi_yoy,,ons_next_release,
+uk_cpih_yoy,,ons_next_release,
+uk_gdp_monthly_index,,ons_next_release,
+uk_unemployment_rate,,ons_next_release,
+ca_cpi,,statcan_json,Consumer Price Index
+ca_unemployment,,statcan_json,Labour Force Survey
+ca_real_gdp_monthly,,statcan_json,Gross domestic product by industry
+es_cpi_ine,,ine_ics,Consumer Price Index
+es_cpi_yoy_ine,,ine_ics,Consumer Price Index
+es_cpi_core_ine,,ine_ics,Consumer Price Index
+es_unemployment_epa,,ine_ics,Economically Active Population Survey
+ea_m3_growth,,ecb_statscal,BSI
+ea_m1_growth,,ecb_statscal,BSI
+ea_loans_hh_growth,,ecb_statscal,BSI
+ea_loans_nfc_growth,,ecb_statscal,BSI
+ea_cob_nfc,,ecb_statscal,MIR
+ea_cob_hh_house,,ecb_statscal,MIR
+ea_bls_cs_enterprises,,ecb_statscal,BLS
+ea_bls_cs_households_house,,ecb_statscal,BLS
+us_indpro,,fedboard_pages,G.17
+us_m2,,fedboard_pages,H.6
+us_fed_balance_sheet,,fedboard_pages,H.4.1
+us_bank_reserves,,fedboard_pages,H.4.1
+us_tga,,fedboard_pages,H.4.1
+us_bank_credit,,fedboard_pages,H.8
+us_sloos_cni_tightening,,fedboard_pages,SLOOS
+us_sloos_cni_demand,,fedboard_pages,SLOOS
+us_sloos_cni_small,,fedboard_pages,SLOOS
+us_sloos_cc_tightening,,fedboard_pages,SLOOS
+us_z1_nfc_financing_gap,,fedboard_pages,Z.1
+us_z1_nfc_capex,,fedboard_pages,Z.1
+us_z1_nfc_debt_issuance,,fedboard_pages,Z.1
+us_z1_nfc_debt,,fedboard_pages,Z.1
+kz_reserves_gross,,nbk_next_release,
+kz_reserves_net,,nbk_next_release,
+kz_national_fund_fx_assets,,nbk_next_release,
+kz_m2,,nbk_next_release,
+kz_m3,,nbk_next_release,
+kz_deposit_rate_households_kzt,,nbk_next_release,
+kz_deposit_rate_firms_kzt,,nbk_next_release,
+kz_cpi,,bns_calendar,Inflation
+kz_cpi_yoy,,bns_calendar,Inflation
+kz_cpi_mom,,bns_calendar,Inflation
+kz_industrial_production_yoy,,bns_calendar,Industry
+kz_wage_nominal,,bns_calendar,Wages
+us_fed_target_lower,,fomc_calendar,FOMC decision
+us_fed_target_upper,,fomc_calendar,FOMC decision
+ecb_deposit_rate,,ecb_meetings,ECB monetary policy decision
+ecb_mro_rate,,ecb_meetings,ECB monetary policy decision
+uk_boe_bank_rate,,boe_mpc,Bank of England MPC decision
+ca_overnight_target_boc,,boc_rate,Bank of Canada rate announcement
+us_ci_loans,,fedboard_pages,H.8
+ea_hicp_yoy,,eurostat_ics,Flash estimate inflation euro area
+hicp_core_ea,,eurostat_ics,Flash estimate inflation euro area
+hicp_core_ea20,,eurostat_ics,Flash estimate inflation euro area
+ea_hicp_index,,eurostat_ics,Inflation (HICP)
+eu_unemployment,,eurostat_ics,Unemployment
+,govdebt_gdp_,eurostat_ics,Quarterly government debt
+,bis_policy_rate_,bis_rss,CBPOL
+,bis_usd_rate_,bis_rss,XRU
+,bis_reer_,bis_rss,EER monthly
+,bis_cpi_yoy_,bis_rss,CPI
+,bis_real_house_prices_,bis_rss,RPP selected
+,bis_credit_gdp_,bis_rss,TOTAL_CREDIT
+,bis_credit_gap_,bis_rss,CREDIT_GAPS
+us_trimmed_pce,,bea_json,Personal Income and Outlays
+kz_base_rate,,nbk_base_rate,National Bank of Kazakhstan base rate decision

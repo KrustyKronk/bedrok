@@ -92,19 +92,25 @@ WORLD_SETS: list[dict] = [
               + BIS_NOTE},
     {"prefix": "bis_real_house_prices_", "source": "bis", "by": "REF_AREA", "codes": "iso2",
      "code": "WS_SPP/Q.{}.R.628", "label": "BIS real house prices",
-     "frequency": "quarterly", "units": "index 2010=100", "staleness_days": 330,
+     "frequency": "quarterly", "units": "index 2010=100",
+     # The standard release is about five months after the quarter (data.bis.org/topics/RPP).
+     "staleness_days": 340,
      "name_tmpl": "{geo} real residential property prices (BIS)",
      "notes": "CPI-deflated residential property prices compiled by the BIS from national "
               "sources. " + BIS_NOTE},
     {"prefix": "bis_credit_gdp_", "source": "bis", "by": "BORROWERS_CTY", "codes": "iso2",
      "code": "WS_TC/Q.{}.P.A.M.770.A", "label": "BIS credit to the private sector",
-     "frequency": "quarterly", "units": "percent of GDP", "staleness_days": 330,
+     "frequency": "quarterly", "units": "percent of GDP",
+     # Published about 165 days after the quarter (data.bis.org/topics/TOTAL_CREDIT).
+     "staleness_days": 360,
      "name_tmpl": "{geo} credit to the private non-financial sector, % of GDP (BIS)",
      "notes": "total credit to the private non-financial sector from all lenders, at market "
               "value, as a share of GDP; adjusted for breaks. " + BIS_NOTE},
     {"prefix": "bis_credit_gap_", "source": "bis", "by": "BORROWERS_CTY", "codes": "iso2",
      "code": "WS_CREDIT_GAP/Q.{}.P.A.C", "label": "BIS credit-to-GDP gaps",
-     "frequency": "quarterly", "units": "percentage points of GDP", "staleness_days": 330,
+     "frequency": "quarterly", "units": "percentage points of GDP",
+     # Published about 165 days after the quarter (data.bis.org/topics/TOTAL_CREDIT).
+     "staleness_days": 360,
      "name_tmpl": "{geo} credit-to-GDP gap (BIS)",
      "notes": "private non-financial credit to GDP minus its one-sided HP trend (lambda "
               "400,000), the Basel III countercyclical-buffer guide; publishes about two "

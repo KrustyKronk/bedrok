@@ -8,6 +8,13 @@ Statuses: `fresh` (the next period is not due yet), `due` (inside its window: fe
 
 | Series | Usually out | Time | Exact calendar |
 |---|---|---|---|
+| `bis_cpi_yoy_…` (family) | 21 to 28 days after the month, on a Thursday | 10:00 UTC | the BIS's release calendar |
+| `bis_credit_gap_…` (family) | 155 to 170 days after the quarter | 10:00 UTC | the BIS's release calendar |
+| `bis_credit_gdp_…` (family) | 155 to 170 days after the quarter | 10:00 UTC | the BIS's release calendar |
+| `bis_policy_rate_…` (family) | 1 to 8 days after the month, on a Thursday | 10:00 UTC | the BIS's release calendar |
+| `bis_real_house_prices_…` (family) | 80 to 150 days after the quarter | 10:00 UTC | the BIS's release calendar |
+| `bis_reer_…` (family) | 14 to 21 days after the month, on a Thursday | 10:00 UTC | the BIS's release calendar |
+| `bis_usd_rate_…` (family) | 1 to 8 days after the month, on a Thursday | 10:00 UTC | the BIS's release calendar |
 | `ca_cpi` | 14 to 21 days after the month | 08:30 America/Toronto | Statistics Canada's release schedule |
 | `ca_real_gdp_monthly` | 50 to 63 days after the month | 08:30 America/Toronto | Statistics Canada's release schedule |
 | `ca_unemployment` | 1 to 10 days after the month, on a Friday | 08:30 America/Toronto | Statistics Canada's release schedule |
@@ -18,8 +25,8 @@ Statuses: `fresh` (the next period is not due yet), `due` (inside its window: fe
 | `ea_cob_hh_house` | 30 to 36 days after the month | 10:00 Europe/Berlin | the ECB's statistical calendar |
 | `ea_cob_nfc` | 30 to 36 days after the month | 10:00 Europe/Berlin | the ECB's statistical calendar |
 | `ea_gdp_qoq` | 29 to 47 days after the quarter | 11:00 Europe/Brussels |  |
-| `ea_hicp_index` | 15 to 20 days after the month | 11:00 Europe/Brussels |  |
-| `ea_hicp_yoy` | 2 days before to 3 days after the end of the month | 11:00 Europe/Brussels |  |
+| `ea_hicp_index` | 15 to 20 days after the month | 11:00 Europe/Brussels | Eurostat's release calendar |
+| `ea_hicp_yoy` | 2 days before to 3 days after the end of the month | 11:00 Europe/Brussels | Eurostat's release calendar |
 | `ea_loans_hh_growth` | 24 to 30 days after the month | 10:00 Europe/Berlin | the ECB's statistical calendar |
 | `ea_loans_nfc_growth` | 24 to 30 days after the month | 10:00 Europe/Berlin | the ECB's statistical calendar |
 | `ea_m1_growth` | 24 to 30 days after the month | 10:00 Europe/Berlin | the ECB's statistical calendar |
@@ -28,10 +35,10 @@ Statuses: `fresh` (the next period is not due yet), `due` (inside its window: fe
 | `es_cpi_ine` | 11 to 16 days after the month | 09:00 Europe/Madrid | INE's release calendar |
 | `es_cpi_yoy_ine` | 11 to 16 days after the month | 09:00 Europe/Madrid | INE's release calendar |
 | `es_unemployment_epa` | 22 to 31 days after the quarter | 09:00 Europe/Madrid | INE's release calendar |
-| `eu_unemployment` | 29 to 35 days after the month | 11:00 Europe/Brussels |  |
-| `govdebt_gdp_…` (family) | 108 to 118 days after the quarter | 11:00 Europe/Brussels |  |
-| `hicp_core_ea` | 2 days before to 3 days after the end of the month | 11:00 Europe/Brussels |  |
-| `hicp_core_ea20` | 2 days before to 3 days after the end of the month | 11:00 Europe/Brussels |  |
+| `eu_unemployment` | 29 to 35 days after the month | 11:00 Europe/Brussels | Eurostat's release calendar |
+| `govdebt_gdp_…` (family) | 108 to 118 days after the quarter | 11:00 Europe/Brussels | Eurostat's release calendar |
+| `hicp_core_ea` | 2 days before to 3 days after the end of the month | 11:00 Europe/Brussels | Eurostat's release calendar |
+| `hicp_core_ea20` | 2 days before to 3 days after the end of the month | 11:00 Europe/Brussels | Eurostat's release calendar |
 | `jp_cpi` | 17 to 25 days after the month, on a Friday | 08:30 Asia/Tokyo |  |
 | `jp_cpi_core` | 17 to 25 days after the month, on a Friday | 08:30 Asia/Tokyo |  |
 | `jp_cpi_core_core` | 17 to 25 days after the month, on a Friday | 08:30 Asia/Tokyo |  |
@@ -67,6 +74,7 @@ Statuses: `fresh` (the next period is not due yet), `due` (inside its window: fe
 | `us_5y_real` | 1 days after the day | 16:15 America/New_York |  |
 | `us_bank_credit` | 9 days after the week, on a Friday | 16:15 America/New_York | the Fed Board's release calendar |
 | `us_bank_reserves` | 1 days after the week, on a Thursday | 16:30 America/New_York | the Fed Board's release calendar |
+| `us_ci_loans` | 9 days after the month, on a Friday | 16:15 America/New_York | the Fed Board's release calendar |
 | `us_continued_claims` | 12 days after the week, on a Thursday | 08:30 America/New_York |  |
 | `us_core_cpi` | 10 to 18 days after the month | 08:30 America/New_York |  |
 | `us_core_pce` | 26 to 36 days after the month | 08:30 America/New_York | BEA's release schedule |
@@ -74,16 +82,25 @@ Statuses: `fresh` (the next period is not due yet), `due` (inside its window: fe
 | `us_cpi_nsa` | 10 to 18 days after the month | 08:30 America/New_York |  |
 | `us_dc_construction` | 28 to 36 days after the month | 10:00 America/New_York |  |
 | `us_ebp` | 3 to 20 days after the month | 12:00 America/New_York |  |
+| `us_empire_fed` | 12 to 16 days before the end of the month | 08:30 America/New_York |  |
 | `us_fed_balance_sheet` | 1 days after the week, on a Thursday | 16:30 America/New_York | the Fed Board's release calendar |
 | `us_gdp_growth_saar` | 26 to 32 days after the quarter | 08:30 America/New_York | BEA's release schedule |
 | `us_indpro` | 14 to 19 days after the month | 09:15 America/New_York | the Fed Board's release calendar |
 | `us_initial_claims` | 5 days after the week, on a Thursday | 08:30 America/New_York |  |
 | `us_initial_claims_4wk` | 5 days after the week, on a Thursday | 08:30 America/New_York |  |
 | `us_ip_investment` | 26 to 32 days after the quarter | 08:30 America/New_York | BEA's release schedule |
+| `us_jolts_hires_rate` | 30 to 42 days after the month | 10:00 America/New_York |  |
+| `us_jolts_layoffs_rate` | 30 to 42 days after the month | 10:00 America/New_York |  |
+| `us_jolts_openings` | 30 to 42 days after the month | 10:00 America/New_York |  |
+| `us_jolts_quits_rate` | 30 to 42 days after the month | 10:00 America/New_York |  |
 | `us_m2` | 21 to 28 days after the month, on a Tuesday | 13:00 America/New_York | the Fed Board's release calendar |
+| `us_mct_infl` | 27 to 37 days after the month | 10:00 America/New_York |  |
 | `us_nominal_gdp` | 26 to 32 days after the quarter | 08:30 America/New_York | BEA's release schedule |
 | `us_payrolls` | 1 to 8 days after the month, on a Friday | 08:30 America/New_York |  |
 | `us_pce` | 26 to 36 days after the month | 08:30 America/New_York | BEA's release schedule |
+| `us_philly_fed` | 8 to 16 days before the end of the month, on a Thursday | 08:30 America/New_York |  |
+| `us_ppi_all_commodities` | 9 to 16 days after the month | 08:30 America/New_York |  |
+| `us_ppi_final_demand` | 9 to 16 days after the month | 08:30 America/New_York |  |
 | `us_real_gdp` | 26 to 32 days after the quarter | 08:30 America/New_York | BEA's release schedule |
 | `us_retail_sales` | 13 to 17 days after the month | 08:30 America/New_York |  |
 | `us_sloos_cc_tightening` | 52 to 61 days before the end of the quarter, on a Monday | 14:00 America/New_York | the Fed Board's release calendar |
@@ -91,6 +108,7 @@ Statuses: `fresh` (the next period is not due yet), `due` (inside its window: fe
 | `us_sloos_cni_small` | 52 to 61 days before the end of the quarter, on a Monday | 14:00 America/New_York | the Fed Board's release calendar |
 | `us_sloos_cni_tightening` | 52 to 61 days before the end of the quarter, on a Monday | 14:00 America/New_York | the Fed Board's release calendar |
 | `us_tga` | 1 days after the week, on a Thursday | 16:30 America/New_York | the Fed Board's release calendar |
+| `us_trimmed_pce` | 26 to 36 days after the month | 08:30 America/New_York | BEA's release schedule |
 | `us_unemployment` | 1 to 8 days after the month, on a Friday | 08:30 America/New_York |  |
 | `us_z1_nfc_capex` | 66 to 80 days after the quarter | 12:00 America/New_York | the Fed Board's release calendar |
 | `us_z1_nfc_debt` | 66 to 80 days after the quarter | 12:00 America/New_York | the Fed Board's release calendar |
@@ -100,20 +118,32 @@ Statuses: `fresh` (the next period is not due yet), `due` (inside its window: fe
 
 ## Exact calendars
 
-- **BEA's release schedule** (`bea_json`): 6 series; fetched at most once a day.
+- **BEA's release schedule** (`bea_json`): 7 series; fetched at most once a day.
 - **The ONS's next-release date** (`ons_next_release`): 4 series; read from the series' own response, no extra request.
 - **The National Bank of Kazakhstan's next-release date** (`nbk_next_release`): 7 series; read from the series' page after each fetch, one extra request per page.
 - **Statistics Canada's release schedule** (`statcan_json`): 3 series; fetched at most once a day.
 - **INE's release calendar** (`ine_ics`): 4 series; fetched at most once a day.
 - **The ECB's statistical calendar** (`ecb_statscal`): 8 series; fetched at most once a day.
-- **The Fed Board's release calendar** (`fedboard_pages`): 14 series; fetched at most once a day.
+- **The Fed Board's release calendar** (`fedboard_pages`): 15 series; fetched at most once a day.
+- **Eurostat's release calendar** (`eurostat_ics`): 5 series and 1 family; fetched at most once a day; it gives the day, and the time is the publisher's usual practice.
+- **The BIS's release calendar** (`bis_rss`): 7 families; fetched at most once a day; the BIS gives the day, releasing no later than it.
 - **The Bureau of National Statistics' release calendar** (`bns_calendar`): 5 series; fetched at most once a day.
 
-The BLS publishes a calendar file, but its website refuses automated retrieval, so BLS series stay on their rules.
+A family's members are fetched together, but a publisher may release a period for some countries and not others (the BIS collects small economies' exchange rates months late). A member whose next period another member already holds is behind its publisher, not due or late: it keeps its age status, and the answer says so.
+
+The BLS publishes a calendar file, but its website refuses automated retrieval, so BLS series stay on their rules. Eurostat's file has no times and no periods; Istat's press calendar (a public Google Calendar, with times) is not read yet. The OECD's release pages refuse programs, so OECD series are judged by age.
+
+## Editions
+
+A publication that revises every period at once, on its own cycle. Its next edition is said, for information, and never makes a series due or late: Bedrok cannot yet tell one edition from the next in the store.
+
+| Family | Next edition | Source |
+|---|---|---|
+| `weo_…` | each April and October, usually between the 8th and the 24th | IMF World Economic Outlook: each April and October, around the IMF and World Bank meetings. https://www.imf.org/en/Publications/WEO |
 
 ## Central banks' decisions
 
-Six banks' meeting schedules are read from their own pages, at most once a day. The day is the bank's; the time is its usual practice, said with "usually", except where the bank states it. A policy rate is `due` once its bank has decided and the store does not show the decision yet, and `late` two days after the day the decision should first show. A rate that only gains a row when it changes counts a hold as shown once it has been fetched on or after that day. Past decisions are kept when a page drops them. Bedrok never says what a bank is expected to decide.
+Seven banks' meeting schedules are read from their own pages, at most once a day. The day is the bank's; the time is its usual practice, said with "usually", except where the bank states it. A policy rate is `due` once its bank has decided and the store does not show the decision yet, and `late` two days after the day the decision should first show. A rate that only gains a row when it changes counts a hold as shown once it has been fetched on or after that day. Past decisions are kept when a page drops them. Bedrok never says what a bank is expected to decide.
 
 | Bank | Decision time | Shows in | Shows from |
 |---|---|---|---|
@@ -123,3 +153,4 @@ Six banks' meeting schedules are read from their own pages, at most once a day. 
 | The Bank of Japan's monetary policy meeting schedule (`boj_mpm`) | no set time | dates only (`jp_policy_rate` is the BIS month-end rate) |  |
 | The Bank of Canada's upcoming events (`boc_rate`) | 09:45 America/Toronto, stated | `ca_overnight_target_boc` | the next day |
 | The Reserve Bank of Australia's board meeting schedule (`rba_board`) | 14:30 Australia/Sydney, usually | dates only (`au_policy_rate` is the BIS month-end rate) |  |
+| The National Bank of Kazakhstan's base rate decision schedule (`nbk_base_rate`) | no set time | `kz_base_rate` | the decision day |
