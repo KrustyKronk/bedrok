@@ -918,6 +918,40 @@ not modify), on the "Terms of use" page under User information, not the
 imprint. The TLS handshake that failed on 2026-10-11 was the service's; on
 2026-10-16 it answered in a quarter of a second.
 
+**The Atlanta Fed moved its sticky-price file (found 2026-11-23).** The old
+`…/datafiles/research/inflationproject/stickprice/stickyprice.xlsx` redirects
+to `/error`, a 404. The sticky-price page now links
+`…/research-and-data/data/sticky-price/sticky-price-data.xlsx`, with the same
+`Data` sheet and block layout; `bedrok tieout --only us_sticky_core_cpi` found
+every stored month equal. When a Fed file 404s, read the product page's own
+link before suspecting the series.
+
+**Webstat's catalog names who made each series, and it is often not the
+Banque de France (2026-11-23).** The keyless explore API
+(`webstat.banque-france.fr/api/explore/v2.1/catalog/datasets`) lists one
+metadata-only dataset per series. Its `metas.default.publisher` reads
+`Banque de France` for the bank's own statistics, `BCE` for exchange rates,
+`Eurostat` for the HICP, and `EURONEXT` for the whole TEC curve (TEC 10, the
+French 10-year), even though the description says "Fournisseur: Banque de
+France". No dataset carries a `license`. The observations live in one table,
+`observations`, which needs a key from a portal account
+(`Authorization: Apikey …`, 10,000 calls a day) and answers a missing key
+with a 404 that pretends the table does not exist. The site's terms say each
+dataset's own licence governs, so a series with no licence and a third-party
+producer is not one Bedrok can carry. Read the publisher field before
+designing an adapter. The ECB publishes no daily national yields, and
+Eurostat's daily convergence set (`irt_lt_mcby_d`) is not disseminated, so
+France stays monthly.
+
+**A vendor's refusal comes and goes: Destatis, the OECD and Statistics
+Canada (2026-11-23).** All three failed in a refresh in November (GENESIS
+refused `de_industrial_production` on 2026-11-05; the OECD and StatCan
+answered 403 on 2026-11-19), and all three answered normally days later with
+the same request: GENESIS through its keyed API (so not a bot check), the
+OECD's 11 series and StatCan's 3 series and calendar without a 403.
+`series_checks` records the last fetch without an error, which dates the
+recovery without a rerun.
+
 **The Fed Board renames files inside its release zips (2026-11-12).** The
 zips stayed at the same addresses, but `SLOOS_data.xml` became
 `sloos_data.xml` and `Z1_data.xml` became `z1_data.xml`, while

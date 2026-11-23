@@ -21,6 +21,19 @@ data sources and not found; most are sold by data vendors.
   Dated Brent, the physical cargo price, which usually sits close to the
   front-month future but can diverge by tens of dollars in a squeeze, as in
   September and October 2026.
+- Daily 10-year government bond yields for France, China and most other
+  markets. A daily benchmark yield is market data: the Banque de France's
+  Webstat shows the French constant-maturity curve (TEC 10) but names
+  Euronext as its producer, states no licence for it and serves it only
+  through an account key. The ECB and Eurostat publish no daily national
+  yields. China's daily curve is ChinaBond's, a commercial product. Bedrok
+  carries the daily 10-year only where an official body publishes it as its
+  own (the Fed Board's `us_10y`, the Bundesbank's `de_10y_yield`, the Bank
+  of England's `uk_gilt_10y`, the Bank of Canada's `ca_10y_yield`, Japan's
+  Ministry of Finance's `jp_10y_yield`, the ECB's euro-area AAA curve
+  `ea_10y_yield`), and monthly averages
+  elsewhere: Eurostat's `ltgov_yield_fr` for France, the OECD's
+  `oecd_10y_cn` for China (from 2014).
 
 **Panels that do not exist openly**
 
